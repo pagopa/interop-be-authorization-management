@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Key management microservice
+  version: 0.0.1
+  contact:
+    name: API Support
+    url: 'http://www.example.com/support'
+    email: support@example.com
+  description: Manages the persistence and retrieval of client keys.
+  termsOfService: 'http://swagger.io/terms/'
+  x-api-id: an x-api-id
+  x-summary: an x-summary
+servers:
+  - url: 'https://gateway.interop.pdnd.dev/pdnd-interop-uservice-key-management/0.0.1'
+    description: This contains key management routes
+tags:
+  - name: key
+    description: Operations on keys persistence
+  - name: health
+    description: Operations about service status
+paths:
+  /status:
+    get:
+      tags:
+        - health
+      summary: Health status endpoint
+      description: Return ok
+      operationId: getStatus
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/{clientId}/keys':
+    post:
+      tags:
+        - key
+      summary: Create Keys for the specific clientId.
+      operationId: createKeys
+      responses:
+        '201':
+          description: Keys created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeysResponse'
+        '400':
+          description: Missing Required Information
+        '404':
+          description: Client id not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Keys'
+      description: Creates one or more keys for the corresponding client.
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: ID of client that the added keys MUST belong to
+          schema:
+            type: string
+            format: uuid
+    get:
+      tags:
+        - key
+      summary: Returns a set of keys by client ID.
+      description: 'Given a client identifier it returns its corresponding set of keys, if any'
+      operationId: getClientKeys
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: returns the corresponding array of keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeysResponse'
+        '404':
+          description: Client id not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/{clientId}/keys/{keyId}':
+    get:
+      tags:
+        - key
+      summary: Returns a key by client and key identifier.
+      description: 'Given a client and key identifiers it returns the corresponding key, if any'
+      operationId: getClientKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key to lookup
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: returns the corresponding key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Key'
+        '404':
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  schemas:
+    KeysResponse:
+      type: object
+      properties:
+        clientId:
+          type: string
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeyEntry'
+      required:
+        - clientId
+        - keys
+    Keys:
+      type: array
+      items:
+        $ref: '#/components/schemas/Key'
+    KeyEntry:
+      type: object
+      properties:
+        keyId:
+          type: string
+        key:
+          $ref: '#/components/schemas/Key'
+      required:
+        - keyId
+        - key
+    Key:
+      type: object
+      required:
+        - kty
+        - alg
+        - use
+        - kid
+      properties:
+        kty:
+          type: string
+        alg:
+          type: string
+        use:
+          type: string
+        kid:
+          type: string
+        'n':
+          type: string
+        e:
+          type: string
+        crv:
+          type: string
+        x:
+          type: string
+        'y':
+          type: string
+    Problem:
+      properties:
+        detail:
+          description: A human readable explanation specific to this occurrence of the problem.
+          example: Request took too long to complete.
+          maxLength: 4096
+          pattern: '^.{0,1024}$'
+          type: string
+        status:
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+          example: 503
+          exclusiveMaximum: true
+          format: int32
+          maximum: 600
+          minimum: 100
+          type: integer
+        title:
+          description: 'A short, summary of the problem type. Written in english and readable'
+          example: Service Unavailable
+          maxLength: 64
+          pattern: '^[ -~]{0,64}$'
+          type: string
+      additionalProperties: false
+      required:
+        - status
+        - title
+  securitySchemes: {}

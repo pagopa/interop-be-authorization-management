@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+
+option (scalapb.options) = {
+  package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
+};
+
+message KeyEntryV1 {
+  required string keyId = 1;
+  required KeyV1 value = 2;
+}
+
+message KeyV1 {
+  required string kty = 1;
+  required string alg = 2;
+  required string use = 3;
+  required string kid = 4;
+  optional string n = 5;
+  optional string e = 6;
+  optional string crv = 7;
+  optional string x = 8;
+  optional string y = 9;
+}
