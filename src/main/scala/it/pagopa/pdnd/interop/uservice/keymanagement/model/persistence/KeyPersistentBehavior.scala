@@ -1,5 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
+import akka.Done
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
@@ -7,8 +8,10 @@ import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{toAPI, toAPIResponse}
 
+import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
@@ -17,6 +20,7 @@ object KeyPersistentBehavior {
 
   final case object KeyNotFoundException extends Throwable
 
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def commandHandler(
     shard: ActorRef[ClusterSharding.ShardCommand],
     context: ActorContext[Command]
@@ -46,6 +50,31 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo)
         }
 
+      case DisableKey(clientId, keyId, replyTo) =>
+        state.getClientKeyByKeyId(clientId, keyId) match {
+          case Some(key) if !key.status.equals(Active) =>
+            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is already disabled")
+            Effect.none[KeyDisabled, State]
+          case Some(_) => {
+            Effect
+              .persist(KeyDisabled(clientId, keyId, OffsetDateTime.now()))
+              .thenRun(_ => replyTo ! StatusReply.Success(Done))
+          }
+          case None => commandError(replyTo)
+        }
+
+      case DeleteKey(clientId, keyId, replyTo) =>
+        state.getClientKeyByKeyId(clientId, keyId) match {
+          case Some(key) if key.status.equals(Deleted) =>
+            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is already deleted")
+            Effect.none[KeyDeleted, State]
+          case Some(_) =>
+            Effect
+              .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
+              .thenRun(_ => replyTo ! StatusReply.Success(Done))
+          case None => commandError(replyTo)
+        }
+
       case GetKeys(clientId, replyTo) =>
         state.getClientKeys(clientId) match {
           case Some(keys) =>
@@ -68,7 +97,9 @@ object KeyPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case KeysAdded(clientId, keys) => state.addKeys(clientId, keys)
+      case KeysAdded(clientId, keys)               => state.addKeys(clientId, keys)
+      case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
+      case KeyDeleted(clientId, keyId, timestamp)  => state.delete(clientId, keyId, timestamp)
     }
 
   val TypeKey: EntityTypeKey[Command] =

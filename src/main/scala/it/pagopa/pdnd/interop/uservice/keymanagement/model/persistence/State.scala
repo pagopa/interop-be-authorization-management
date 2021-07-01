@@ -3,7 +3,13 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
 
+import java.time.OffsetDateTime
+
 final case class State(keys: Map[String, Keys]) extends Persistable {
+
+  def delete(clientId: String, keyId: String, timestamp: OffsetDateTime): State  = ??? // TODO
+  def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State = ??? // TODO
+
   def addKeys(clientId: String, addedKeys: Keys): State = {
     keys.get(clientId) match {
       case Some(entries) => {
