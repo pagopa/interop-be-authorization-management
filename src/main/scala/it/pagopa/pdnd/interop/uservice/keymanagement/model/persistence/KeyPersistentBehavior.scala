@@ -6,7 +6,8 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Key.toAPI
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{toAPI, toAPIResponse}
 
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
@@ -24,14 +25,23 @@ object KeyPersistentBehavior {
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddKeys(clientId, keys, replyTo) =>
-        Effect
-          .persist(KeysAdded(clientId, keys))
-          .thenRun(_ => replyTo ! StatusReply.Success(toAPI(clientId, keys)))
+        state
+          .containsKeys(clientId, keys.map(_._1).toSeq) match {
+          case Some(existingKeys) =>
+            replyTo ! StatusReply.Error[KeysResponse](
+              s"The keys identified by: '${existingKeys.mkString(", ")}' already exist for this client"
+            )
+            Effect.none[Event, State]
+          case None =>
+            Effect
+              .persist(KeysAdded(clientId, keys))
+              .thenRun(_ => replyTo ! StatusReply.Success(toAPIResponse(clientId, keys)))
+        }
 
       case GetKey(clientId, keyId, replyTo) =>
         state.getClientKeyByKeyId(clientId, keyId) match {
           case Some(key) =>
-            replyTo ! StatusReply.Success(key)
+            replyTo ! StatusReply.Success(toAPI(key))
             Effect.none[Event, State]
           case None => commandError(replyTo)
         }
@@ -39,7 +49,7 @@ object KeyPersistentBehavior {
       case GetKeys(clientId, replyTo) =>
         state.getClientKeys(clientId) match {
           case Some(keys) =>
-            replyTo ! StatusReply.Success(toAPI(clientId, keys))
+            replyTo ! StatusReply.Success(toAPIResponse(clientId, keys))
             Effect.none[Event, State]
           case None => commandError(replyTo)
         }

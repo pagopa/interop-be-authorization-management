@@ -7,9 +7,13 @@ import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.ValidatedNel
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse, Problem}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -27,7 +31,8 @@ class KeyApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]]
-) extends KeyApiService {
+) extends KeyApiService
+    with Validation {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -47,15 +52,23 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Creating keys for client ${clientId}...")
-    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
 
-    val result: Future[StatusReply[KeysResponse]] = commander.ask(ref => AddKeys(clientId, toKeysMap(key), ref))
+    val validatedPayload: ValidatedNel[String, Seq[Key]] = validateKeys(key)
 
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
-      case statusReply if statusReply.isError =>
-        createKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+    validatedPayload match {
+      case Valid(validPayload) =>
+        val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+        val result: Future[StatusReply[KeysResponse]] =
+          commander.ask(ref => AddKeys(clientId, toKeysMap(validPayload), ref))
+        onSuccess(result) {
+          case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
+          case statusReply if statusReply.isError =>
+            createKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        }
+
+      case Invalid(errors) => createKeys400(Problem(Option(errors.toList.mkString(", ")), status = 400, "some error"))
     }
+
   }
 
   /** Code: 200, Message: returns the corresponding key, DataType: Key

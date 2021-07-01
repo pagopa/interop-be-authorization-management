@@ -9,5 +9,5 @@ option (scalapb.options) = {
 
 message KeysAddedV1 {
   required string clientId = 1;
-  repeated KeyEntryV1 keys = 2;
+  repeated PersistentKeyEntryV1 keys = 2;
 }

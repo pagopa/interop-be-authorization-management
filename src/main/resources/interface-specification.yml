@@ -48,6 +48,10 @@ paths:
                 $ref: '#/components/schemas/KeysResponse'
         '400':
           description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '404':
           description: Client id not found
           content:

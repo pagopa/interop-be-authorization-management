@@ -9,12 +9,16 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 trait Validation {
 
   def validateKey(key: Key): ValidatedNel[String, Key] = {
-    KeyProcessor.validation(key).left.map(t => s"${key.kid} - ${t.getLocalizedMessage}").toValidatedNel
+    KeyProcessor
+      .validation(key)
+      .left
+      .map(t => s"Key with id ${key.kid} is invalid: ${t.getLocalizedMessage}")
+      .toValidatedNel
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
   def validateKeys(keys: Seq[Key]): ValidatedNel[String, Seq[Key]] = {
-    keys.map(validateKey).sequence
+    keys.traverse(validateKey)
   }
 
 }
