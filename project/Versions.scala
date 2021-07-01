@@ -18,4 +18,6 @@ object Versions {
   lazy val scalatestVersion            = "3.2.8"
   lazy val mockitoVersion              = "3.9.0"
   lazy val catsVersion                 = "2.6.0"
+  lazy val nimbusVersion               = "9.10.1"
+  lazy val bouncycastleVersion         = "1.69"
 }
