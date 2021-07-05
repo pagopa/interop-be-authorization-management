@@ -7,9 +7,14 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
+import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{toAPI, toAPIResponse}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
+  toAPI,
+  toAPIResponse,
+  toPersistentKey
+}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted, Disabled, PersistentKey}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -28,25 +33,29 @@ object KeyPersistentBehavior {
     val idleTimeout = context.system.settings.config.getDuration("pdnd-interop-uservice-key-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
-      case AddKeys(clientId, keys, replyTo) =>
-        state
-          .containsKeys(clientId, keys.map(_._1).toSeq) match {
-          case Some(existingKeys) =>
-            replyTo ! StatusReply.Error[KeysResponse](
-              s"The keys identified by: '${existingKeys.mkString(", ")}' already exist for this client"
-            )
+      case AddKeys(clientId, validKeys, replyTo) =>
+        validKeys.map(toPersistentKey).sequence match {
+          case Right(keys) => {
+            addKeys(replyTo, state, clientId, keys)
+          }
+
+          case Left(t) =>
+            replyTo ! StatusReply.Error(s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}")
             Effect.none[Event, State]
-          case None =>
-            Effect
-              .persist(KeysAdded(clientId, keys))
-              .thenRun(_ => replyTo ! StatusReply.Success(toAPIResponse(clientId, keys)))
+
         }
 
       case GetKey(clientId, keyId, replyTo) =>
         state.getClientKeyByKeyId(clientId, keyId) match {
           case Some(key) =>
-            replyTo ! StatusReply.Success(toAPI(key))
-            Effect.none[Event, State]
+            toAPI(key).fold(
+              error => errorMessageReply(replyTo, s"Error while retrieving key: ${error.getLocalizedMessage}"),
+              key => {
+                replyTo ! StatusReply.Success(key)
+                Effect.none[Event, State]
+              }
+            )
+
           case None => commandError(replyTo)
         }
 
@@ -58,6 +67,19 @@ object KeyPersistentBehavior {
           case Some(_) => {
             Effect
               .persist(KeyDisabled(clientId, keyId, OffsetDateTime.now()))
+              .thenRun(_ => replyTo ! StatusReply.Success(Done))
+          }
+          case None => commandError(replyTo)
+        }
+
+      case EnableKey(clientId, keyId, replyTo) =>
+        state.getClientKeyByKeyId(clientId, keyId) match {
+          case Some(key) if !key.status.equals(Disabled) =>
+            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is not disabled")
+            Effect.none[KeyEnabled, State]
+          case Some(_) => {
+            Effect
+              .persist(KeyEnabled(clientId, keyId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           }
           case None => commandError(replyTo)
@@ -78,8 +100,14 @@ object KeyPersistentBehavior {
       case GetKeys(clientId, replyTo) =>
         state.getClientKeys(clientId) match {
           case Some(keys) =>
-            replyTo ! StatusReply.Success(toAPIResponse(clientId, keys))
-            Effect.none[Event, State]
+            toAPIResponse(keys).fold(
+              error => errorMessageReply(replyTo, s"Error while retrieving keys: ${error.getLocalizedMessage}"),
+              keys => {
+                replyTo ! StatusReply.Success(keys)
+                Effect.none[Event, State]
+              }
+            )
+
           case None => commandError(replyTo)
         }
 
@@ -87,6 +115,39 @@ object KeyPersistentBehavior {
         shard ! ClusterSharding.Passivate(context.self)
         context.log.error(s"Passivate shard: ${shard.path.name}")
         Effect.none[Event, State]
+    }
+  }
+
+  private def errorMessageReply[T](replyTo: ActorRef[StatusReply[T]], message: String): Effect[Event, State] = {
+    replyTo ! StatusReply.Error[T](message)
+    Effect.none[KeyDeleted, State]
+  }
+
+  private def addKeys(
+    replyTo: ActorRef[StatusReply[KeysResponse]],
+    state: State,
+    clientId: String,
+    keys: Seq[PersistentKey]
+  ): Effect[Event, State] = {
+    state.containsKeys(clientId, keys.map(_.kid)) match {
+      case Some(existingKeys) =>
+        replyTo ! StatusReply.Error(
+          s"The keys identified by: '${existingKeys.mkString(", ")}' already exist for this client"
+        )
+        Effect.none[Event, State]
+      case None =>
+        val mapKeys = keys.map(k => k.kid -> k).toMap
+
+        toAPIResponse(mapKeys).fold[Effect[Event, State]](
+          t => {
+            replyTo ! StatusReply.Error(s"Error while building response object ${t.getLocalizedMessage}")
+            Effect.none[KeyDeleted, State]
+          },
+          response =>
+            Effect
+              .persist(KeysAdded(clientId, mapKeys))
+              .thenRun(_ => replyTo ! StatusReply.Success(response))
+        )
     }
   }
 
@@ -99,6 +160,7 @@ object KeyPersistentBehavior {
     event match {
       case KeysAdded(clientId, keys)               => state.addKeys(clientId, keys)
       case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
+      case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
       case KeyDeleted(clientId, keyId, timestamp)  => state.delete(clientId, keyId, timestamp)
     }
 

@@ -7,10 +7,12 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse}
 
 sealed trait Command
 
-final case class AddKeys(clientId: String, keys: Keys, replyTo: ActorRef[StatusReply[KeysResponse]]) extends Command
-final case class GetKeys(clientId: String, replyTo: ActorRef[StatusReply[KeysResponse]])             extends Command
-final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Key]])        extends Command
-final case class DisableKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])   extends Command
-final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])    extends Command
+final case class AddKeys(clientId: String, keys: Seq[ValidKey], replyTo: ActorRef[StatusReply[KeysResponse]])
+    extends Command
+final case class GetKeys(clientId: String, replyTo: ActorRef[StatusReply[KeysResponse]])           extends Command
+final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Key]])      extends Command
+final case class DisableKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
+final case class EnableKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])  extends Command
+final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])  extends Command
 
 case object Idle extends Command

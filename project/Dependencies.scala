@@ -101,6 +101,7 @@ object Dependencies {
   private[this] object bouncycastle {
     lazy val namespace = "org.bouncycastle"
     lazy val provider  = namespace % "bcprov-jdk15on" % bouncycastleVersion
+    lazy val kix       = namespace % "bcpkix-jdk15on" % bouncycastleVersion
   }
 
   object Jars {
@@ -141,6 +142,7 @@ object Dependencies {
       cats.core                    % Compile,
       nimbus.joseJwt               % Compile,
       bouncycastle.provider        % Compile,
+      bouncycastle.kix             % Compile,
       scalaprotobuf.core           % Protobuf,
       scalatest.core               % Test
     )

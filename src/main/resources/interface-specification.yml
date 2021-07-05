@@ -60,6 +60,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
+        description: an array of base64 encoded PEM keys.
         content:
           application/json:
             schema:
@@ -100,11 +101,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+
   '/{clientId}/keys/{keyId}':
     get:
       tags:
         - key
-      summary: Returns a key by client and key identifier.
+      summary: Returns a key by client and key identifier (kid).
       description: 'Given a client and key identifiers it returns the corresponding key, if any'
       operationId: getClientKeyById
       parameters:
@@ -117,7 +119,7 @@ paths:
             format: uuid
         - name: keyId
           in: path
-          description: the unique identifier of the key to lookup
+          description: the unique identifier of the key (kid) to lookup
           required: true
           schema:
             type: string
@@ -134,60 +136,184 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+    delete:
+      tags:
+        - key
+      summary: Deletes a key by client and key identifier (kid).
+      description: 'Given a client and key identifiers it deletes the corresponding key, if any'
+      operationId: deleteClientKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client holding the key
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the corresponding key has been deleted.
+        '404':
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/{clientId}/keys/{keyId}/disable':
+    get:
+      tags:
+        - key
+      summary: Disable a client key by key identifier (kid).
+      description: 'Given a client and an enabled key identifier it disables the corresponding key, if any'
+      operationId: disableKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client holding the key
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to disable
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the corresponding key has been disabled.
+        '404':
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/{clientId}/keys/{keyId}/enable':
+    get:
+      tags:
+        - key
+      summary: Enables a client key by key identifier (kid).
+      description: 'Given a client and a disabled key identifier it enables the corresponding key, if any'
+      operationId: enableKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client holding the key
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to enable
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the corresponding key has been enabled.
+        '404':
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   schemas:
     KeysResponse:
       type: object
       properties:
-        clientId:
-          type: string
         keys:
           type: array
           items:
-            $ref: '#/components/schemas/KeyEntry'
+            $ref: '#/components/schemas/Key'
       required:
-        - clientId
         - keys
     Keys:
       type: array
       items:
-        $ref: '#/components/schemas/Key'
-    KeyEntry:
-      type: object
-      properties:
-        keyId:
-          type: string
-        key:
-          $ref: '#/components/schemas/Key'
-      required:
-        - keyId
-        - key
+        type: string
     Key:
+      description: 'Models a JWK'
       type: object
-      required:
-        - kty
-        - alg
-        - use
-        - kid
       properties:
         kty:
           type: string
-        alg:
-          type: string
+        key_ops:
+          type: array
+          items:
+            type: string
         use:
+          type: string
+        alg:
           type: string
         kid:
           type: string
-        'n':
+        x5u:
           type: string
-        e:
+          minLength: 1
+        x5t:
           type: string
+        'x5t#S256':
+          type: string
+        x5c:
+          type: array
+          items:
+            type: string
         crv:
           type: string
         x:
           type: string
         'y':
           type: string
+        d:
+          type: string
+        k:
+          type: string
+        'n':
+          type: string
+        e:
+          type: string
+        p:
+          type: string
+        q:
+          type: string
+        dp:
+          type: string
+        dq:
+          type: string
+        qi:
+          type: string
+        oth:
+          uniqueItems: false
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/OtherPrimeInfo'
+      required:
+        - kty
+        - kid
+    OtherPrimeInfo:
+      title: OtherPrimeInfo
+      type: object
+      properties:
+        r:
+          type: string
+        d:
+          type: string
+        t:
+          type: string
+      required:
+        - r
+        - d
+        - t
     Problem:
       properties:
         detail:

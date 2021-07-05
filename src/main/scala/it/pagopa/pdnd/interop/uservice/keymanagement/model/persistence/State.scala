@@ -7,6 +7,7 @@ import java.time.OffsetDateTime
 
 final case class State(keys: Map[String, Keys]) extends Persistable {
 
+  def enable(clientId: String, keyId: String): State                             = ???
   def delete(clientId: String, keyId: String, timestamp: OffsetDateTime): State  = ??? // TODO
   def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State = ??? // TODO
 

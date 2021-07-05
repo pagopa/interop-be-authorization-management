@@ -1,7 +1,9 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key
 
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.Keys
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeyEntry, KeysResponse}
+import cats.implicits.toTraverseOps
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, ValidKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 import java.time.OffsetDateTime
 
@@ -29,15 +31,8 @@ case object Deleted  extends KeyStatus
 sealed trait Persistent
 
 final case class PersistentKey(
-  kty: String,
-  alg: String,
-  use: String,
   kid: String,
-  n: Option[String],
-  e: Option[String],
-  crv: Option[String],
-  x: Option[String],
-  y: Option[String],
+  encodedPem: String,
   creationTimestamp: OffsetDateTime,
   deactivationTimestamp: Option[OffsetDateTime],
   status: KeyStatus
@@ -45,36 +40,28 @@ final case class PersistentKey(
 
 object PersistentKey {
 
-  def toKeysMap(keys: Seq[Key]): Keys = keys.map(key => key.kid -> fromAPI(key)).toMap
-
-  def toAPI(persistedKey: PersistentKey): Key = Key(
-    kty = persistedKey.kty,
-    alg = persistedKey.alg,
-    use = persistedKey.use,
-    kid = persistedKey.kid,
-    n = persistedKey.n,
-    e = persistedKey.e,
-    crv = persistedKey.crv,
-    x = persistedKey.x,
-    y = persistedKey.y
-  )
-
-  def toAPIResponse(clientId: String, keys: Keys): KeysResponse = {
-    KeysResponse(clientId = clientId, keys = keys.map(entry => KeyEntry(entry._1, toAPI(entry._2))).toSeq)
+  def toPersistentKey(validKey: ValidKey): Either[Throwable, PersistentKey] = {
+    for {
+      kid <- KeyProcessor.calculateKid(validKey._2)
+    } yield PersistentKey(
+      kid = kid,
+      encodedPem = validKey._1,
+      creationTimestamp = OffsetDateTime.now(),
+      deactivationTimestamp = None,
+      status = Active
+    )
   }
 
-  def fromAPI(key: Key): PersistentKey = PersistentKey(
-    kty = key.kty,
-    alg = key.alg,
-    use = key.use,
-    kid = key.kid,
-    n = key.n,
-    e = key.e,
-    crv = key.crv,
-    x = key.x,
-    y = key.y,
-    creationTimestamp = OffsetDateTime.now(),
-    deactivationTimestamp = None,
-    status = Active
-  )
+  def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] = {
+    val processed = for {
+      key <- keys.map(entry => KeyProcessor.fromBase64encodedPEMToAPIKey(entry._2.kid, entry._2.encodedPem))
+    } yield key
+
+    processed.toSeq.sequence.map(elem => KeysResponse(keys = elem))
+  }
+
+  def toAPI(key: PersistentKey): Either[Throwable, Key] = {
+    KeyProcessor.fromBase64encodedPEMToAPIKey(key.kid, key.encodedPem)
+  }
+
 }

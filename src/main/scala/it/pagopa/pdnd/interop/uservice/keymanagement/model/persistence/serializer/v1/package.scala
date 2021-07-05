@@ -1,18 +1,30 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer
 
+import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events.KeysAddedV1
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events.{
+  KeyDeletedV1,
+  KeyDisabledV1,
+  KeyEnabledV1,
+  KeysAddedV1
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
   KeyStatusV1,
   PersistentKeyEntryV1,
   PersistentKeyV1
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.state.{StateEntryV1, StateV1}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, KeysAdded, State}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
+  KeyDeleted,
+  KeyDisabled,
+  KeyEnabled,
+  Keys,
+  KeysAdded,
+  State
+}
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import cats.implicits._
 
 package object v1 {
 
@@ -50,9 +62,51 @@ package object v1 {
     protoEntryToKey(event.keys).map(keys => KeysAdded(clientId = event.clientId, keys = keys.toMap))
   }
 
-  implicit def keysAddedV1PersistEventSerializer: PersistEventSerializer[KeysAdded, KeysAddedV1] = { event =>
+  implicit def keysAddedV1PersistEventSerializer: PersistEventSerializer[KeysAdded, KeysAddedV1] = event => {
     keyToEntry(event.keys).map(keys => KeysAddedV1(clientId = event.clientId, keys = keys))
   }
+
+  implicit def keyDeletedV1PersistEventDeserializer: PersistEventDeserializer[KeyDeletedV1, KeyDeleted] = event =>
+    Right[Throwable, KeyDeleted](
+      KeyDeleted(
+        clientId = event.clientId,
+        keyId = event.keyId,
+        deactivationTimestamp = toTime(event.deactivationTimestamp)
+      )
+    )
+
+  implicit def keyDeletedV1PersistEventSerializer: PersistEventSerializer[KeyDeleted, KeyDeletedV1] = event =>
+    Right[Throwable, KeyDeletedV1](
+      KeyDeletedV1(
+        clientId = event.clientId,
+        keyId = event.keyId,
+        deactivationTimestamp = fromTime(event.deactivationTimestamp)
+      )
+    )
+
+  implicit def keyDisabledV1PersistEventDeserializer: PersistEventDeserializer[KeyDisabledV1, KeyDisabled] = event =>
+    Right[Throwable, KeyDisabled](
+      KeyDisabled(
+        clientId = event.clientId,
+        keyId = event.keyId,
+        deactivationTimestamp = toTime(event.deactivationTimestamp)
+      )
+    )
+
+  implicit def keyDisabledV1PersistEventSerializer: PersistEventSerializer[KeyDisabled, KeyDisabledV1] = event =>
+    Right[Throwable, KeyDisabledV1](
+      KeyDisabledV1(
+        clientId = event.clientId,
+        keyId = event.keyId,
+        deactivationTimestamp = fromTime(event.deactivationTimestamp)
+      )
+    )
+
+  implicit def keyEnabledV1PersistEventDeserializer: PersistEventDeserializer[KeyEnabledV1, KeyEnabled] = event =>
+    Right[Throwable, KeyEnabled](KeyEnabled(clientId = event.clientId, keyId = event.keyId))
+
+  implicit def keyEnabledV1PersistEventSerializer: PersistEventSerializer[KeyEnabled, KeyEnabledV1] = event =>
+    Right[Throwable, KeyEnabledV1](KeyEnabledV1(clientId = event.clientId, keyId = event.keyId))
 
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
     val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq
@@ -65,15 +119,8 @@ package object v1 {
         .fromName(key.status.stringify)
         .toRight(new RuntimeException("Protobuf serialization failed"))
     } yield PersistentKeyV1(
-      kty = key.kty,
-      alg = key.alg,
-      use = key.use,
       kid = key.kid,
-      n = key.n,
-      e = key.e,
-      crv = key.crv,
-      x = key.x,
-      y = key.y,
+      encodedPem = key.encodedPem,
       creationTimestamp = fromTime(key.creationTimestamp),
       deactivationTimestamp = key.deactivationTimestamp.map(fromTime),
       status = keyStatus
@@ -88,15 +135,8 @@ package object v1 {
     for {
       keyStatus <- KeyStatus.fromText(key.status.name)
     } yield PersistentKey(
-      kty = key.kty,
-      alg = key.alg,
-      use = key.use,
       kid = key.kid,
-      n = key.n,
-      e = key.e,
-      crv = key.crv,
-      x = key.x,
-      y = key.y,
+      encodedPem = key.encodedPem,
       creationTimestamp = toTime(key.creationTimestamp),
       deactivationTimestamp = key.deactivationTimestamp.map(toTime),
       status = keyStatus

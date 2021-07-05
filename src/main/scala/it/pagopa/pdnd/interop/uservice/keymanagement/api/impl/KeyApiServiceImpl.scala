@@ -13,7 +13,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse, Problem}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -41,25 +40,25 @@ class KeyApiServiceImpl(
     case Some(s) => s
   }
 
-  @inline private def getShard(id: String): String = (id.hashCode % settings.numberOfShards).toString
+  @inline private def getShard(id: String): String = Math.abs((id.hashCode % settings.numberOfShards)).toString
 
   /** Code: 201, Message: Keys created
     * Code: 400, Message: Missing Required Information
     * Code: 404, Message: Client id not found, DataType: Problem
     */
-  override def createKeys(clientId: String, key: Seq[Key])(implicit
+  override def createKeys(clientId: String, key: Seq[String])(implicit
     toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Creating keys for client ${clientId}...")
 
-    val validatedPayload: ValidatedNel[String, Seq[Key]] = validateKeys(key)
+    val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
     validatedPayload match {
-      case Valid(validPayload) =>
+      case Valid(validKeys) =>
         val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
         val result: Future[StatusReply[KeysResponse]] =
-          commander.ask(ref => AddKeys(clientId, toKeysMap(validPayload), ref))
+          commander.ask(ref => AddKeys(clientId, validKeys, ref))
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
@@ -108,4 +107,25 @@ class KeyApiServiceImpl(
         getClientKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
+
+  /** Code: 204, Message: the corresponding key has been deleted.
+    * Code: 404, Message: Key not found, DataType: Problem
+    */
+  override def deleteClientKeyById(clientId: String, keyId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
+  ): Route = ???
+
+  /** Code: 204, Message: the corresponding key has been disabled.
+    * Code: 404, Message: Key not found, DataType: Problem
+    */
+  override def disableKeyById(clientId: String, keyId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
+  ): Route = ???
+
+  /** Code: 204, Message: the corresponding key has been enabled.
+    * Code: 404, Message: Key not found, DataType: Problem
+    */
+  override def enableKeyById(clientId: String, keyId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
+  ): Route = ???
 }

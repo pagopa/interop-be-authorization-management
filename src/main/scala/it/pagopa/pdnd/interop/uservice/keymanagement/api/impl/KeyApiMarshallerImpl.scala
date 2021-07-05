@@ -8,8 +8,8 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse, P
 import spray.json._
 
 class KeyApiMarshallerImpl extends KeyApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
-  override implicit def fromEntityUnmarshallerKeyList: FromEntityUnmarshaller[Seq[Key]] =
-    sprayJsonUnmarshaller[Seq[Key]]
+  override implicit def fromEntityUnmarshallerStringList: FromEntityUnmarshaller[Seq[String]] =
+    sprayJsonUnmarshaller[Seq[String]]
   override implicit def toEntityMarshallerKey: ToEntityMarshaller[Key] = sprayJsonMarshaller[Key]
   override implicit def toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse] =
     sprayJsonMarshaller[KeysResponse]
