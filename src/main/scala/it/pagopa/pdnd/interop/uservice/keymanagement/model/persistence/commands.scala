@@ -14,5 +14,6 @@ final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[Statu
 final case class DisableKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
 final case class EnableKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])  extends Command
 final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])  extends Command
+final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])          extends Command
 
 case object Idle extends Command

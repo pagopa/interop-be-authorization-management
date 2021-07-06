@@ -14,18 +14,18 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Persi
   toAPIResponse,
   toPersistentKey
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted, Disabled, PersistentKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, PersistentKey}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
 
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
 object KeyPersistentBehavior {
 
   final case object KeyNotFoundException extends Throwable
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def commandHandler(
     shard: ActorRef[ClusterSharding.ShardCommand],
     context: ActorContext[Command]
@@ -34,16 +34,17 @@ object KeyPersistentBehavior {
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddKeys(clientId, validKeys, replyTo) =>
-        validKeys.map(toPersistentKey).sequence match {
-          case Right(keys) => {
-            addKeys(replyTo, state, clientId, keys)
-          }
-
-          case Left(t) =>
-            replyTo ! StatusReply.Error(s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}")
-            Effect.none[Event, State]
-
-        }
+        validKeys
+          .map(toPersistentKey)
+          .sequence
+          .fold(
+            t => {
+              replyTo ! StatusReply
+                .Error[KeysResponse](s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}")
+              Effect.none[Event, State]
+            },
+            keys => addKeys(replyTo, clientId, keys)
+          )
 
       case GetKey(clientId, keyId, replyTo) =>
         state.getClientKeyByKeyId(clientId, keyId) match {
@@ -87,9 +88,6 @@ object KeyPersistentBehavior {
 
       case DeleteKey(clientId, keyId, replyTo) =>
         state.getClientKeyByKeyId(clientId, keyId) match {
-          case Some(key) if key.status.equals(Deleted) =>
-            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is already deleted")
-            Effect.none[KeyDeleted, State]
           case Some(_) =>
             Effect
               .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
@@ -111,6 +109,10 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo)
         }
 
+      case ListKid(from: Int, until: Int, replyTo) =>
+        replyTo ! StatusReply.Success(state.keys.values.toSeq.slice(from, until).flatMap(_.keys))
+        Effect.none[Event, State]
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.error(s"Passivate shard: ${shard.path.name}")
@@ -125,30 +127,22 @@ object KeyPersistentBehavior {
 
   private def addKeys(
     replyTo: ActorRef[StatusReply[KeysResponse]],
-    state: State,
     clientId: String,
     keys: Seq[PersistentKey]
   ): Effect[Event, State] = {
-    state.containsKeys(clientId, keys.map(_.kid)) match {
-      case Some(existingKeys) =>
-        replyTo ! StatusReply.Error(
-          s"The keys identified by: '${existingKeys.mkString(", ")}' already exist for this client"
-        )
-        Effect.none[Event, State]
-      case None =>
-        val mapKeys = keys.map(k => k.kid -> k).toMap
+    val mapKeys = keys.map(k => k.kid -> k).toMap
 
-        toAPIResponse(mapKeys).fold[Effect[Event, State]](
-          t => {
-            replyTo ! StatusReply.Error(s"Error while building response object ${t.getLocalizedMessage}")
-            Effect.none[KeyDeleted, State]
-          },
-          response =>
-            Effect
-              .persist(KeysAdded(clientId, mapKeys))
-              .thenRun(_ => replyTo ! StatusReply.Success(response))
-        )
-    }
+    toAPIResponse(mapKeys).fold[Effect[Event, State]](
+      t => {
+        replyTo ! StatusReply.Error[KeysResponse](s"Error while building response object ${t.getLocalizedMessage}")
+        Effect.none[KeyDeleted, State]
+      },
+      response =>
+        Effect
+          .persist(KeysAdded(clientId, mapKeys))
+          .thenRun(_ => replyTo ! StatusReply.Success(response))
+    )
+
   }
 
   private def commandError[T](replyTo: ActorRef[StatusReply[T]]): Effect[Event, State] = {
@@ -161,7 +155,7 @@ object KeyPersistentBehavior {
       case KeysAdded(clientId, keys)               => state.addKeys(clientId, keys)
       case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
       case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
-      case KeyDeleted(clientId, keyId, timestamp)  => state.delete(clientId, keyId, timestamp)
+      case KeyDeleted(clientId, keyId, _)          => state.delete(clientId, keyId)
     }
 
   val TypeKey: EntityTypeKey[Command] =

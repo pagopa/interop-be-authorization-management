@@ -1,6 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.service.impl
 
-import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, KeyUse, OctetKeyPair, OctetSequenceKey, RSAKey}
+import com.nimbusds.jose.jwk._
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.keyFormat
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, OtherPrimeInfo}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.utils.decodeBase64
@@ -9,7 +9,8 @@ import spray.json._
 
 import java.io.StringWriter
 import java.security.PublicKey
-import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.annotation.nowarn
+import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 import scala.util.{Failure, Try}
 
 trait KeyProcessor {
@@ -21,7 +22,10 @@ trait KeyProcessor {
 }
 
 object KeyProcessor {
-  def calculateKid(key: JWK) = Try {
+
+  lazy val SIGATURE_USAGE = "sig" //TODO so far it's uncoded for the POC
+
+  def calculateKid(key: JWK): Either[Throwable, String] = Try {
     key.computeThumbprint().toString
   }.toEither
 
@@ -33,9 +37,7 @@ object KeyProcessor {
   }
 
   def fromPEM(pem: String): Either[Throwable, JWK] = Try {
-    import com.nimbusds.jose.util.X509CertUtils
-    val cert = X509CertUtils.parse(pem)
-    JWK.parse(cert)
+    JWK.parseFromPEMEncodedObjects(pem)
   }.toEither
 
   def validation(key: Key): Either[Throwable, Key] = {
@@ -83,28 +85,30 @@ object KeyProcessor {
 
   private def rsa(kid: String, key: RSAKey): Key = {
 
-    val otherPrimes = Option(key.getOtherPrimes).map(list =>
-      list.asScala
-        .map(entry =>
-          OtherPrimeInfo(
-            r = entry.getPrimeFactor.toString,
-            d = entry.getFactorCRTExponent.toString,
-            t = entry.getFactorCRTCoefficient.toString
+    val otherPrimes = Option(key.getOtherPrimes)
+      .map(list =>
+        list.asScala
+          .map(entry =>
+            OtherPrimeInfo(
+              r = entry.getPrimeFactor.toString,
+              d = entry.getFactorCRTExponent.toString,
+              t = entry.getFactorCRTCoefficient.toString
+            )
           )
-        )
-        .toSeq
-    )
+          .toSeq
+      )
+      .filter(_.nonEmpty)
 
     Key(
       kty = key.getKeyType.getValue,
-      keyOps = Option(key.getKeyOperations).map(_.toArray.map(op => op.toString)),
-      use = Option(key.getKeyUse).map(_.toString),
+      keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
+      use = Option(SIGATURE_USAGE),
       alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
-      x5t = Option(key.getX509CertThumbprint).map(_.toString),
+      x5t = getX5T(key), //Option(key.getX509CertThumbprint).map(_.toString),
       x5tS256 = Option(key.getX509CertSHA256Thumbprint).map(_.toString),
-      x5c = Option(key.getX509CertChain).map(_.toArray.map(op => op.toString)),
+      x5c = Option(key.getX509CertChain).map(list => list.asScala.map(op => op.toString).toSeq),
       crv = None,
       x = None,
       y = None,
@@ -121,16 +125,19 @@ object KeyProcessor {
     )
   }
 
+  @nowarn
+  private def getX5T(key: JWK): Option[String] = Option(key.getX509CertThumbprint).map(_.toString)
+
   private def ec(kid: String, key: ECKey): Key = Key(
     kty = key.getKeyType.getValue,
-    keyOps = Option(key.getKeyOperations).map(_.toArray.map(op => op.toString)),
-    use = Option(key.getKeyUse).map(_.toString),
+    keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
+    use = Option(SIGATURE_USAGE),
     alg = Option(key.getAlgorithm).map(_.toString),
     kid = kid,
     x5u = Option(key.getX509CertURL).map(_.toString),
-    x5t = Option(key.getX509CertThumbprint).map(_.toString),
+    x5t = getX5T(key),
     x5tS256 = Option(key.getX509CertSHA256Thumbprint).map(_.toString),
-    x5c = Option(key.getX509CertChain).map(_.toArray.map(op => op.toString)),
+    x5c = Option(key.getX509CertChain).map(list => list.asScala.map(op => op.toString).toSeq),
     crv = Option(key.getCurve).map(_.toString),
     x = Option(key.getX).map(_.toString),
     y = Option(key.getY).map(_.toString),
@@ -150,14 +157,14 @@ object KeyProcessor {
 
     Key(
       kty = key.getKeyType.getValue,
-      keyOps = Option(key.getKeyOperations).map(_.toArray.map(op => op.toString)),
-      use = Option(key.getKeyUse).map(_.toString),
+      keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
+      use = Option(SIGATURE_USAGE),
       alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
-      x5t = Option(key.getX509CertThumbprint).map(_.toString),
+      x5t = getX5T(key),
       x5tS256 = Option(key.getX509CertSHA256Thumbprint).map(_.toString),
-      x5c = Option(key.getX509CertChain).map(_.toArray.map(op => op.toString)),
+      x5c = Option(key.getX509CertChain).map(list => list.asScala.map(op => op.toString).toSeq),
       crv = Option(key.getCurve).map(_.toString),
       x = Option(key.getX).map(_.toString),
       y = None,
@@ -176,14 +183,14 @@ object KeyProcessor {
   private def oct(kid: String, key: OctetSequenceKey): Key = {
     Key(
       kty = key.getKeyType.getValue,
-      keyOps = Option(key.getKeyOperations).map(_.toArray.map(op => op.toString)),
-      use = Option(key.getKeyUse).map(_.toString),
+      keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
+      use = Option(SIGATURE_USAGE),
       alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
-      x5t = Option(key.getX509CertThumbprint).map(_.toString),
+      x5t = getX5T(key),
       x5tS256 = Option(key.getX509CertSHA256Thumbprint).map(_.toString),
-      x5c = Option(key.getX509CertChain).map(_.toArray.map(op => op.toString)),
+      x5c = Option(key.getX509CertChain).map(list => list.asScala.map(op => op.toString).toSeq),
       crv = None,
       x = None,
       y = None,

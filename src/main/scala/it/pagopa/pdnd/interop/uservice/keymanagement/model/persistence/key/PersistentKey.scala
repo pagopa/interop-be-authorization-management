@@ -52,6 +52,7 @@ object PersistentKey {
     )
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
   def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] = {
     val processed = for {
       key <- keys.map(entry => KeyProcessor.fromBase64encodedPEMToAPIKey(entry._2.kid, entry._2.encodedPem))

@@ -1,5 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.api.impl
 
+import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
@@ -16,7 +17,9 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Vali
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse, Problem}
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.Future
+import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 @SuppressWarnings(
   Array(
@@ -54,7 +57,7 @@ class KeyApiServiceImpl(
 
     val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
-    validatedPayload match {
+    validatedPayload.andThen(k => validateWithCurrentKeys(k, keysIdentifiers)) match {
       case Valid(validKeys) =>
         val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
         val result: Future[StatusReply[KeysResponse]] =
@@ -62,12 +65,36 @@ class KeyApiServiceImpl(
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
-            createKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+            createKeys400(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
         }
 
       case Invalid(errors) => createKeys400(Problem(Option(errors.toList.mkString(", ")), status = 400, "some error"))
     }
+  }
 
+  /** Code: 200, Message: List of keyIdentifiers, DataType: Seq[Pet]
+    */
+  private def keysIdentifiers: LazyList[Kid] = {
+    val sliceSize = 1000
+    val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
+    )
+    val keyIdentifiers: LazyList[Kid] = commanders.to(LazyList).flatMap(ref => slices(ref, sliceSize))
+
+    keyIdentifiers
+  }
+
+  private def slices(commander: EntityRef[Command], sliceSize: Int): LazyList[Kid] = {
+    @tailrec
+    def readSlice(commander: EntityRef[Command], from: Int, to: Int, lazyList: LazyList[Kid]): LazyList[Kid] = {
+      lazy val slice: Seq[Kid] =
+        Await.result(commander.ask(ref => ListKid(from, to, ref)), Duration.Inf).getValue
+      if (slice.isEmpty)
+        lazyList
+      else
+        readSlice(commander, to, to + sliceSize, slice.to(LazyList) #::: lazyList)
+    }
+    readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
   /** Code: 200, Message: returns the corresponding key, DataType: Key
@@ -113,19 +140,46 @@ class KeyApiServiceImpl(
     */
   override def deleteClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
-  ): Route = ???
+  ): Route = {
+    logger.info(s"Delete key $keyId belonging to $clientId...")
+    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => deleteClientKeyById204
+      case statusReply if statusReply.isError =>
+        deleteClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
 
   /** Code: 204, Message: the corresponding key has been disabled.
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def disableKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
-  ): Route = ???
+  ): Route = {
+    logger.info(s"Disabling key $keyId belonging to $clientId...")
+    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => DisableKey(clientId, keyId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => disableKeyById204
+      case statusReply if statusReply.isError =>
+        disableKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
 
   /** Code: 204, Message: the corresponding key has been enabled.
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def enableKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
-  ): Route = ???
+  ): Route = {
+    logger.info(s"Enabling key $keyId belonging to $clientId...")
+    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => EnableKey(clientId, keyId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => enableKeyById204
+      case statusReply if statusReply.isError =>
+        enableKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
 }

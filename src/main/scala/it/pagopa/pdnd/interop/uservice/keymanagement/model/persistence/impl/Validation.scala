@@ -7,7 +7,12 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 trait Validation {
 
-  def validateKey(key: String): ValidatedNel[String, ValidKey] = {
+  @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
+  def validateKeys(keys: Seq[String]): ValidatedNel[String, Seq[ValidKey]] = {
+    keys.traverse(validateKey)
+  }
+
+  private def validateKey(key: String): ValidatedNel[String, ValidKey] = {
     val processedKey = for {
       jwk <- KeyProcessor.fromBase64encodedPEM(key)
       _   <- KeyProcessor.publicKeyOnly(jwk)
@@ -20,9 +25,18 @@ trait Validation {
     }
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
-  def validateKeys(keys: Seq[String]): ValidatedNel[String, Seq[ValidKey]] = {
-    keys.traverse(validateKey)
+  def validateWithCurrentKeys(
+    value: Seq[ValidKey],
+    currentKeys: LazyList[String]
+  ): ValidatedNel[String, Seq[ValidKey]] = {
+    val existingIds = value
+      .map(key => key._2.computeThumbprint().toString)
+      .filter(kid => currentKeys.contains(kid))
+
+    Option.when(existingIds.nonEmpty)(existingIds) match {
+      case Some(existingIds) => s"These kids already exist: ${existingIds.mkString(", ")}".invalidNel[Seq[ValidKey]]
+      case None              => value.validNel[String]
+    }
   }
 
 }

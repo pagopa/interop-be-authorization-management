@@ -1,15 +1,21 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
-import cats.implicits.toTraverseOps
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, KeyStatus, PersistentKey}
 
 import java.time.OffsetDateTime
 
 final case class State(keys: Map[String, Keys]) extends Persistable {
 
-  def enable(clientId: String, keyId: String): State                             = ???
-  def delete(clientId: String, keyId: String, timestamp: OffsetDateTime): State  = ??? // TODO
-  def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State = ??? // TODO
+  def enable(clientId: String, keyId: String): State = updateKey(clientId, keyId, Active, None)
+  def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
+    updateKey(clientId, keyId, Disabled, Some(timestamp))
+
+  def delete(clientId: String, keyId: String): State = keys.get(clientId) match {
+    case Some(entries) => {
+      copy(keys = keys + (clientId -> (entries - keyId)))
+    }
+    case None => this
+  }
 
   def addKeys(clientId: String, addedKeys: Keys): State = {
     keys.get(clientId) match {
@@ -21,19 +27,24 @@ final case class State(keys: Map[String, Keys]) extends Persistable {
   }
 
   def getClientKeys(clientId: String): Option[Keys] = keys.get(clientId)
-  def getClientKeyByKeyId(clientId: String, keyId: String): Option[PersistentKey] = {
+  def getClientKeyByKeyId(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
-  }
-  def containsKeys(clientId: String, keyIdentifiers: Seq[String]): Option[List[String]] = {
-    val existingIds = keys
-      .get(clientId)
-      .map(_.keys.toList)
-      .traverse(identity)
-      .flatten
-      .filter(kid => keyIdentifiers.contains(kid))
 
-    Option.when(existingIds.nonEmpty)(existingIds)
+  private def updateKey(
+    clientId: String,
+    keyId: String,
+    status: KeyStatus,
+    timestamp: Option[OffsetDateTime]
+  ): State = {
+    val keyToChange = keys.get(clientId).flatMap(_.get(keyId))
+
+    keyToChange
+      .fold(this)(key => {
+        val updatedKey = key.copy(status = status, deactivationTimestamp = timestamp)
+        addKeys(clientId, Map(updatedKey.kid -> updatedKey))
+      })
   }
+
 }
 
 object State {
