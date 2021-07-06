@@ -26,9 +26,15 @@ final case class State(keys: Map[String, Keys]) extends Persistable {
     }
   }
 
-  def getClientKeys(clientId: String): Option[Keys] = keys.get(clientId)
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  def getClientActiveKeys(clientId: String): Option[Keys] = {
+    for {
+      keys <- keys.get(clientId)
+      enabledKeys = keys.filter(key => key._2.status.equals(Active))
+    } yield enabledKeys
+  }
   def getClientKeyByKeyId(clientId: String, keyId: String): Option[PersistentKey] =
-    keys.get(clientId).flatMap(_.get(keyId))
+    getClientActiveKeys(clientId).flatMap(_.get(keyId))
 
   private def updateKey(
     clientId: String,
