@@ -159,11 +159,11 @@ object KeyPersistentBehavior {
     }
 
   val TypeKey: EntityTypeKey[Command] =
-    EntityTypeKey[Command]("pdnd-interop-uservice-pdnd-uservice-key_management-persistence")
+    EntityTypeKey[Command]("pdnd-interop-uservice-pdnd-uservice-key-management-persistence")
 
   def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[Command] = {
     Behaviors.setup { context =>
-      context.log.error(s"Starting Pet Shard ${persistenceId.id}")
+      context.log.error(s"Starting Key Shard ${persistenceId.id}")
       val numberOfEvents =
         context.system.settings.config.getInt("pdnd-interop-uservice-key-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](

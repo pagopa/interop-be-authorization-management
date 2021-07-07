@@ -15,20 +15,24 @@ import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.{HealthApi, KeyApi}
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{HealthApiMarshallerImpl, HealthServiceApiImpl, KeyApiMarshallerImpl, KeyApiServiceImpl}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
+  HealthApiMarshallerImpl,
+  HealthServiceApiImpl,
+  KeyApiMarshallerImpl,
+  KeyApiServiceImpl
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior, KeyPersistentProjection}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
+  Command,
+  KeyPersistentBehavior,
+  KeyPersistentProjection
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import kamon.Kamon
 
 import scala.jdk.CollectionConverters._
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.StringPlusAny",
-    "org.wartremover.warts.Nothing"
-  )
-)
+@SuppressWarnings(Array("org.wartremover.warts.StringPlusAny", "org.wartremover.warts.Nothing"))
 object Main extends App {
 
   Kamon.init()
@@ -41,15 +45,17 @@ object Main extends App {
 
         val cluster = Cluster(context.system)
 
-        context.log.error(
-          "Started [" + context.system + "], cluster.selfAddress = " + cluster.selfMember.address + ")"
-        )
+        context.log.error("Started [" + context.system + "], cluster.selfAddress = " + cluster.selfMember.address + ")")
 
         val sharding: ClusterSharding = ClusterSharding(context.system)
 
-        val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] = Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
-          KeyPersistentBehavior(entityContext.shard, PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId))
-        }
+        val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
+          Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
+            KeyPersistentBehavior(
+              entityContext.shard,
+              PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
+            )
+          }
 
         val _ = sharding.init(keyPersistentEntity)
 
@@ -58,15 +64,17 @@ object Main extends App {
           case Some(s) => s
         }
 
-        val persistence = classicSystem.classicSystem.settings.config.getString("pdnd-interop-uservice-key-management.persistence")
-        if(persistence == "cassandra") {
-          val petPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity)
+        val persistence =
+          classicSystem.classicSystem.settings.config.getString("pdnd-interop-uservice-key-management.persistence")
+        if (persistence == "cassandra") {
+          val keyPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "keys-projections",
             numberOfInstances = settings.numberOfShards,
-            behaviorFactory = (i: Int) => ProjectionBehavior(petPersistentProjection.projections(i)),
-            stopMessage = ProjectionBehavior.Stop)
+            behaviorFactory = (i: Int) => ProjectionBehavior(keyPersistentProjection.projections(i)),
+            stopMessage = ProjectionBehavior.Stop
+          )
         }
 
         val keyApi = new KeyApi(
@@ -113,14 +121,13 @@ object Main extends App {
           "listener"
         )
 
-        Cluster(context.system).subscriptions ! Subscribe(
-          listener,
-          classOf[ClusterEvent.MemberEvent]
-        )
+        Cluster(context.system).subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
         val _ = AkkaManagement(classicSystem).start()
         ClusterBootstrap.get(classicSystem).start()
         Behaviors.empty
-      }, "pdnd-interop-uservice-key-management")
+      },
+      "pdnd-interop-uservice-key-management"
+    )
   }
 }
