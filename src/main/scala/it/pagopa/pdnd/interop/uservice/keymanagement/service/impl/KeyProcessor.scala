@@ -1,55 +1,41 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.service.impl
 
 import com.nimbusds.jose.jwk._
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.keyFormat
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, OtherPrimeInfo}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.utils.decodeBase64
-import org.bouncycastle.util.io.pem.{PemObject, PemWriter}
-import spray.json._
 
-import java.io.StringWriter
-import java.security.PublicKey
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
-import scala.util.{Failure, Try}
+import scala.util.Try
 
 trait KeyProcessor {
+  def calculateKid(key: JWK): Either[Throwable, String]
   def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK]
-  def fromPEM(pem: String): Either[Throwable, JWK]
-  def toPEM(key: Key): Either[Throwable, String]
-  def validation(key: Key): Either[Throwable, Key]
-  def validatePEM(base64PEM: String): Either[Throwable, String]
+  def usableJWK(key: JWK): Either[Throwable, Boolean]
+  def publicKeyOnly(key: JWK): Either[Throwable, Boolean]
+  def fromBase64encodedPEMToAPIKey(kid: String, base64PEM: String): Either[Throwable, Key]
 }
 
-object KeyProcessor {
+object KeyProcessor extends KeyProcessor {
 
   lazy val SIGATURE_USAGE = "sig" //TODO so far it's uncoded for the POC
 
-  def calculateKid(key: JWK): Either[Throwable, String] = Try {
+  override def calculateKid(key: JWK): Either[Throwable, String] = Try {
     key.computeThumbprint().toString
   }.toEither
 
-  def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK] = {
+  override def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK] = {
     for {
       decodedPem <- decodeBase64(base64PEM).toEither
       key        <- fromPEM(decodedPem)
     } yield key
   }
 
-  def fromPEM(pem: String): Either[Throwable, JWK] = Try {
+  private def fromPEM(pem: String): Either[Throwable, JWK] = Try {
     JWK.parseFromPEMEncodedObjects(pem)
   }.toEither
 
-  def validation(key: Key): Either[Throwable, Key] = {
-    val serializedKey: String = key.toJson.compactPrint
-    val validKey = for {
-      serialized <- Try(JWK.parse(serializedKey))
-      _          <- publicKeyByAdmittableType(serialized)
-    } yield key
-    validKey.toEither
-  }
-
-  def usableJWK(key: JWK): Either[Throwable, Boolean] = {
+  override def usableJWK(key: JWK): Either[Throwable, Boolean] = {
     key.getKeyUse match {
       case KeyUse.SIGNATURE  => Right[Throwable, Boolean](true)
       case KeyUse.ENCRYPTION => Right[Throwable, Boolean](true)
@@ -57,22 +43,11 @@ object KeyProcessor {
     }
   }
 
-  def publicKeyOnly(key: JWK): Either[Throwable, Boolean] = {
+  override def publicKeyOnly(key: JWK): Either[Throwable, Boolean] = {
     Either.cond(!key.isPrivate, true, new RuntimeException("This contains a private key!"))
   }
 
-  def toPEM(key: Key): Either[Throwable, String] = {
-    val serializedKey: String = key.toJson.compactPrint
-    val pem = for {
-      key       <- Try(JWK.parse(serializedKey))
-      publicKey <- publicKeyByAdmittableType(key)
-      pem       <- publicKeyToPem(publicKey)
-    } yield pem
-
-    pem.toEither
-  }
-
-  def fromBase64encodedPEMToAPIKey(kid: String, base64PEM: String): Either[Throwable, Key] = {
+  override def fromBase64encodedPEMToAPIKey(kid: String, base64PEM: String): Either[Throwable, Key] = {
     for {
       jwk <- fromBase64encodedPEM(base64PEM)
     } yield jwk.getKeyType match {
@@ -84,7 +59,6 @@ object KeyProcessor {
   }
 
   private def rsa(kid: String, key: RSAKey): Key = {
-
     val otherPrimes = Option(key.getOtherPrimes)
       .map(list =>
         list.asScala
@@ -124,10 +98,6 @@ object KeyProcessor {
       oth = otherPrimes
     )
   }
-
-  @nowarn
-  private def getX5T(key: JWK): Option[String] = Option(key.getX509CertThumbprint).map(_.toString)
-
   private def ec(kid: String, key: ECKey): Key = Key(
     kty = key.getKeyType.getValue,
     keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
@@ -152,7 +122,6 @@ object KeyProcessor {
     qi = None,
     oth = None
   )
-
   private def okp(kid: String, key: OctetKeyPair): Key = {
 
     Key(
@@ -208,22 +177,7 @@ object KeyProcessor {
 
   }
 
-  private def publicKeyByAdmittableType(key: JWK): Try[PublicKey] = {
-    key.getKeyType match {
-      case KeyType.RSA => Try(key.toRSAKey.toPublicKey)
-      case KeyType.EC  => Try(key.toECKey.toPublicKey)
-      case KeyType.OKP => Try(key.toOctetKeyPair.toPublicKey)
-      case _           => Failure[PublicKey](new RuntimeException("No valid kty provided"))
-    }
-  }
-
-  private def publicKeyToPem(publicKey: PublicKey): Try[String] = Try {
-    val output    = new StringWriter
-    val pemWriter = new PemWriter(output)
-    val pem       = new PemObject("PUBLIC KEY", publicKey.getEncoded)
-    pemWriter.writeObject(pem)
-    pemWriter.close()
-    output.toString
-  }
-
+  //encapsulating in a method to avoid compilation errors because of Nimbus deprecated method
+  @nowarn
+  @inline private def getX5T(key: JWK): Option[String] = Option(key.getX509CertThumbprint).map(_.toString)
 }
