@@ -6,7 +6,7 @@ info:
     name: API Support
     url: 'http://www.example.com/support'
     email: support@example.com
-  description: Manages the persistence and retrieval of client keys.
+  description: Manages the persistence and retrieval of party keys.
   termsOfService: 'http://swagger.io/terms/'
   x-api-id: an x-api-id
   x-summary: an x-summary
@@ -33,11 +33,11 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/{clientId}/keys':
+  '/{partyId}/keys':
     post:
       tags:
         - key
-      summary: Create Keys for the specific clientId.
+      summary: Create Keys for the specific partyId.
       operationId: createKeys
       responses:
         '201':
@@ -53,7 +53,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '404':
-          description: Client id not found
+          description: Clien id not found
           content:
             application/problem+json:
               schema:
@@ -65,25 +65,25 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Keys'
-      description: Creates one or more keys for the corresponding client.
+      description: Creates one or more keys for the corresponding party.
       parameters:
-        - name: clientId
+        - name: partyId
           in: path
           required: true
-          description: ID of client that the added keys MUST belong to
+          description: ID of party that the added keys MUST belong to
           schema:
             type: string
             format: uuid
     get:
       tags:
         - key
-      summary: Returns a set of keys by client ID.
-      description: 'Given a client identifier it returns its corresponding set of keys, if any'
-      operationId: getClientKeys
+      summary: Returns a set of keys by party ID.
+      description: 'Given a party identifier it returns its corresponding set of keys, if any'
+      operationId: getPartyKeys
       parameters:
-        - name: clientId
+        - name: partyId
           in: path
-          description: ID of the client to look up
+          description: ID of the party to look up
           required: true
           schema:
             type: string
@@ -96,23 +96,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/KeysResponse'
         '404':
-          description: Client id not found
+          description: Party id not found
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
 
-  '/{clientId}/keys/{keyId}':
+  '/{partyId}/keys/{keyId}':
     get:
       tags:
         - key
-      summary: Returns a key by client and key identifier (kid).
-      description: 'Given a client and key identifiers it returns the corresponding key, if any'
-      operationId: getClientKeyById
+      summary: Returns a key by party and key identifier (kid).
+      description: 'Given a party and key identifiers it returns the corresponding key, if any'
+      operationId: getPartyKeyById
       parameters:
-        - name: clientId
+        - name: partyId
           in: path
-          description: ID of the client to look up
+          description: ID of the party to look up
           required: true
           schema:
             type: string
@@ -139,13 +139,13 @@ paths:
     delete:
       tags:
         - key
-      summary: Deletes a key by client and key identifier (kid).
-      description: 'Given a client and key identifiers it deletes the corresponding key, if any'
-      operationId: deleteClientKeyById
+      summary: Deletes a key by party and key identifier (kid).
+      description: 'Given a party and key identifiers it deletes the corresponding key, if any'
+      operationId: deletePartyKeyById
       parameters:
-        - name: clientId
+        - name: partyId
           in: path
-          description: ID of the client holding the key
+          description: ID of the party holding the key
           required: true
           schema:
             type: string
@@ -165,17 +165,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/{clientId}/keys/{keyId}/disable':
+  '/{partyId}/keys/{keyId}/disable':
     get:
       tags:
         - key
-      summary: Disable a client key by key identifier (kid).
-      description: 'Given a client and an enabled key identifier it disables the corresponding key, if any'
+      summary: Disable a party key by key identifier (kid).
+      description: 'Given a party and an enabled key identifier it disables the corresponding key, if any'
       operationId: disableKeyById
       parameters:
-        - name: clientId
+        - name: partyId
           in: path
-          description: ID of the client holding the key
+          description: ID of the party holding the key
           required: true
           schema:
             type: string
@@ -195,17 +195,17 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/{clientId}/keys/{keyId}/enable':
+  '/{partyId}/keys/{keyId}/enable':
     get:
       tags:
         - key
-      summary: Enables a client key by key identifier (kid).
-      description: 'Given a client and a disabled key identifier it enables the corresponding key, if any'
+      summary: Enables a party key by key identifier (kid).
+      description: 'Given a party and a disabled key identifier it enables the corresponding key, if any'
       operationId: enableKeyById
       parameters:
-        - name: clientId
+        - name: partyId
           in: path
-          description: ID of the client holding the key
+          description: ID of the party holding the key
           required: true
           schema:
             type: string

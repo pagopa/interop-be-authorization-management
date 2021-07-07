@@ -26,16 +26,17 @@ trait Validation {
   }
 
   def validateWithCurrentKeys(
-    value: Seq[ValidKey],
+    inputPayload: Seq[ValidKey],
     currentKeys: LazyList[String]
   ): ValidatedNel[String, Seq[ValidKey]] = {
-    val existingIds = value
+
+    val existingIds = inputPayload
       .map(key => key._2.computeThumbprint().toString)
       .filter(kid => currentKeys.contains(kid))
 
     Option.when(existingIds.nonEmpty)(existingIds) match {
       case Some(existingIds) => s"These kids already exist: ${existingIds.mkString(", ")}".invalidNel[Seq[ValidKey]]
-      case None              => value.validNel[String]
+      case None              => inputPayload.validNel[String]
     }
   }
 

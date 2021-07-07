@@ -33,7 +33,7 @@ object KeyPersistentBehavior {
     val idleTimeout = context.system.settings.config.getDuration("pdnd-interop-uservice-key-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
-      case AddKeys(clientId, validKeys, replyTo) =>
+      case AddKeys(partyId, validKeys, replyTo) =>
         validKeys
           .map(toPersistentKey)
           .sequence
@@ -43,11 +43,11 @@ object KeyPersistentBehavior {
                 .Error[KeysResponse](s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}")
               Effect.none[Event, State]
             },
-            keys => addKeys(replyTo, clientId, keys)
+            keys => addKeys(replyTo, partyId, keys)
           )
 
-      case GetKey(clientId, keyId, replyTo) =>
-        state.getClientKeyByKeyId(clientId, keyId) match {
+      case GetKey(partyId, keyId, replyTo) =>
+        state.getActivePartyKeyById(partyId, keyId) match {
           case Some(key) =>
             toAPI(key).fold(
               error => errorMessageReply(replyTo, s"Error while retrieving key: ${error.getLocalizedMessage}"),
@@ -60,43 +60,43 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo)
         }
 
-      case DisableKey(clientId, keyId, replyTo) =>
-        state.getClientKeyByKeyId(clientId, keyId) match {
+      case DisableKey(partyId, keyId, replyTo) =>
+        state.getActivePartyKeyById(partyId, keyId) match {
           case Some(key) if !key.status.equals(Active) =>
-            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is already disabled")
+            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${partyId} is already disabled")
             Effect.none[KeyDisabled, State]
           case Some(_) => {
             Effect
-              .persist(KeyDisabled(clientId, keyId, OffsetDateTime.now()))
+              .persist(KeyDisabled(partyId, keyId, OffsetDateTime.now()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           }
           case None => commandError(replyTo)
         }
 
-      case EnableKey(clientId, keyId, replyTo) =>
-        state.getClientKeyByKeyId(clientId, keyId) match {
+      case EnableKey(partyId, keyId, replyTo) =>
+        state.getActivePartyKeyById(partyId, keyId) match {
           case Some(key) if !key.status.equals(Disabled) =>
-            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is not disabled")
+            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${partyId} is not disabled")
             Effect.none[KeyEnabled, State]
           case Some(_) => {
             Effect
-              .persist(KeyEnabled(clientId, keyId))
+              .persist(KeyEnabled(partyId, keyId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           }
           case None => commandError(replyTo)
         }
 
-      case DeleteKey(clientId, keyId, replyTo) =>
-        state.getClientKeyByKeyId(clientId, keyId) match {
+      case DeleteKey(partyId, keyId, replyTo) =>
+        state.getActivePartyKeyById(partyId, keyId) match {
           case Some(_) =>
             Effect
-              .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
+              .persist(KeyDeleted(partyId, keyId, OffsetDateTime.now()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           case None => commandError(replyTo)
         }
 
-      case GetKeys(clientId, replyTo) =>
-        state.getClientActiveKeys(clientId) match {
+      case GetKeys(partyId, replyTo) =>
+        state.getClientActiveKeys(partyId) match {
           case Some(keys) =>
             toAPIResponse(keys).fold(
               error => errorMessageReply(replyTo, s"Error while retrieving keys: ${error.getLocalizedMessage}"),
@@ -127,7 +127,7 @@ object KeyPersistentBehavior {
 
   private def addKeys(
     replyTo: ActorRef[StatusReply[KeysResponse]],
-    clientId: String,
+    partyId: String,
     keys: Seq[PersistentKey]
   ): Effect[Event, State] = {
     val mapKeys = keys.map(k => k.kid -> k).toMap
@@ -139,7 +139,7 @@ object KeyPersistentBehavior {
       },
       response =>
         Effect
-          .persist(KeysAdded(clientId, mapKeys))
+          .persist(KeysAdded(partyId, mapKeys))
           .thenRun(_ => replyTo ! StatusReply.Success(response))
     )
 
@@ -152,10 +152,10 @@ object KeyPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case KeysAdded(clientId, keys)               => state.addKeys(clientId, keys)
-      case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
-      case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
-      case KeyDeleted(clientId, keyId, _)          => state.delete(clientId, keyId)
+      case KeysAdded(partyId, keys)               => state.addKeys(partyId, keys)
+      case KeyDisabled(partyId, keyId, timestamp) => state.disable(partyId, keyId, timestamp)
+      case KeyEnabled(partyId, keyId)             => state.enable(partyId, keyId)
+      case KeyDeleted(partyId, keyId, _)          => state.delete(partyId, keyId)
     }
 
   val TypeKey: EntityTypeKey[Command] =

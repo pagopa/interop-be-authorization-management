@@ -4,50 +4,59 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Acti
 
 import java.time.OffsetDateTime
 
-final case class State(keys: Map[String, Keys]) extends Persistable {
+/*
+/partyId/keys
+/partyId/key/{kid}
+/agreement/keys GET
+/agreement/key/kid GET ?
+/agreement/key/kid  POST => creates a key for the agreemen
+/agreement/key/kid  DELETE => creates a key for the agreement */
 
-  def enable(clientId: String, keyId: String): State = updateKey(clientId, keyId, Active, None)
-  def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
-    updateKey(clientId, keyId, Disabled, Some(timestamp))
+/*
+    possible models
+     indexes: Map[AgreementId, PartyId] //TODO evaluate about it
+     agreements: Map[AgreementId, List[(Kid, PartyId)]]
+ */
 
-  def delete(clientId: String, keyId: String): State = keys.get(clientId) match {
+final case class State(keys: Map[PartyId, Keys]) extends Persistable {
+
+  def enable(partyId: String, keyId: String): State = updateKey(partyId, keyId, Active, None)
+  def disable(partyId: String, keyId: String, timestamp: OffsetDateTime): State =
+    updateKey(partyId, keyId, Disabled, Some(timestamp))
+
+  def delete(partyId: String, keyId: String): State = keys.get(partyId) match {
     case Some(entries) => {
-      copy(keys = keys + (clientId -> (entries - keyId)))
+      copy(keys = keys + (partyId -> (entries - keyId)))
     }
     case None => this
   }
 
-  def addKeys(clientId: String, addedKeys: Keys): State = {
-    keys.get(clientId) match {
+  def addKeys(partyId: String, addedKeys: Keys): State = {
+    keys.get(partyId) match {
       case Some(entries) => {
-        copy(keys = keys + (clientId -> (entries ++ addedKeys)))
+        copy(keys = keys + (partyId -> (entries ++ addedKeys)))
       }
-      case None => copy(keys = keys + (clientId -> addedKeys))
+      case None => copy(keys = keys + (partyId -> addedKeys))
     }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  def getClientActiveKeys(clientId: String): Option[Keys] = {
+  def getClientActiveKeys(partyId: String): Option[Keys] = {
     for {
-      keys <- keys.get(clientId)
+      keys <- keys.get(partyId)
       enabledKeys = keys.filter(key => key._2.status.equals(Active))
     } yield enabledKeys
   }
-  def getClientKeyByKeyId(clientId: String, keyId: String): Option[PersistentKey] =
-    getClientActiveKeys(clientId).flatMap(_.get(keyId))
+  def getActivePartyKeyById(partyId: String, keyId: String): Option[PersistentKey] =
+    getClientActiveKeys(partyId).flatMap(_.get(keyId))
 
-  private def updateKey(
-    clientId: String,
-    keyId: String,
-    status: KeyStatus,
-    timestamp: Option[OffsetDateTime]
-  ): State = {
-    val keyToChange = keys.get(clientId).flatMap(_.get(keyId))
+  private def updateKey(partyId: String, keyId: String, status: KeyStatus, timestamp: Option[OffsetDateTime]): State = {
+    val keyToChange = keys.get(partyId).flatMap(_.get(keyId))
 
     keyToChange
       .fold(this)(key => {
         val updatedKey = key.copy(status = status, deactivationTimestamp = timestamp)
-        addKeys(clientId, Map(updatedKey.kid -> updatedKey))
+        addKeys(partyId, Map(updatedKey.kid -> updatedKey))
       })
   }
 
