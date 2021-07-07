@@ -80,7 +80,7 @@ object KeyProcessor extends KeyProcessor {
       alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
-      x5t = getX5T(key), //Option(key.getX509CertThumbprint).map(_.toString),
+      x5t = getX5T(key),
       x5tS256 = Option(key.getX509CertSHA256Thumbprint).map(_.toString),
       x5c = Option(key.getX509CertChain).map(list => list.asScala.map(op => op.toString).toSeq),
       crv = None,
