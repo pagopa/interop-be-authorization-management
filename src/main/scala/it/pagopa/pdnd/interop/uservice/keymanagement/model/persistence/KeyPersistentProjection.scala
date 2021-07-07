@@ -46,7 +46,7 @@ class KeyPersistentProjection(system: ActorSystem[_], entity: Entity[Command, Sh
 
   val projections: Seq[AtLeastOnceFlowProjection[Offset, EventEnvelope[Event]]] =
     (0 until settings.numberOfShards).map(i =>
-      projection(s"pdnd-interop-uservice-pdnd_uservice_key_management_persistence|$i")
+      projection(s"pdnd-interop-uservice-pdnd-uservice-key_management-persistence|$i")
     )
 
 }
