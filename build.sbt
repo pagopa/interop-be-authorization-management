@@ -85,13 +85,7 @@ lazy val root = (project in file("."))
     dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
     dockerUpdateLatest := true,
     daemonUser := "daemon",
-    Docker / version := s"${
-      val buildVersion = (ThisBuild / version).value
-      if (buildVersion == "latest")
-        buildVersion
-      else
-        s"v$buildVersion"
-    }".toLowerCase,
+    Docker / version := (ThisBuild / version).value,
     Docker / packageName := s"services/${name.value}",
     Docker / dockerExposedPorts := Seq(8080),
     Compile / compile / wartremoverErrors ++= Warts.all,
