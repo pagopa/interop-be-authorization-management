@@ -1,0 +1,26 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+
+option (scalapb.options) = {
+  package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
+};
+
+message PersistentKeyEntryV1 {
+  required string keyId = 1;
+  required PersistentKeyV1 value = 2;
+}
+
+message PersistentKeyV1 {
+  required string kid = 1;
+  required string encodedPem = 2;
+  required string creationTimestamp = 3;
+  optional string deactivationTimestamp = 4;
+  required KeyStatusV1 status = 5;
+}
+
+enum KeyStatusV1 {
+  Active = 0;
+  Disabled = 1;
+  Deleted = 2;
+}
