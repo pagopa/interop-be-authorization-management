@@ -121,6 +121,8 @@ package object v1 {
     } yield PersistentKeyV1(
       kid = key.kid,
       encodedPem = key.encodedPem,
+      algorithm = key.algorithm,
+      use = key.use,
       creationTimestamp = fromTime(key.creationTimestamp),
       deactivationTimestamp = key.deactivationTimestamp.map(fromTime),
       status = keyStatus
@@ -137,6 +139,8 @@ package object v1 {
     } yield PersistentKey(
       kid = key.kid,
       encodedPem = key.encodedPem,
+      algorithm = key.algorithm,
+      use = key.use,
       creationTimestamp = toTime(key.creationTimestamp),
       deactivationTimestamp = key.deactivationTimestamp.map(toTime),
       status = keyStatus

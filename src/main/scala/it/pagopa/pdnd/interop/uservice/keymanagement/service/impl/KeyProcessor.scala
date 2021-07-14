@@ -13,7 +13,12 @@ trait KeyProcessor {
   def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK]
   def usableJWK(key: JWK): Either[Throwable, Boolean]
   def publicKeyOnly(key: JWK): Either[Throwable, Boolean]
-  def fromBase64encodedPEMToAPIKey(kid: String, base64PEM: String): Either[Throwable, Key]
+  def fromBase64encodedPEMToAPIKey(
+    kid: String,
+    base64PEM: String,
+    use: String,
+    algorithm: String
+  ): Either[Throwable, Key]
 }
 
 object KeyProcessor extends KeyProcessor {
@@ -47,8 +52,13 @@ object KeyProcessor extends KeyProcessor {
     Either.cond(!key.isPrivate, true, new RuntimeException("This contains a private key!"))
   }
 
-  override def fromBase64encodedPEMToAPIKey(kid: String, base64PEM: String): Either[Throwable, Key] = {
-    for {
+  override def fromBase64encodedPEMToAPIKey(
+    kid: String,
+    base64PEM: String,
+    use: String,
+    algorithm: String
+  ): Either[Throwable, Key] = {
+    val key = for {
       jwk <- fromBase64encodedPEM(base64PEM)
     } yield jwk.getKeyType match {
       case KeyType.RSA => rsa(kid, jwk.toRSAKey)
@@ -56,6 +66,8 @@ object KeyProcessor extends KeyProcessor {
       case KeyType.OKP => okp(kid, jwk.toOctetKeyPair)
       case KeyType.OCT => oct(kid, jwk.toOctetSequenceKey)
     }
+
+    key.map(_.copy(alg = Some(algorithm), use = Some(use)))
   }
 
   private def rsa(kid: String, key: RSAKey): Key = {
@@ -74,10 +86,10 @@ object KeyProcessor extends KeyProcessor {
       .filter(_.nonEmpty)
 
     Key(
+      use = None,
+      alg = None,
       kty = key.getKeyType.getValue,
       keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
-      use = Option(SIGATURE_USAGE),
-      alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
       x5t = getX5T(key),
@@ -99,10 +111,10 @@ object KeyProcessor extends KeyProcessor {
     )
   }
   private def ec(kid: String, key: ECKey): Key = Key(
+    use = None,
+    alg = None,
     kty = key.getKeyType.getValue,
     keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
-    use = Option(SIGATURE_USAGE),
-    alg = Option(key.getAlgorithm).map(_.toString),
     kid = kid,
     x5u = Option(key.getX509CertURL).map(_.toString),
     x5t = getX5T(key),
@@ -123,12 +135,11 @@ object KeyProcessor extends KeyProcessor {
     oth = None
   )
   private def okp(kid: String, key: OctetKeyPair): Key = {
-
     Key(
+      use = None,
+      alg = None,
       kty = key.getKeyType.getValue,
       keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
-      use = Option(SIGATURE_USAGE),
-      alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
       x5t = getX5T(key),
@@ -151,10 +162,10 @@ object KeyProcessor extends KeyProcessor {
   }
   private def oct(kid: String, key: OctetSequenceKey): Key = {
     Key(
+      use = None,
+      alg = None,
       kty = key.getKeyType.getValue,
       keyOps = Option(key.getKeyOperations).map(list => list.asScala.map(op => op.toString).toSeq),
-      use = Option(SIGATURE_USAGE),
-      alg = Option(key.getAlgorithm).map(_.toString),
       kid = kid,
       x5u = Option(key.getX509CertURL).map(_.toString),
       x5t = getX5T(key),

@@ -239,7 +239,24 @@ components:
     Keys:
       type: array
       items:
-        type: string
+        $ref: '#/components/schemas/KeySeed'
+    KeySeed:
+      description: 'Models the seed for a public key to be persisted'
+      type: object
+      properties:
+        key:
+          type: string
+        use:
+          type: string
+          enum:
+            - sig
+            - enc
+        alg:
+          type: string
+      required:
+        - key
+        - use
+        - alg
     Key:
       description: 'Models a JWK'
       type: object

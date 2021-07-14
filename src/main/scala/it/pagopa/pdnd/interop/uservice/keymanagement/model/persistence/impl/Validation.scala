@@ -2,26 +2,27 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
 import cats.data.ValidatedNel
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeySeed
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.ValidKey
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 trait Validation {
 
   @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
-  def validateKeys(keys: Seq[String]): ValidatedNel[String, Seq[ValidKey]] = {
+  def validateKeys(keys: Seq[KeySeed]): ValidatedNel[String, Seq[ValidKey]] = {
     keys.traverse(validateKey)
   }
 
-  private def validateKey(key: String): ValidatedNel[String, ValidKey] = {
+  private def validateKey(keySeed: KeySeed): ValidatedNel[String, ValidKey] = {
     val processedKey = for {
-      jwk <- KeyProcessor.fromBase64encodedPEM(key)
+      jwk <- KeyProcessor.fromBase64encodedPEM(keySeed.key)
       _   <- KeyProcessor.publicKeyOnly(jwk)
       // _   <- KeyProcessor.usableJWK(jwk)
     } yield jwk
 
     processedKey match {
-      case Left(throwable) => s"Key ${key} is invalid: ${throwable.getLocalizedMessage}".invalidNel[ValidKey]
-      case Right(jwk)      => (key, jwk).validNel[String]
+      case Left(throwable) => s"Key ${keySeed.key} is invalid: ${throwable.getLocalizedMessage}".invalidNel[ValidKey]
+      case Right(jwk)      => (keySeed, jwk).validNel[String]
     }
   }
 

@@ -14,7 +14,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse, Problem}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeySeed, KeysResponse, Problem}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.tailrec
@@ -49,7 +49,7 @@ class KeyApiServiceImpl(
     * Code: 400, Message: Missing Required Information
     * Code: 404, Message: Client id not found, DataType: Problem
     */
-  override def createKeys(partyId: String, key: Seq[String])(implicit
+  override def createKeys(partyId: String, key: Seq[KeySeed])(implicit
     toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {

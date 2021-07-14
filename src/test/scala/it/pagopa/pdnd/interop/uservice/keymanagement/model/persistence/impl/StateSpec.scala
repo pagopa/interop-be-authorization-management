@@ -17,6 +17,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "1" -> PersistentKey(
           kid = "1",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -24,6 +26,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -31,6 +35,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "3" -> PersistentKey(
           kid = "3",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -38,6 +44,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "4" -> PersistentKey(
           kid = "4",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Disabled
@@ -62,6 +70,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "1" -> PersistentKey(
           kid = "1",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -69,6 +79,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -99,6 +111,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "1" -> PersistentKey(
           kid = "1",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -106,6 +120,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -135,6 +151,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "1" -> PersistentKey(
           kid = "1",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -142,6 +160,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Deleted
@@ -149,6 +169,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "3" -> PersistentKey(
           kid = "3",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Active
@@ -156,6 +178,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "4" -> PersistentKey(
           kid = "4",
           encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
           creationTimestamp = OffsetDateTime.now(),
           deactivationTimestamp = None,
           status = Disabled
