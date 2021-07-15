@@ -22,6 +22,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   KeyApiServiceImpl
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
   KeyPersistentBehavior,
@@ -42,6 +43,7 @@ object Main extends App {
       Behaviors.setup[Nothing] { context =>
         import akka.actor.typed.scaladsl.adapter._
         implicit val classicSystem: classic.ActorSystem = context.system.toClassic
+        val marshallerImpl                              = new KeyApiMarshallerImpl()
 
         val cluster = Cluster(context.system)
 
@@ -79,7 +81,7 @@ object Main extends App {
 
         val keyApi = new KeyApi(
           new KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
-          new KeyApiMarshallerImpl(),
+          marshallerImpl,
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
 
@@ -107,7 +109,7 @@ object Main extends App {
               println(item.severity())
             }
             val message = e.results().items().asScala.map(_.message()).mkString("\n")
-            complete((400, message))
+            complete(400, Problem(Some(message), 400, "bad request"))(marshallerImpl.toEntityMarshallerProblem)
           })
         )
 

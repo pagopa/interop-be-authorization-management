@@ -23,7 +23,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   State
 }
 
-import java.time.OffsetDateTime
+import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 
 package object v1 {
@@ -149,5 +149,6 @@ package object v1 {
   private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
   def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
-  def toTime(timestamp: String): OffsetDateTime   = OffsetDateTime.parse(timestamp, formatter)
+  def toTime(timestamp: String): OffsetDateTime =
+    OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
 }
