@@ -40,7 +40,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
       validation shouldBe a[Valid[_]]
     }
 
-    "return a valid object when the certificate is valid" in {
+    "return an error since certificates upload is not allowed" in {
       val key = KeySeed(
         key = Base64Encoder.encode("""-----BEGIN CERTIFICATE-----
                                      |MIIC6jCCAdKgAwIBAgIGAXqAeuDUMA0GCSqGSIb3DQEBCwUAMDYxNDAyBgNVBAMM
@@ -65,12 +65,10 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
-      validation shouldBe a[Valid[_]]
-      val keys = validation.getOrElse(Seq.empty)
-      keys(0)._2.getKeyType.toString shouldBe "RSA"
+      validation shouldBe a[Invalid[_]]
     }
 
-    "return a valid serialized JWK given a valid certificate" in {
+    "return an error since certificates are not uploadable on the platform" in {
       //given
       val encodedPem = KeySeed(
         key = Base64Encoder.encode("""-----BEGIN CERTIFICATE-----
@@ -95,31 +93,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         use = "sig"
       )
 
-      val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, "enc", "123").value
-      key.kty shouldBe "RSA"
-      key.keyOps shouldBe None
-      key.use shouldBe Some("enc")
-      key.alg shouldBe Some("123")
-      key.kid shouldBe "mockKID"
-      key.x5u shouldBe None
-      key.x5t shouldBe None
-      key.x5tS256 shouldBe None
-      key.x5c shouldBe None
-      key.crv shouldBe None
-      key.x shouldBe None
-      key.y shouldBe None
-      key.d shouldBe None
-      key.k shouldBe None
-      key.n shouldBe Some(
-        "g5fQtCnaHyXMPtlXn7l_ZlAGlwR0XFzFsjLR8HtUsgsdo7ZY7MToV7Oz2ZkuKayIqrwCtud9_8LijXEOw42fPon04XTOQ3HAl8zT22lkV9f7Q0XTl1PaREEewEqOWYhGJUxRcGXqpKQMm40JGNP24-DH8WJZmUTsU83fGAr7uats-xQq902yWKNoII2OJvGzHxhK9cDmyfNzPE8w3L6KmOs6BXMYTBOor2VuPeK1s2FByHtR5VuhydmE79mZJZnIBkm7N4odcWGU5qEOgFR3BlV0S51QDsw5tA3183D8Utf-k4HjXodwyMwfR4bLJ9SPK5XvC_-3W7JNJH_awH6AsQ"
-      )
-      key.e shouldBe Some("AQAB")
-      key.p shouldBe None
-      key.q shouldBe None
-      key.dp shouldBe None
-      key.dq shouldBe None
-      key.qi shouldBe None
-      key.oth shouldBe None
+      val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, "enc", "123")
+      key.isLeft shouldBe true
     }
 
     "return a invalid object when some of the keys are invalid" in {

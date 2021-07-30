@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.service.impl
 
 import com.nimbusds.jose.jwk._
+import com.nimbusds.jose.util.X509CertUtils
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, OtherPrimeInfo}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.utils.decodeBase64
 
@@ -23,8 +24,6 @@ trait KeyProcessor {
 
 object KeyProcessor extends KeyProcessor {
 
-  lazy val SIGATURE_USAGE = "sig" //TODO so far it's uncoded for the POC
-
   override def calculateKid(key: JWK): Either[Throwable, String] = Try {
     key.computeThumbprint().toString
   }.toEither
@@ -37,8 +36,12 @@ object KeyProcessor extends KeyProcessor {
   }
 
   private def fromPEM(pem: String): Either[Throwable, JWK] = Try {
-    JWK.parseFromPEMEncodedObjects(pem)
-  }.toEither
+    Option(X509CertUtils.parse(pem)) match {
+      case None    => Try { JWK.parseFromPEMEncodedObjects(pem) }.toEither
+      case Some(_) => Left[Throwable, JWK](new RuntimeException("The platform does not allow to upload certificates"))
+    }
+
+  }.toEither.flatten
 
   override def usableJWK(key: JWK): Either[Throwable, Boolean] = {
     key.getKeyUse match {
