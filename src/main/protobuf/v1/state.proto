@@ -13,6 +13,6 @@ message StateV1 {
 }
 
 message StateEntryV1 {
-  required string partyId = 1;
+  required string clientId = 1;
   repeated PersistentKeyEntryV1 keyEntries = 2;
 }

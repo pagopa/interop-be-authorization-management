@@ -49,21 +49,21 @@ class KeyApiServiceImpl(
     * Code: 400, Message: Missing Required Information
     * Code: 404, Message: Client id not found, DataType: Problem
     */
-  override def createKeys(partyId: String, key: Seq[KeySeed])(implicit
+  override def createKeys(clientId: String, key: Seq[KeySeed])(implicit
     toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     //TODO consider a preauthorize for user rights validations...
 
-    logger.info(s"Creating keys for client ${partyId}...")
+    logger.info(s"Creating keys for client ${clientId}...")
 
     val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
     validatedPayload.andThen(k => validateWithCurrentKeys(k, keysIdentifiers)) match {
       case Valid(validKeys) =>
-        val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(partyId))
+        val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
         val result: Future[StatusReply[KeysResponse]] =
-          commander.ask(ref => AddKeys(partyId, validKeys, ref))
+          commander.ask(ref => AddKeys(clientId, validKeys, ref))
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
@@ -102,66 +102,66 @@ class KeyApiServiceImpl(
   /** Code: 200, Message: returns the corresponding key, DataType: Key
     * Code: 404, Message: Key not found, DataType: Problem
     */
-  override def getPartyKeyById(partyId: String, keyId: String)(implicit
+  override def getClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerKey: ToEntityMarshaller[Key],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Getting key ${keyId} for client ${partyId}...")
-    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(partyId))
+    logger.info(s"Getting key ${keyId} for client ${clientId}...")
+    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
 
-    val result: Future[StatusReply[Key]] = commander.ask(ref => GetKey(partyId, keyId, ref))
+    val result: Future[StatusReply[Key]] = commander.ask(ref => GetKey(clientId, keyId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => getPartyKeyById200(statusReply.getValue)
+      case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        getPartyKeyById404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        getClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
 
   /** Code: 200, Message: returns the corresponding array of keys, DataType: KeysCreatedResponse
     * Code: 404, Message: Client id not found, DataType: Problem
     */
-  override def getPartyKeys(partyId: String)(implicit
+  override def getClientKeys(clientId: String)(implicit
     toEntityMarshallerKeysCreatedResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Getting keys for client ${partyId}...")
-    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(partyId))
+    logger.info(s"Getting keys for client ${clientId}...")
+    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
 
-    val result: Future[StatusReply[KeysResponse]] = commander.ask(ref => GetKeys(partyId, ref))
+    val result: Future[StatusReply[KeysResponse]] = commander.ask(ref => GetKeys(clientId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => getPartyKeys200(statusReply.getValue)
+      case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        getPartyKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        getClientKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
 
   /** Code: 204, Message: the corresponding key has been deleted.
     * Code: 404, Message: Key not found, DataType: Problem
     */
-  override def deletePartyKeyById(partyId: String, keyId: String)(implicit
+  override def deleteClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Delete key $keyId belonging to $partyId...")
-    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(partyId))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(partyId, keyId, ref))
+    logger.info(s"Delete key $keyId belonging to $clientId...")
+    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => deletePartyKeyById204
+      case statusReply if statusReply.isSuccess => deleteClientKeyById204
       case statusReply if statusReply.isError =>
-        deletePartyKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+        deleteClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
     }
   }
 
   /** Code: 204, Message: the corresponding key has been disabled.
     * Code: 404, Message: Key not found, DataType: Problem
     */
-  override def disableKeyById(partyId: String, keyId: String)(implicit
+  override def disableKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Disabling key $keyId belonging to $partyId...")
-    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(partyId))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => DisableKey(partyId, keyId, ref))
+    logger.info(s"Disabling key $keyId belonging to $clientId...")
+    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => DisableKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => disableKeyById204
       case statusReply if statusReply.isError =>
@@ -172,12 +172,12 @@ class KeyApiServiceImpl(
   /** Code: 204, Message: the corresponding key has been enabled.
     * Code: 404, Message: Key not found, DataType: Problem
     */
-  override def enableKeyById(partyId: String, keyId: String)(implicit
+  override def enableKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Enabling key $keyId belonging to $partyId...")
-    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(partyId))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => EnableKey(partyId, keyId, ref))
+    logger.info(s"Enabling key $keyId belonging to $clientId...")
+    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => EnableKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => enableKeyById204
       case statusReply if statusReply.isError =>

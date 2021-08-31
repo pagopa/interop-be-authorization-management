@@ -38,7 +38,7 @@ package object v1 {
           .traverse[ErrorOr, (String, Keys)] {
             case client => {
               protoEntryToKey(client.keyEntries)
-                .map(entry => client.partyId -> entry.toMap)
+                .map(entry => client.clientId -> entry.toMap)
             }
           }
           .map(_.toMap)
@@ -59,17 +59,17 @@ package object v1 {
     }
 
   implicit def keysAddedV1PersistEventDeserializer: PersistEventDeserializer[KeysAddedV1, KeysAdded] = event => {
-    protoEntryToKey(event.keys).map(keys => KeysAdded(partyId = event.partyId, keys = keys.toMap))
+    protoEntryToKey(event.keys).map(keys => KeysAdded(clientId = event.clientId, keys = keys.toMap))
   }
 
   implicit def keysAddedV1PersistEventSerializer: PersistEventSerializer[KeysAdded, KeysAddedV1] = event => {
-    keyToEntry(event.keys).map(keys => KeysAddedV1(partyId = event.partyId, keys = keys))
+    keyToEntry(event.keys).map(keys => KeysAddedV1(clientId = event.clientId, keys = keys))
   }
 
   implicit def keyDeletedV1PersistEventDeserializer: PersistEventDeserializer[KeyDeletedV1, KeyDeleted] = event =>
     Right[Throwable, KeyDeleted](
       KeyDeleted(
-        partyId = event.partyId,
+        clientId = event.clientId,
         keyId = event.keyId,
         deactivationTimestamp = toTime(event.deactivationTimestamp)
       )
@@ -78,7 +78,7 @@ package object v1 {
   implicit def keyDeletedV1PersistEventSerializer: PersistEventSerializer[KeyDeleted, KeyDeletedV1] = event =>
     Right[Throwable, KeyDeletedV1](
       KeyDeletedV1(
-        partyId = event.partyId,
+        clientId = event.clientId,
         keyId = event.keyId,
         deactivationTimestamp = fromTime(event.deactivationTimestamp)
       )
@@ -87,7 +87,7 @@ package object v1 {
   implicit def keyDisabledV1PersistEventDeserializer: PersistEventDeserializer[KeyDisabledV1, KeyDisabled] = event =>
     Right[Throwable, KeyDisabled](
       KeyDisabled(
-        partyId = event.partyId,
+        clientId = event.clientId,
         keyId = event.keyId,
         deactivationTimestamp = toTime(event.deactivationTimestamp)
       )
@@ -96,17 +96,17 @@ package object v1 {
   implicit def keyDisabledV1PersistEventSerializer: PersistEventSerializer[KeyDisabled, KeyDisabledV1] = event =>
     Right[Throwable, KeyDisabledV1](
       KeyDisabledV1(
-        partyId = event.partyId,
+        clientId = event.clientId,
         keyId = event.keyId,
         deactivationTimestamp = fromTime(event.deactivationTimestamp)
       )
     )
 
   implicit def keyEnabledV1PersistEventDeserializer: PersistEventDeserializer[KeyEnabledV1, KeyEnabled] = event =>
-    Right[Throwable, KeyEnabled](KeyEnabled(partyId = event.partyId, keyId = event.keyId))
+    Right[Throwable, KeyEnabled](KeyEnabled(clientId = event.clientId, keyId = event.keyId))
 
   implicit def keyEnabledV1PersistEventSerializer: PersistEventSerializer[KeyEnabled, KeyEnabledV1] = event =>
-    Right[Throwable, KeyEnabledV1](KeyEnabledV1(partyId = event.partyId, keyId = event.keyId))
+    Right[Throwable, KeyEnabledV1](KeyEnabledV1(clientId = event.clientId, keyId = event.keyId))
 
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
     val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq

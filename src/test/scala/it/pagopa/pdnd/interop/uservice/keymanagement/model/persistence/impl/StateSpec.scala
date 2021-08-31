@@ -61,7 +61,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe None
       updatedState.keys.get("fooBarKeys").get.size shouldBe 3
-      updatedState.getActivePartyKeyById("fooBarKeys", "1").get.status shouldBe Active
+      updatedState.getActiveClientKeyById("fooBarKeys", "1").get.status shouldBe Active
     }
 
     "disable the keys properly" in {
@@ -96,13 +96,13 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")).get.status shouldBe Disabled
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")).get.deactivationTimestamp shouldBe Some(time)
-      updatedState.getActivePartyKeyById(
+      updatedState.getActiveClientKeyById(
         "fooBarKeys",
         "2"
       ) shouldBe None //since the API method returns active keys only
 
-      updatedState.getActivePartyKeyById("fooBarKeys", "1").get.status shouldBe Active
-      updatedState.getActivePartyKeyById("fooBarKeys", "1").get.deactivationTimestamp shouldBe None
+      updatedState.getActiveClientKeyById("fooBarKeys", "1").get.status shouldBe Active
+      updatedState.getActiveClientKeyById("fooBarKeys", "1").get.deactivationTimestamp shouldBe None
     }
 
     "disabling the key and then reactivating it should work properly" in {
@@ -141,8 +141,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val updatedUpdatedState = updatedState.enable("fooBarKeys", "2")
 
       //then
-      updatedUpdatedState.getActivePartyKeyById("fooBarKeys", "2").get.status shouldBe Active
-      updatedUpdatedState.getActivePartyKeyById("fooBarKeys", "2").get.deactivationTimestamp shouldBe None
+      updatedUpdatedState.getActiveClientKeyById("fooBarKeys", "2").get.status shouldBe Active
+      updatedUpdatedState.getActiveClientKeyById("fooBarKeys", "2").get.deactivationTimestamp shouldBe None
     }
 
     "return only the list of active keys" in {

@@ -6,6 +6,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Persi
 package object persistence {
   type ValidKey = (KeySeed, JWK)
   type Kid      = String
-  type PartyId  = String
+  type ClientId = String
   type Keys     = Map[Kid, PersistentKey]
 }
