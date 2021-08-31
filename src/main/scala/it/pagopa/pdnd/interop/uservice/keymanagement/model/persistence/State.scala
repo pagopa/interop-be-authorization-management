@@ -11,7 +11,6 @@ import java.time.OffsetDateTime
  */
 
 final case class State(keys: Map[ClientId, Keys]) extends Persistable {
-
   def enable(clientId: String, keyId: String): State = updateKey(clientId, keyId, Active, None)
   def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
     updateKey(clientId, keyId, Disabled, Some(timestamp))

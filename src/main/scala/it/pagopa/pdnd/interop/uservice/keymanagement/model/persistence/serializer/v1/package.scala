@@ -25,6 +25,8 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
 
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.util.UUID
+import scala.util.Try
 
 package object v1 {
 
@@ -120,6 +122,7 @@ package object v1 {
         .toRight(new RuntimeException("Protobuf serialization failed"))
     } yield PersistentKeyV1(
       kid = key.kid,
+      operatorId = key.operatorId.toString,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = key.use,
@@ -135,9 +138,11 @@ package object v1 {
 
   private def protbufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      keyStatus <- KeyStatus.fromText(key.status.name)
+      keyStatus  <- KeyStatus.fromText(key.status.name)
+      operatorId <- Try(UUID.fromString(key.operatorId)).toEither
     } yield PersistentKey(
       kid = key.kid,
+      operatorId = operatorId,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = key.use,

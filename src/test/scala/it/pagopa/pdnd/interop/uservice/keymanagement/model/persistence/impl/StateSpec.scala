@@ -1,11 +1,12 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.State
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, Deleted, PersistentKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted, Disabled, PersistentKey}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.time.OffsetDateTime
+import java.util.UUID
 
 class StateSpec extends AnyWordSpecLike with Matchers {
 
@@ -16,6 +17,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -25,6 +27,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -34,6 +37,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "3" -> PersistentKey(
           kid = "3",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -43,6 +47,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "4" -> PersistentKey(
           kid = "4",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -69,6 +74,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -78,6 +84,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -110,6 +117,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -119,6 +127,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -150,6 +159,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -159,6 +169,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -168,6 +179,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "3" -> PersistentKey(
           kid = "3",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9222"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -177,6 +189,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "4" -> PersistentKey(
           kid = "4",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -194,6 +207,9 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       activeKeys shouldBe a[Some[_]]
       activeKeys.get.keys should contain allOf ("1", "3")
+      activeKeys.get.values.map(
+        _.operatorId.toString
+      ) should contain allOf ("27f8dce0-0a5b-476b-9fdd-a7a658eb9215", "27f8dce0-0a5b-476b-9fdd-a7a658eb9222")
       activeKeys.get.keys shouldNot contain allOf ("2", "4")
     }
 
