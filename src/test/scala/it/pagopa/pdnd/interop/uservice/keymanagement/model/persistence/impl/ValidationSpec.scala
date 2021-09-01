@@ -8,7 +8,7 @@ import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import java.util.Base64
+import java.util.{Base64, UUID}
 
 object ValidationTest extends Validation
 
@@ -33,7 +33,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |lQIDAQAB
                                      |-----END PUBLIC KEY-----""".stripMargin),
         alg = "123",
-        use = "sig"
+        use = "sig",
+        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -61,7 +62,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |gujPVi0wH0Oo/zXTJ9G+6slRDsFO6LdQrjf04eCP
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
-        use = "sig"
+        use = "sig",
+        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -90,7 +92,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |Xq3dfXqqnHpThqcNNnoZX0jSwT/o62zGtvGvybbL
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
-        use = "sig"
+        use = "sig",
+        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
       )
 
       val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, "enc", "123")
@@ -113,7 +116,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |37sJ5QsW+sJyoNde3xH8vdXhzU7eT82D6X/scw9RZz+/6rCJ4p0=
                                      |-----END RSA PRIVATE KEY-----""".stripMargin),
         alg = "123",
-        use = "sig"
+        use = "sig",
+        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))

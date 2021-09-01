@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 
 sealed trait Event extends Persistable
 
-final case class KeysAdded(partyId: String, keys: Keys)                                             extends Event
-final case class KeyDisabled(partyId: String, keyId: String, deactivationTimestamp: OffsetDateTime) extends Event
-final case class KeyEnabled(partyId: String, keyId: String)                                         extends Event
-final case class KeyDeleted(partyId: String, keyId: String, deactivationTimestamp: OffsetDateTime)  extends Event
+final case class KeysAdded(clientId: String, keys: Keys)                                             extends Event
+final case class KeyDisabled(clientId: String, keyId: String, deactivationTimestamp: OffsetDateTime) extends Event
+final case class KeyEnabled(clientId: String, keyId: String)                                         extends Event
+final case class KeyDeleted(clientId: String, keyId: String, deactivationTimestamp: OffsetDateTime)  extends Event

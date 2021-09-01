@@ -12,13 +12,14 @@ message PersistentKeyEntryV1 {
 }
 
 message PersistentKeyV1 {
-  required string kid = 1;
-  required string encodedPem = 2;
-  required string use = 3;
-  required string algorithm = 4;
-  required string creationTimestamp = 5;
-  optional string deactivationTimestamp = 6;
-  required KeyStatusV1 status = 7;
+  required string operatorId = 1;
+  required string kid = 2;
+  required string encodedPem = 3;
+  required string use = 4;
+  required string algorithm = 5;
+  required string creationTimestamp = 6;
+  optional string deactivationTimestamp = 7;
+  required KeyStatusV1 status = 8;
 }
 
 enum KeyStatusV1 {

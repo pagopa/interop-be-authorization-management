@@ -6,6 +6,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, Va
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 import java.time.OffsetDateTime
+import java.util.UUID
 
 sealed trait KeyStatus {
   def stringify: String = this match {
@@ -31,6 +32,7 @@ case object Deleted  extends KeyStatus
 sealed trait Persistent
 
 final case class PersistentKey(
+  operatorId: UUID,
   kid: String,
   encodedPem: String,
   algorithm: String,
@@ -46,6 +48,7 @@ object PersistentKey {
     for {
       kid <- KeyProcessor.calculateKid(validKey._2)
     } yield PersistentKey(
+      operatorId = validKey._1.operatorId,
       kid = kid,
       encodedPem = validKey._1.key,
       algorithm = validKey._1.alg,
