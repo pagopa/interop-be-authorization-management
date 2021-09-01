@@ -2,7 +2,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key
 
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, ValidKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, Persistent, ValidKey}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 import java.time.OffsetDateTime
@@ -28,8 +28,6 @@ object KeyStatus {
 case object Active   extends KeyStatus
 case object Disabled extends KeyStatus
 case object Deleted  extends KeyStatus
-
-sealed trait Persistent
 
 final case class PersistentKey(
   operatorId: UUID,

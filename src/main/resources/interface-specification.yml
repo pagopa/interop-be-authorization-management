@@ -33,6 +33,33 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/clients':
+    post:
+      tags:
+        - client
+      summary: Create Client
+      operationId: createClient
+      responses:
+        '201':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: A Client seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientSeed'
+      description: Creates a Client
   '/{clientId}/keys':
     post:
       tags:
@@ -339,6 +366,34 @@ components:
         - r
         - d
         - t
+    ClientSeed:
+      description: Models the seed for a client to be persisted
+      type: object
+      properties:
+        agreementId:
+          type: string
+          format: uuid
+        description:
+          type: string
+      required:
+        - agreementId
+        - description
+    Client:
+      description: Models a Client
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        description:
+          type: string
+      required:
+        - id
+        - agreementId
+        - description
     Problem:
       properties:
         detail:

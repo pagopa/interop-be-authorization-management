@@ -1,5 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, KeyStatus, PersistentKey}
 
 import java.time.OffsetDateTime
@@ -10,7 +11,7 @@ import java.time.OffsetDateTime
      agreements: Map[AgreementId, List[(Kid, clientId)]]
  */
 
-final case class State(keys: Map[ClientId, Keys]) extends Persistable {
+final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, PersistentClient]) extends Persistable {
   def enable(clientId: String, keyId: String): State = updateKey(clientId, keyId, Active, None)
   def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
     updateKey(clientId, keyId, Disabled, Some(timestamp))
@@ -29,6 +30,10 @@ final case class State(keys: Map[ClientId, Keys]) extends Persistable {
       }
       case None => copy(keys = keys + (clientId -> addedKeys))
     }
+  }
+
+  def addClient(client: PersistentClient): State = {
+    copy(clients = clients + (client.id.toString -> client))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
@@ -59,5 +64,5 @@ final case class State(keys: Map[ClientId, Keys]) extends Persistable {
 }
 
 object State {
-  val empty: State = State(keys = Map.empty[String, Keys])
+  val empty: State = State(keys = Map.empty[String, Keys], clients = Map.empty[String, PersistentClient])
 }

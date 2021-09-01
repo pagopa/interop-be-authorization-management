@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+
+option (scalapb.options) = {
+  package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
+};
+
+message PersistentClientV1 {
+  required string id = 1;
+  required string agreementId = 2;
+  required string description = 3;
+}

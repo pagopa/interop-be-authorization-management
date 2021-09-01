@@ -14,8 +14,10 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.{HealthApi, KeyApi}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi}
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
+  ClientApiMarshallerImpl,
+  ClientApiServiceImpl,
   HealthApiMarshallerImpl,
   HealthServiceApiImpl,
   KeyApiMarshallerImpl,
@@ -23,12 +25,14 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientCommand, ClientPersistentBehavior}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
   KeyPersistentBehavior,
   KeyPersistentProjection
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
+import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
 
 import scala.jdk.CollectionConverters._
@@ -44,6 +48,7 @@ object Main extends App {
         import akka.actor.typed.scaladsl.adapter._
         implicit val classicSystem: classic.ActorSystem = context.system.toClassic
         val marshallerImpl                              = new KeyApiMarshallerImpl()
+        val uuidSupplierImpl                            = new UUIDSupplierImpl()
 
         val cluster = Cluster(context.system)
 
@@ -54,6 +59,14 @@ object Main extends App {
         val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
           Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
             KeyPersistentBehavior(
+              entityContext.shard,
+              PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
+            )
+          }
+
+        val clientPersistentEntity: Entity[ClientCommand, ShardingEnvelope[ClientCommand]] =
+          Entity(typeKey = ClientPersistentBehavior.TypeKey) { entityContext =>
+            ClientPersistentBehavior(
               entityContext.shard,
               PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
             )
@@ -85,6 +98,12 @@ object Main extends App {
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
 
+        val clientApi = new ClientApi(
+          new ClientApiServiceImpl(context.system, sharding, clientPersistentEntity, uuidSupplierImpl),
+          new ClientApiMarshallerImpl(),
+          SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
+        )
+
         val healthApi: HealthApi = new HealthApi(
           new HealthServiceApiImpl(),
           new HealthApiMarshallerImpl(),
@@ -94,6 +113,7 @@ object Main extends App {
         val _ = AkkaManagement.get(classicSystem).start()
 
         val controller = new Controller(
+          clientApi,
           healthApi,
           keyApi,
           validationExceptionToRoute = Some(e => {
