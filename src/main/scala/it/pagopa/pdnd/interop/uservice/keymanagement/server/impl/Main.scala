@@ -15,10 +15,21 @@ import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi}
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{ClientApiMarshallerImpl, ClientApiServiceImpl, HealthApiMarshallerImpl, HealthServiceApiImpl, KeyApiMarshallerImpl, KeyApiServiceImpl}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
+  ClientApiMarshallerImpl,
+  ClientApiServiceImpl,
+  HealthApiMarshallerImpl,
+  HealthServiceApiImpl,
+  KeyApiMarshallerImpl,
+  KeyApiServiceImpl
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{Authenticator, shardingSettings}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior, KeyPersistentProjection}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
+  Command,
+  KeyPersistentBehavior,
+  KeyPersistentProjection
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
@@ -44,7 +55,7 @@ object Main extends App {
 
         val sharding: ClusterSharding = ClusterSharding(context.system)
 
-        val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
+        val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
           Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
             KeyPersistentBehavior(
               entityContext.shard,
@@ -52,14 +63,14 @@ object Main extends App {
             )
           }
 
-        val _ = sharding.init(persistentEntity)
+        val _ = sharding.init(keyPersistentEntity)
 
-        val keySettings: ClusterShardingSettings = shardingSettings(persistentEntity, context.system)
+        val keySettings: ClusterShardingSettings = shardingSettings(keyPersistentEntity, context.system)
 
         val persistence =
           classicSystem.classicSystem.settings.config.getString("pdnd-interop-uservice-key-management.persistence")
         if (persistence == "cassandra") {
-          val keyPersistentProjection = new KeyPersistentProjection(context.system, persistentEntity)
+          val keyPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "keys-projections",
@@ -70,13 +81,13 @@ object Main extends App {
         }
 
         val keyApi = new KeyApi(
-          new KeyApiServiceImpl(context.system, sharding, persistentEntity),
+          new KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
           marshallerImpl,
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
 
         val clientApi = new ClientApi(
-          new ClientApiServiceImpl(context.system, sharding, persistentEntity, uuidSupplierImpl),
+          new ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplierImpl),
           new ClientApiMarshallerImpl(),
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
