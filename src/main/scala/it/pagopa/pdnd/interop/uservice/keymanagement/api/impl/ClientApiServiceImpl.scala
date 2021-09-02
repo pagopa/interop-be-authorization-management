@@ -9,13 +9,9 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
-  AddClient,
-  ClientCommand,
-  ClientPersistentBehavior,
-  PersistentClient
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{AddClient, Command, KeyPersistentBehavior}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, Problem}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.slf4j.{Logger, LoggerFactory}
@@ -34,7 +30,7 @@ import scala.concurrent.Future
 class ClientApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
-  entity: Entity[ClientCommand, ShardingEnvelope[ClientCommand]],
+  entity: Entity[Command, ShardingEnvelope[Command]],
   uuidSupplier: UUIDSupplier
 ) extends ClientApiService
     with Validation {
@@ -55,8 +51,8 @@ class ClientApiServiceImpl(
 
     val clientId = uuidSupplier.get
 
-    val commander: EntityRef[ClientCommand] =
-      sharding.entityRefFor(ClientPersistentBehavior.TypeKey, getShard(clientId.toString, settings.numberOfShards))
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId.toString, settings.numberOfShards))
 
     val persistentClient = PersistentClient.toPersistentClient(clientId, clientSeed)
     val result: Future[StatusReply[PersistentClient]] =

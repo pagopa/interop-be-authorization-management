@@ -18,7 +18,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, 
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{ClientApiMarshallerImpl, ClientApiServiceImpl, HealthApiMarshallerImpl, HealthServiceApiImpl, KeyApiMarshallerImpl, KeyApiServiceImpl}
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{Authenticator, shardingSettings}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientCommand, ClientPersistentBehavior, ClientPersistentProjection}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior, KeyPersistentProjection}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.UUIDSupplierImpl
@@ -45,7 +44,7 @@ object Main extends App {
 
         val sharding: ClusterSharding = ClusterSharding(context.system)
 
-        val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
+        val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
           Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
             KeyPersistentBehavior(
               entityContext.shard,
@@ -53,25 +52,14 @@ object Main extends App {
             )
           }
 
-        val clientPersistentEntity: Entity[ClientCommand, ShardingEnvelope[ClientCommand]] =
-          Entity(typeKey = ClientPersistentBehavior.TypeKey) { entityContext =>
-            ClientPersistentBehavior(
-              entityContext.shard,
-              PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
-            )
-          }
+        val _ = sharding.init(persistentEntity)
 
-        val _ = sharding.init(keyPersistentEntity)
-        val _ = sharding.init(clientPersistentEntity)
-
-        val keySettings: ClusterShardingSettings = shardingSettings(keyPersistentEntity, context.system)
-        val clientSettings: ClusterShardingSettings = shardingSettings(clientPersistentEntity, context.system)
+        val keySettings: ClusterShardingSettings = shardingSettings(persistentEntity, context.system)
 
         val persistence =
           classicSystem.classicSystem.settings.config.getString("pdnd-interop-uservice-key-management.persistence")
         if (persistence == "cassandra") {
-          val keyPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity)
-          val clientPersistentProjection = new ClientPersistentProjection(context.system, clientPersistentEntity)
+          val keyPersistentProjection = new KeyPersistentProjection(context.system, persistentEntity)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "keys-projections",
@@ -79,23 +67,16 @@ object Main extends App {
             behaviorFactory = (i: Int) => ProjectionBehavior(keyPersistentProjection.projections(i)),
             stopMessage = ProjectionBehavior.Stop
           )
-
-          ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
-            name = "clients-projections",
-            numberOfInstances = clientSettings.numberOfShards,
-            behaviorFactory = (i: Int) => ProjectionBehavior(clientPersistentProjection.projections(i)),
-            stopMessage = ProjectionBehavior.Stop
-          )
         }
 
         val keyApi = new KeyApi(
-          new KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
+          new KeyApiServiceImpl(context.system, sharding, persistentEntity),
           marshallerImpl,
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
 
         val clientApi = new ClientApi(
-          new ClientApiServiceImpl(context.system, sharding, clientPersistentEntity, uuidSupplierImpl),
+          new ClientApiServiceImpl(context.system, sharding, persistentEntity, uuidSupplierImpl),
           new ClientApiMarshallerImpl(),
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )

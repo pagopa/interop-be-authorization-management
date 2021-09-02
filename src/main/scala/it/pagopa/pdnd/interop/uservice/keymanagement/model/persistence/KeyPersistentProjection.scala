@@ -12,16 +12,14 @@ import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.scaladsl.{AtLeastOnceFlowProjection, SourceProvider}
 import akka.projection.{ProjectionContext, ProjectionId}
 import akka.stream.scaladsl.FlowWithContext
+import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.shardingSettings
 
 import scala.concurrent.duration.DurationInt
 
 @SuppressWarnings(Array("org.wartremover.warts.StringPlusAny"))
 class KeyPersistentProjection(system: ActorSystem[_], entity: Entity[Command, ShardingEnvelope[Command]]) {
 
-  private val settings: ClusterShardingSettings = entity.settings match {
-    case None    => ClusterShardingSettings(system)
-    case Some(s) => s
-  }
+  private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
   def sourceProvider(tag: String): SourceProvider[Offset, EventEnvelope[Event]] =
     EventSourcedProvider

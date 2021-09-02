@@ -9,6 +9,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
   toAPI,
   toAPIResponse,
@@ -115,6 +116,21 @@ object KeyPersistentBehavior {
         replyTo ! StatusReply.Success(state.keys.values.toSeq.slice(from, until).flatMap(_.keys))
         Effect.none[Event, State]
 
+        // TODO Client commands should be in a separated behavior
+      case AddClient(persistentClient, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(persistentClient.id.toString)
+
+        client
+          .map { c =>
+            replyTo ! StatusReply.Error[PersistentClient](s"Client ${c.id.toString} already exists")
+            Effect.none[ClientAdded, State]
+          }
+          .getOrElse {
+            Effect
+              .persist(ClientAdded(persistentClient))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(persistentClient))
+          }
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.error(s"Passivate shard: ${shard.path.name}")
@@ -163,6 +179,7 @@ object KeyPersistentBehavior {
       case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
       case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
       case KeyDeleted(clientId, keyId, _)          => state.delete(clientId, keyId)
+      case ClientAdded(client)                     => state.addClient(client)
     }
 
   val TypeKey: EntityTypeKey[Command] =
