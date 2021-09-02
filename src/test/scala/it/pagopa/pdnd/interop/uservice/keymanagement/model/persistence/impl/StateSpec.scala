@@ -57,7 +57,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val keys  = Map("fooBarKeys" -> fooBarKeys)
-      val state = State(keys = keys)
+      val state = State(keys = keys, clients = Map.empty)
       state.keys.get("fooBarKeys").get.size shouldBe 4
 
       //when
@@ -94,7 +94,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val keys  = Map("fooBarKeys" -> fooBarKeys)
-      val state = State(keys = keys)
+      val state = State(keys = keys, clients = Map.empty)
       val time  = OffsetDateTime.now()
 
       //when
@@ -137,7 +137,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val keys  = Map("fooBarKeys" -> fooBarKeys)
-      val state = State(keys = keys)
+      val state = State(keys = keys, clients = Map.empty)
       val time  = OffsetDateTime.now()
 
       //when
@@ -199,7 +199,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val keys  = Map("fooBarKeys" -> fooBarKeys)
-      val state = State(keys = keys)
+      val state = State(keys = keys, clients = Map.empty)
 
       //when
       val activeKeys = state.getClientActiveKeys("fooBarKeys")

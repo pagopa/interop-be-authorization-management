@@ -15,6 +15,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Persi
   toPersistentKey
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, PersistentKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.errors.ClientNotFoundError
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -34,17 +35,18 @@ object KeyPersistentBehavior {
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddKeys(clientId, validKeys, replyTo) =>
-        validKeys
-          .map(toPersistentKey)
-          .sequence
-          .fold(
-            t => {
-              replyTo ! StatusReply
-                .Error[KeysResponse](s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}")
-              Effect.none[Event, State]
-            },
-            keys => addKeys(replyTo, clientId, keys)
-          )
+        state.clients.get(clientId) match {
+          case Some(_) =>
+            validKeys
+              .map(toPersistentKey)
+              .sequence
+              .fold(
+                t => errorMessageReply(replyTo, s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}"),
+                keys => addKeys(replyTo, clientId, keys)
+              )
+
+          case None => commandError(replyTo, ClientNotFoundError(clientId))
+        }
 
       case GetKey(clientId, keyId, replyTo) =>
         state.getActiveClientKeyById(clientId, keyId) match {
@@ -57,7 +59,7 @@ object KeyPersistentBehavior {
               }
             )
 
-          case None => commandError(replyTo)
+          case None => commandKeyNotFoundError(replyTo)
         }
 
       case DisableKey(clientId, keyId, replyTo) =>
@@ -70,7 +72,7 @@ object KeyPersistentBehavior {
               .persist(KeyDisabled(clientId, keyId, OffsetDateTime.now()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           }
-          case None => commandError(replyTo)
+          case None => commandKeyNotFoundError(replyTo)
         }
 
       case EnableKey(clientId, keyId, replyTo) =>
@@ -83,7 +85,7 @@ object KeyPersistentBehavior {
               .persist(KeyEnabled(clientId, keyId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           }
-          case None => commandError(replyTo)
+          case None => commandKeyNotFoundError(replyTo)
         }
 
       case DeleteKey(clientId, keyId, replyTo) =>
@@ -92,7 +94,7 @@ object KeyPersistentBehavior {
             Effect
               .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
-          case None => commandError(replyTo)
+          case None => commandKeyNotFoundError(replyTo)
         }
 
       case GetKeys(clientId, replyTo) =>
@@ -106,7 +108,7 @@ object KeyPersistentBehavior {
               }
             )
 
-          case None => commandError(replyTo)
+          case None => commandKeyNotFoundError(replyTo)
         }
 
       case ListKid(from: Int, until: Int, replyTo) =>
@@ -122,7 +124,7 @@ object KeyPersistentBehavior {
 
   private def errorMessageReply[T](replyTo: ActorRef[StatusReply[T]], message: String): Effect[Event, State] = {
     replyTo ! StatusReply.Error[T](message)
-    Effect.none[KeyDeleted, State]
+    Effect.none[Event, State]
   }
 
   private def addKeys(
@@ -145,8 +147,13 @@ object KeyPersistentBehavior {
 
   }
 
-  private def commandError[T](replyTo: ActorRef[StatusReply[T]]): Effect[Event, State] = {
+  private def commandKeyNotFoundError[T](replyTo: ActorRef[StatusReply[T]]): Effect[Event, State] = {
     replyTo ! StatusReply.Error[T](KeyNotFoundException)
+    Effect.none[Event, State]
+  }
+
+  private def commandError[T](replyTo: ActorRef[StatusReply[T]], error: Throwable): Effect[Event, State] = {
+    replyTo ! StatusReply.Error[T](error)
     Effect.none[Event, State]
   }
 
