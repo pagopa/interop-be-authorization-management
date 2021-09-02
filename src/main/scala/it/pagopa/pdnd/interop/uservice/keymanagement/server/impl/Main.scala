@@ -16,7 +16,7 @@ import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi}
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{ClientApiMarshallerImpl, ClientApiServiceImpl, HealthApiMarshallerImpl, HealthServiceApiImpl, KeyApiMarshallerImpl, KeyApiServiceImpl}
-import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
+import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{Authenticator, shardingSettings}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientCommand, ClientPersistentBehavior, ClientPersistentProjection}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior, KeyPersistentProjection}
@@ -64,15 +64,8 @@ object Main extends App {
         val _ = sharding.init(keyPersistentEntity)
         val _ = sharding.init(clientPersistentEntity)
 
-        val keySettings: ClusterShardingSettings = keyPersistentEntity.settings match {
-          case None    => ClusterShardingSettings(context.system)
-          case Some(s) => s
-        }
-
-        val clientSettings: ClusterShardingSettings = clientPersistentEntity.settings match {
-          case None    => ClusterShardingSettings(context.system)
-          case Some(s) => s
-        }
+        val keySettings: ClusterShardingSettings = shardingSettings(keyPersistentEntity, context.system)
+        val clientSettings: ClusterShardingSettings = shardingSettings(clientPersistentEntity, context.system)
 
         val persistence =
           classicSystem.classicSystem.settings.config.getString("pdnd-interop-uservice-key-management.persistence")

@@ -38,12 +38,7 @@ class KeyApiServiceImpl(
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  private val settings: ClusterShardingSettings = entity.settings match {
-    case None    => ClusterShardingSettings(system)
-    case Some(s) => s
-  }
-
-  @inline private def getShard(id: String): String = Math.abs((id.hashCode % settings.numberOfShards)).toString
+  private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
   /** Code: 201, Message: Keys created
     * Code: 400, Message: Missing Required Information
@@ -61,7 +56,8 @@ class KeyApiServiceImpl(
 
     validatedPayload.andThen(k => validateWithCurrentKeys(k, keysIdentifiers)) match {
       case Valid(validKeys) =>
-        val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+        val commander: EntityRef[Command] =
+          sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
         val result: Future[StatusReply[KeysResponse]] =
           commander.ask(ref => AddKeys(clientId, validKeys, ref))
         onSuccess(result) {
@@ -107,7 +103,8 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Getting key ${keyId} for client ${clientId}...")
-    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
     val result: Future[StatusReply[Key]] = commander.ask(ref => GetKey(clientId, keyId, ref))
 
@@ -126,7 +123,8 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Getting keys for client ${clientId}...")
-    val commander: EntityRef[Command] = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
     val result: Future[StatusReply[KeysResponse]] = commander.ask(ref => GetKeys(clientId, ref))
 
@@ -144,7 +142,8 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Delete key $keyId belonging to $clientId...")
-    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
@@ -160,7 +159,8 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Disabling key $keyId belonging to $clientId...")
-    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => DisableKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => disableKeyById204
@@ -176,7 +176,8 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Enabling key $keyId belonging to $clientId...")
-    val commander: EntityRef[Command]     = sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId))
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => EnableKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => enableKeyById204

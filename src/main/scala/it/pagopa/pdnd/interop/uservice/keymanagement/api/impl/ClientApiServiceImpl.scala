@@ -41,12 +41,7 @@ class ClientApiServiceImpl(
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  private val settings: ClusterShardingSettings = entity.settings match {
-    case None    => ClusterShardingSettings(system)
-    case Some(s) => s
-  }
-
-  @inline private def getShard(id: String): String = Math.abs(id.hashCode % settings.numberOfShards).toString
+  private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
   /** Code: 201, Message: Client created, DataType: Client
     * Code: 400, Message: Missing Required Information, DataType: Problem
@@ -61,7 +56,7 @@ class ClientApiServiceImpl(
     val clientId = uuidSupplier.get
 
     val commander: EntityRef[ClientCommand] =
-      sharding.entityRefFor(ClientPersistentBehavior.TypeKey, getShard(clientId.toString))
+      sharding.entityRefFor(ClientPersistentBehavior.TypeKey, getShard(clientId.toString, settings.numberOfShards))
 
     val persistentClient = PersistentClient.toPersistentClient(clientId, clientSeed)
     val result: Future[StatusReply[PersistentClient]] =
