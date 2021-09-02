@@ -49,7 +49,7 @@ object ClientPersistentBehavior {
     }
 
   val TypeKey: EntityTypeKey[ClientCommand] =
-    EntityTypeKey[ClientCommand]("pdnd-interop-uservice-pdnd-uservice-key-management-persistence")
+    EntityTypeKey[ClientCommand]("pdnd-interop-uservice-pdnd-uservice-key-management-client-persistence")
 
   def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[ClientCommand] = {
     Behaviors.setup { context =>
