@@ -152,7 +152,13 @@ package object v1 {
     for {
       clientId    <- Try(UUID.fromString(client.id)).toEither
       agreementId <- Try(UUID.fromString(client.agreementId)).toEither
-    } yield PersistentClient(id = clientId, agreementId = agreementId, description = client.description)
+      operators   <- client.operators.map(id => Try(UUID.fromString(id))).sequence.toEither
+    } yield PersistentClient(
+      id = clientId,
+      agreementId = agreementId,
+      description = client.description,
+      operators = operators
+    )
 
   private def protbufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {

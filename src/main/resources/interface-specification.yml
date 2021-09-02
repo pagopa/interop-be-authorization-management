@@ -12,6 +12,7 @@ info:
   x-summary: an x-summary
 servers:
   - url: 'https://gateway.interop.pdnd.dev/pdnd-interop-uservice-key-management/0.0.1'
+#  - url: 'http://localhost:8088/pdnd-interop-uservice-key-management/0.0.1'
     description: This contains key management routes
 tags:
   - name: key
@@ -390,10 +391,16 @@ components:
           format: uuid
         description:
           type: string
+        operators:
+          type: array
+          items:
+            type: string
+            format: uuid
       required:
         - id
         - agreementId
         - description
+        - operators
     Problem:
       properties:
         detail:

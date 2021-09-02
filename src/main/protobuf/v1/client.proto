@@ -10,4 +10,5 @@ message PersistentClientV1 {
   required string id = 1;
   required string agreementId = 2;
   required string description = 3;
+  repeated string operators = 4;
 }
