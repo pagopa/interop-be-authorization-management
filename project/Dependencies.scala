@@ -30,6 +30,7 @@ object Dependencies {
       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
     lazy val clusterHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
     lazy val slf4j       = namespace                       %% "akka-slf4j"                   % akkaVersion
+    lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
   }
 
   private[this] object postgres {
@@ -88,9 +89,9 @@ object Dependencies {
     lazy val core      = namespace %% "scalatest" % scalatestVersion
   }
 
-  private[this] object mockito {
-    lazy val namespace = "org.mockito"
-    lazy val core      = namespace % "mockito-core" % mockitoVersion
+  private[this] object scalamock {
+    lazy val namespace = "org.scalamock"
+    lazy val core      = namespace %% "scalamock" % scalaMockVersion
   }
 
   private[this] object nimbus {
@@ -144,7 +145,9 @@ object Dependencies {
       bouncycastle.provider        % Compile,
       bouncycastle.kix             % Compile,
       scalaprotobuf.core           % Protobuf,
-      scalatest.core               % Test
+      akka.testkit                 % Test,
+      scalatest.core               % Test,
+      scalamock.core               % Test
     )
     lazy val client: Seq[ModuleID] = Seq(
       akka.stream     % Compile,
