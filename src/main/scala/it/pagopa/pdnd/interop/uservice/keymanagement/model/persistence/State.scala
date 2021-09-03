@@ -38,7 +38,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   }
 
   def addOperator(client: PersistentClient, operatorId: UUID): State = {
-    val updatedClient = client.copy(operators = (client.operators :+ operatorId).distinct) // TODO Use set for operators
+    val updatedClient = client.copy(operators = client.operators + operatorId)
     copy(clients = clients + (client.id.toString -> updatedClient))
   }
 
