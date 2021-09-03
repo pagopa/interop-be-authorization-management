@@ -11,20 +11,16 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.persistence.typed.PersistenceId
 import it.pagopa.pdnd.interop.uservice.keymanagement.api._
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
-  ClientApiMarshallerImpl,
-  ClientApiServiceImpl,
-  KeyApiMarshallerImpl,
-  KeyApiServiceImpl
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.Client
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.Assertion
 import spray.json.DefaultJsonProtocol
 
 import java.util.UUID
@@ -93,7 +89,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     println("Server shut down - Resources cleaned")
   }
 
-  def createClient(id: UUID, agreementId: UUID): Assertion = {
+  def createClient(id: UUID, agreementId: UUID): Client = {
     (() => mockUUIDSupplier.get).expects().returning(id).once()
 
     val agreementUuid = agreementId
@@ -117,5 +113,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     )
 
     response.status shouldBe StatusCodes.Created
+
+    Await.result(Unmarshal(response).to[Client], Duration.Inf)
   }
 }
