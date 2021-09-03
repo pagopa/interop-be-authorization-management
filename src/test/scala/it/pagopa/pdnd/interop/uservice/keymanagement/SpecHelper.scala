@@ -101,19 +101,19 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
          |  "description": "$description"
          |}""".stripMargin
 
-    val response = Await.result(
-      Http()(classicSystem).singleRequest(
-        HttpRequest(
-          uri = s"$serviceURL/clients",
-          method = HttpMethods.POST,
-          entity = HttpEntity(ContentTypes.`application/json`, data)
-        )
-      ),
-      Duration.Inf
-    )
+    val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
 
     response.status shouldBe StatusCodes.Created
 
     Await.result(Unmarshal(response).to[Client], Duration.Inf)
+  }
+
+  def request(uri: String, method: HttpMethod, data: Option[String] = None): HttpResponse = {
+    val httpRequest: HttpRequest = HttpRequest(uri = uri, method = method)
+
+    val requestWithEntity: HttpRequest =
+      data.fold(httpRequest)(d => httpRequest.withEntity(HttpEntity(ContentTypes.`application/json`, d)))
+
+    Await.result(Http()(classicSystem).singleRequest(requestWithEntity), Duration.Inf)
   }
 }
