@@ -94,6 +94,52 @@ class KeyManagementServiceSpec
 
   }
 
+  "Client list" should {
+    "correctly filter by agreement id" in {
+      val clientId1 = UUID.fromString("8198d261-2e2f-4ef4-a7a2-1d7ea4cef472")
+      val clientId2 = UUID.fromString("dea175f3-3180-42cf-9c1b-048a67c6e4ff")
+      val clientId3 = UUID.fromString("d78fe4d4-9518-4ea1-bf44-e1a86db080bd")
+      val agreementId1 = UUID.fromString("4922fcfe-206f-41a1-83ea-f2647b4eeb3c")
+      val agreementId3 = UUID.fromString("58277d2a-8b68-4609-89d1-bae23100e964")
+
+      val client1 = createClient(clientId1, agreementId1)
+      val client2 = createClient(clientId2, agreementId1)
+      createClient(clientId3, agreementId3)
+
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients?agreementId=$agreementId1",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients.size shouldBe 2
+      retrievedClients should contain only (client1, client2)
+
+    }
+
+    "not be retrieved without required fields" in {
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.BadRequest
+    }
+
+  }
+
   "Key creation should" should {
     "fail if client does not exist" in {
       val data =
