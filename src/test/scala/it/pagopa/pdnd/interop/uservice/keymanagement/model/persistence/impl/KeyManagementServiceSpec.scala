@@ -94,6 +94,103 @@ class KeyManagementServiceSpec
 
   }
 
+  "Client list" should {
+    "correctly filter by agreement id" in {
+      val clientId1 = UUID.fromString("8198d261-2e2f-4ef4-a7a2-1d7ea4cef472")
+      val clientId2 = UUID.fromString("dea175f3-3180-42cf-9c1b-048a67c6e4ff")
+      val clientId3 = UUID.fromString("d78fe4d4-9518-4ea1-bf44-e1a86db080bd")
+      val agreementId1 = UUID.fromString("4922fcfe-206f-41a1-83ea-f2647b4eeb3c")
+      val agreementId3 = UUID.fromString("58277d2a-8b68-4609-89d1-bae23100e964")
+
+      val client1 = createClient(clientId1, agreementId1)
+      val client2 = createClient(clientId2, agreementId1)
+      createClient(clientId3, agreementId3)
+
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients?agreementId=$agreementId1",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients.size shouldBe 2
+      retrievedClients should contain only (client1, client2)
+
+    }
+
+    "correctly paginate elements" in {
+      val clientId1 = UUID.fromString("a24ee7f9-f445-4e77-a77f-c21dfbce4bed")
+      val clientId2 = UUID.fromString("d0b551d7-57c2-4373-afa4-ba3a3413caad")
+      val clientId3 = UUID.fromString("ed228675-b9db-46fc-92e7-bd6cb3f7a306")
+      val agreementId1 = UUID.fromString("9fa239f7-6189-4165-a95d-64c87324b122")
+
+      createClient(clientId1, agreementId1)
+      createClient(clientId2, agreementId1)
+      createClient(clientId3, agreementId1)
+
+      // First page
+      val offset1 = 0
+      val limit1 = 2
+
+      val response1 = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients?agreementId=$agreementId1&offset=$offset1&limit=$limit1",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response1.status shouldBe StatusCodes.OK
+      val retrievedClients1 = Await.result(Unmarshal(response1).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients1.size shouldBe 2
+
+      // Second page
+      val offset2 = 2
+      val limit2 = 3
+
+      val response2 = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients?agreementId=$agreementId1&offset=$offset2&limit=$limit2",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response2.status shouldBe StatusCodes.OK
+      val retrievedClients2 = Await.result(Unmarshal(response2).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients2.size shouldBe 1
+
+      retrievedClients1.intersect(retrievedClients2) shouldBe empty
+    }
+
+    "not be retrieved without required fields" in {
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.BadRequest
+    }
+
+  }
+
   "Key creation should" should {
     "fail if client does not exist" in {
       val data =
