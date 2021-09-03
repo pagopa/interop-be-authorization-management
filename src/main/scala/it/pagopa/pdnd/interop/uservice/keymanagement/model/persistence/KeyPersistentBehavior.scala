@@ -116,7 +116,7 @@ object KeyPersistentBehavior {
         replyTo ! StatusReply.Success(state.keys.values.toSeq.slice(from, until).flatMap(_.keys))
         Effect.none[Event, State]
 
-        // TODO Client commands should be in a separated behavior
+      // TODO Client commands should be in a separated behavior
       case AddClient(persistentClient, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(persistentClient.id.toString)
 
@@ -130,6 +130,14 @@ object KeyPersistentBehavior {
               .persist(ClientAdded(persistentClient))
               .thenRun((_: State) => replyTo ! StatusReply.Success(persistentClient))
           }
+
+      case GetClient(clientId, replyTo) =>
+        state.clients.get(clientId) match {
+          case Some(client) =>
+            replyTo ! StatusReply.Success(client)
+            Effect.none[Event, State]
+          case None => commandError(replyTo, ClientNotFoundError(clientId))
+        }
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)

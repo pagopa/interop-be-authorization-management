@@ -18,5 +18,6 @@ final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[St
 final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])          extends Command
 
 final case class AddClient(client: PersistentClient, replyTo: ActorRef[StatusReply[PersistentClient]]) extends Command
+final case class GetClient(clientId: String, replyTo: ActorRef[StatusReply[PersistentClient]])         extends Command
 
 case object Idle extends Command
