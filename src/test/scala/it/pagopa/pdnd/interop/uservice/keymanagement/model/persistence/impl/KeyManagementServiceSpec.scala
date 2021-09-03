@@ -45,7 +45,7 @@ class KeyManagementServiceSpec
       val description   = "New Client 1"
 
       val expected =
-        Client(id = newClientUuid, agreementId = agreementUuid, description = description, operators = Seq.empty)
+        Client(id = newClientUuid, agreementId = agreementUuid, description = description, operators = Set.empty)
 
       val data =
         s"""{
@@ -72,17 +72,13 @@ class KeyManagementServiceSpec
     }
 
     "be retrieved successfully" in {
-      val clientUuid = UUID.fromString("f3447128-4695-418f-9658-959da0ee3f8c")
+      val clientUuid    = UUID.fromString("f3447128-4695-418f-9658-959da0ee3f8c")
       val agreementUuid = UUID.fromString("48e948cc-a60a-4d93-97e9-bcbe1d6e5283")
       val createdClient = createClient(clientUuid, agreementUuid)
 
       val response = Await.result(
-        Http()(classicSystem).singleRequest(
-          HttpRequest(
-            uri = s"$serviceURL/clients/$clientUuid",
-            method = HttpMethods.GET
-          )
-        ),
+        Http()(classicSystem)
+          .singleRequest(HttpRequest(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)),
         Duration.Inf
       )
 
@@ -92,6 +88,58 @@ class KeyManagementServiceSpec
       retrievedClient shouldBe createdClient
     }
 
+  }
+
+  "Operator" should {
+    "be created on existing client" in {
+      val clientId    = UUID.fromString("29204cb0-f4a8-40a5-b447-8ba84ed988d4")
+      val agreementId = UUID.fromString("c794f9a7-5d40-40d7-8fb9-af92d2b0356c")
+      val operatorId  = UUID.fromString("7955e640-b2a1-4fe7-b0b4-e00045a83d1a")
+
+      createClient(clientId, agreementId)
+
+      val data = s"""{
+                    |  "operatorId": "${operatorId.toString}"
+                    |}""".stripMargin
+
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients/$clientId/operators",
+            method = HttpMethods.POST,
+            entity = HttpEntity(ContentTypes.`application/json`, data)
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.Created
+      val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
+
+      retrievedClient.operators shouldBe Set(operatorId)
+    }
+
+    "fail if client does not exist" in {
+      val clientId    = UUID.fromString("43c2fd14-4efb-4489-8f21-ac4977abee49")
+      val operatorId  = UUID.fromString("4fdfc95c-b687-4d5f-83a9-f0ce01037aea")
+
+      val data = s"""{
+                    |  "operatorId": "${operatorId.toString}"
+                    |}""".stripMargin
+
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients/$clientId/operators",
+            method = HttpMethods.POST,
+            entity = HttpEntity(ContentTypes.`application/json`, data)
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.NotFound
+    }
   }
 
   "Client list" should {
