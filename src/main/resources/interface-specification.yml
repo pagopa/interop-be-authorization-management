@@ -81,12 +81,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          description: Missing Required Information
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
       description: Lists Clients
       parameters:
         - name: offset

@@ -139,6 +139,16 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
+      case ListClients(from, to, agreementId, operatorId, replyTo) =>
+        val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
+          agreementId.forall(_ == client.agreementId.toString) &&
+          operatorId.forall(operator => client.operators.map(_.toString).contains(operator))
+        }
+        val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)
+
+        replyTo ! StatusReply.Success(paginatedClients)
+        Effect.none[Event, State]
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.error(s"Passivate shard: ${shard.path.name}")

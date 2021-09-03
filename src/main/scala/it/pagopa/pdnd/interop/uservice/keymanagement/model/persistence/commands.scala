@@ -20,8 +20,8 @@ final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Se
 final case class AddClient(client: PersistentClient, replyTo: ActorRef[StatusReply[PersistentClient]]) extends Command
 final case class GetClient(clientId: String, replyTo: ActorRef[StatusReply[PersistentClient]])         extends Command
 final case class ListClients(
-  offset: Int,
-  limit: Int,
+  from: Int,
+  until: Int,
   agreementId: Option[String],
   operatorId: Option[String],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]

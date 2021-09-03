@@ -119,6 +119,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]]
   ): Route = {
+    val sliceSize = 1000
 
     // This could be implemented using 'anyOf' function of OpenApi, but the generetor does not support it yet
     // see https://github.com/OpenAPITools/openapi-generator/issues/634
@@ -136,39 +137,33 @@ class ClientApiServiceImpl(
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
-        val clients: Seq[Client] = commanders.flatMap(ref => sliceClients(ref, offset, limit, agrId, opId))
-        listClients200(clients)
+        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, agrId, opId).map(_.toApi))
+        val paginatedClients     = clients.sortBy(_.id).slice(offset, offset + limit)
+        listClients200(paginatedClients)
     }
   }
 
-  private def sliceClients(
+  private def slices(
     commander: EntityRef[Command],
-    offset: Int,
-    limit: Int,
+    sliceSize: Int,
     agreementId: Option[String],
     operatorId: Option[String]
-  ): LazyList[Client] = {
+  ): LazyList[PersistentClient] = {
     @tailrec
     def readSlice(
       commander: EntityRef[Command],
-      offset: Int,
-      limit: Int,
-      agreementId: Option[String],
-      operatorId: Option[String],
-      lazyList: LazyList[Client]
-    ): LazyList[Client] = {
-      lazy val slice: Seq[Client] =
-        Await
-          .result(commander.ask(ref => ListClients(offset, limit, agreementId, operatorId, ref)), Duration.Inf)
-          .getValue
-          .map(_.toApi)
+      from: Int,
+      to: Int,
+      lazyList: LazyList[PersistentClient]
+    ): LazyList[PersistentClient] = {
+      lazy val slice: Seq[PersistentClient] =
+        Await.result(commander.ask(ref => ListClients(from, to, agreementId, operatorId, ref)), Duration.Inf).getValue
       if (slice.isEmpty)
         lazyList
       else
-        readSlice(commander, offset + limit, limit, agreementId, operatorId, slice.to(LazyList) #::: lazyList)
+        readSlice(commander, to, to + sliceSize, slice.to(LazyList) #::: lazyList)
     }
-
-    readSlice(commander, offset, limit, agreementId, operatorId, LazyList.empty)
+    readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
 }
