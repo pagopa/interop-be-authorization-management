@@ -16,13 +16,16 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   AddClient,
   Command,
   GetClient,
-  KeyPersistentBehavior
+  KeyPersistentBehavior,
+  ListClients
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, Problem}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.Future
+import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 @SuppressWarnings(
   Array(
@@ -107,4 +110,65 @@ class ClientApiServiceImpl(
         getClient500(Problem(Option(unknownReply.toString()), 500, s"Error while retrieving client $clientId"))
     }
   }
+
+  /** Code: 201, Message: Client list retrieved, DataType: Seq[Client]
+    * Code: 400, Message: Missing Required Information, DataType: Problem
+    * Code: 500, Message: Missing Required Information, DataType: Problem
+    */
+  override def listClients(offset: Int, limit: Int, agreementId: Option[String], operatorId: Option[String])(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]]
+  ): Route = {
+
+    // This could be implemented using 'anyOf' function of OpenApi, but the generetor does not support it yet
+    // see https://github.com/OpenAPITools/openapi-generator/issues/634
+    (agreementId, operatorId) match {
+      case (None, None) =>
+        listClients400(
+          Problem(
+            Some("At least one parameter is required [ agreementId, operatorId ]"),
+            status = 400,
+            s"Error retrieving clients list for parameters"
+          )
+        )
+      case (agrId, opId) =>
+        val commanders: Seq[EntityRef[Command]] =
+          (0 until settings.numberOfShards).map(shard =>
+            sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
+          )
+        val clients: Seq[Client] = commanders.flatMap(ref => sliceClients(ref, offset, limit, agrId, opId))
+        listClients201(clients)
+    }
+  }
+
+  private def sliceClients(
+    commander: EntityRef[Command],
+    offset: Int,
+    limit: Int,
+    agreementId: Option[String],
+    operatorId: Option[String]
+  ): LazyList[Client] = {
+    @tailrec
+    def readSlice(
+      commander: EntityRef[Command],
+      offset: Int,
+      limit: Int,
+      agreementId: Option[String],
+      operatorId: Option[String],
+      lazyList: LazyList[Client]
+    ): LazyList[Client] = {
+      lazy val slice: Seq[Client] =
+        Await
+          .result(commander.ask(ref => ListClients(offset, limit, agreementId, operatorId, ref)), Duration.Inf)
+          .getValue
+          .map(_.toApi)
+      if (slice.isEmpty)
+        lazyList
+      else
+        readSlice(commander, offset + limit, limit, agreementId, operatorId, slice.to(LazyList) #::: lazyList)
+    }
+
+    readSlice(commander, offset, limit, agreementId, operatorId, LazyList.empty)
+  }
+
 }
