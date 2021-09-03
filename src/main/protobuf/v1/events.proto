@@ -2,6 +2,7 @@ syntax = "proto2";
 
 import "scalapb/scalapb.proto";
 import "v1/key.proto";
+import "v1/client.proto";
 
 option (scalapb.options) = {
   package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
@@ -27,4 +28,8 @@ message KeyDeletedV1 {
   required string clientId = 1;
   required string keyId = 2;
   required string deactivationTimestamp = 3;
+}
+
+message ClientAddedV1 {
+  required PersistentClientV1 client = 1;
 }

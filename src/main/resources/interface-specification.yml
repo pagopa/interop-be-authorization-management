@@ -12,6 +12,7 @@ info:
   x-summary: an x-summary
 servers:
   - url: 'https://gateway.interop.pdnd.dev/pdnd-interop-uservice-key-management/0.0.1'
+#  - url: 'http://localhost:8088/pdnd-interop-uservice-key-management/0.0.1'
     description: This contains key management routes
 tags:
   - name: key
@@ -33,6 +34,33 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/clients':
+    post:
+      tags:
+        - client
+      summary: Create Client
+      operationId: createClient
+      responses:
+        '201':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: A Client seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientSeed'
+      description: Creates a Client
   '/{clientId}/keys':
     post:
       tags:
@@ -339,6 +367,40 @@ components:
         - r
         - d
         - t
+    ClientSeed:
+      description: Models the seed for a client to be persisted
+      type: object
+      properties:
+        agreementId:
+          type: string
+          format: uuid
+        description:
+          type: string
+      required:
+        - agreementId
+        - description
+    Client:
+      description: Models a Client
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agreementId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        operators:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - id
+        - agreementId
+        - description
+        - operators
     Problem:
       properties:
         detail:

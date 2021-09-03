@@ -2,6 +2,7 @@ syntax = "proto2";
 
 import "scalapb/scalapb.proto";
 import "v1/key.proto";
+import "v1/client.proto";
 
 option (scalapb.options) = {
   package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
@@ -9,10 +10,16 @@ option (scalapb.options) = {
 
 
 message StateV1 {
-  repeated StateEntryV1 keys = 1;
+  repeated StateKeysEntryV1 keys = 1;
+  repeated StateClientsEntryV1 clients = 2;
 }
 
-message StateEntryV1 {
+message StateKeysEntryV1 {
   required string clientId = 1;
   repeated PersistentKeyEntryV1 keyEntries = 2;
+}
+
+message StateClientsEntryV1 {
+  required string clientId = 1;
+  required PersistentClientV1 client = 2;
 }

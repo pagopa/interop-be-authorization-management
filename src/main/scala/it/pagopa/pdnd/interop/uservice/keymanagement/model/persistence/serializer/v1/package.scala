@@ -1,7 +1,9 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer
 
 import cats.implicits._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.PersistentClientV1
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events.{
   KeyDeletedV1,
   KeyDisabledV1,
@@ -13,7 +15,11 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serialize
   PersistentKeyEntryV1,
   PersistentKeyV1
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.state.{StateEntryV1, StateV1}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.state.{
+  StateClientsEntryV1,
+  StateKeysEntryV1,
+  StateV1
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   KeyDeleted,
   KeyDisabled,
@@ -36,24 +42,27 @@ package object v1 {
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
       for {
-        clients <- state.keys
+        keys <- state.keys
           .traverse[ErrorOr, (String, Keys)] {
-            case client => {
-              protoEntryToKey(client.keyEntries)
-                .map(entry => client.clientId -> entry.toMap)
+            case key => {
+              protoEntryToKey(key.keyEntries)
+                .map(entry => key.clientId -> entry.toMap)
             }
           }
           .map(_.toMap)
-      } yield State(clients)
+        clients <- state.clients
+          .traverse[ErrorOr, (String, PersistentClient)](protoEntryToClient)
+          .map(_.toMap)
+      } yield State(keys, clients)
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.Nothing", "org.wartremover.warts.OptionPartial"))
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
       for {
-        clients <- state.keys.toSeq.traverse[ErrorOr, StateEntryV1] {
+        clients <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] {
           case (client, keys) => {
-            keyToEntry(keys).map(entries => StateEntryV1(client, entries))
+            keyToEntry(keys).map(entries => StateKeysEntryV1(client, entries))
           }
         }
       } yield StateV1(clients)
@@ -135,6 +144,21 @@ package object v1 {
     val entries = keys.map(entry => protbufToKey(entry.value).map(key => (entry.keyId, key)))
     entries.traverse[ErrorOr, (String, PersistentKey)](identity)
   }
+
+  private def protoEntryToClient(client: StateClientsEntryV1): ErrorOr[(String, PersistentClient)] =
+    protobufToClient(client.client).map(pc => client.clientId -> pc)
+
+  private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] =
+    for {
+      clientId    <- Try(UUID.fromString(client.id)).toEither
+      agreementId <- Try(UUID.fromString(client.agreementId)).toEither
+      operators   <- client.operators.map(id => Try(UUID.fromString(id))).sequence.toEither
+    } yield PersistentClient(
+      id = clientId,
+      agreementId = agreementId,
+      description = client.description,
+      operators = operators
+    )
 
   private def protbufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
