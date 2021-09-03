@@ -9,17 +9,11 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.errors.ClientNotFoundError
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
-  AddClient,
-  Command,
-  GetClient,
-  KeyPersistentBehavior,
-  ListClients
-}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, Problem}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, OperatorSeed, Problem}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -166,4 +160,38 @@ class ClientApiServiceImpl(
     readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
+  /** Code: 201, Message: Operator added, DataType: Client
+    * Code: 400, Message: Missing Required Information, DataType: Problem
+    * Code: 404, Message: Missing Required Information, DataType: Problem
+    */
+  override def addOperator(clientId: String, operatorSeed: OperatorSeed)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerClient: ToEntityMarshaller[Client]
+  ): Route = {
+    logger.info(s"Adding operator ${operatorSeed.operatorId} to client $clientId...")
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[PersistentClient]] =
+      commander.ask(ref => AddOperator(clientId, operatorSeed.operatorId, ref))
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => addOperator201(statusReply.getValue.toApi)
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case ex: ClientNotFoundError =>
+            addOperator404(Problem(Option(ex.getMessage), status = 404, s"Error adding operator to client"))
+          case ex =>
+            addOperator500(
+              Problem(
+                Option(ex.getMessage),
+                status = 500,
+                s"Error adding operator ${operatorSeed.operatorId.toString} to client $clientId"
+              )
+            )
+        }
+    }
+
+  }
 }
