@@ -35,9 +35,9 @@ class KeyManagementServiceSpec
     println("Resources cleaned")
   }
 
-  "Client creation" should {
+  "Client" should {
 
-    "succeed" in {
+    "be created successfully" in {
       val newClientUuid = UUID.fromString("8113bd7c-8c31-4912-ac05-883c25347960")
       (() => mockUUIDSupplier.get).expects().returning(newClientUuid).once()
 
@@ -69,6 +69,27 @@ class KeyManagementServiceSpec
 
       createdClient shouldBe expected
 
+    }
+
+    "be retrieved successfully" in {
+      val clientUuid = UUID.fromString("f3447128-4695-418f-9658-959da0ee3f8c")
+      val agreementUuid = UUID.fromString("48e948cc-a60a-4d93-97e9-bcbe1d6e5283")
+      val createdClient = createClient(clientUuid, agreementUuid)
+
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients/$clientUuid",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
+
+      retrievedClient shouldBe createdClient
     }
 
   }

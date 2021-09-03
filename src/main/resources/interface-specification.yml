@@ -17,6 +17,8 @@ servers:
 tags:
   - name: key
     description: Operations on keys persistence
+  - name: client
+    description: Operations on clients persistence
   - name: health
     description: Operations about service status
 paths:
@@ -61,6 +63,39 @@ paths:
             schema:
               $ref: '#/components/schemas/ClientSeed'
       description: Creates a Client
+  /clients/{clientId}:
+    get:
+      description: Retrieves a Client
+      tags:
+        - client
+      summary: Get a Client
+      operationId: getClient
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Client retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/{clientId}/keys':
     post:
       tags:
