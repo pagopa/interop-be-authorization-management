@@ -172,6 +172,62 @@ class KeyManagementServiceSpec
 
     }
 
+    "correctly filter by operator id" in {
+      val clientId1 = UUID.fromString("264e0348-c465-4739-9970-3b79953a91aa")
+      val clientId2 = UUID.fromString("ef118f0d-c5a9-4b8e-8a1d-9c844efdfc3b")
+      val agreementId1 = UUID.fromString("39e20f27-9052-4c55-9e79-a7dc2f706a6e")
+      val agreementId2 = UUID.fromString("53ed4323-a62c-485f-956a-fc2b1ce4b90b")
+      val operatorId1 = UUID.fromString("13c91530-c015-4fa0-8631-933277d47394")
+      val operatorId2 = UUID.fromString("4fbce7d2-e382-44d1-a7cb-6436891a568e")
+
+      createClient(clientId1, agreementId1)
+      createClient(clientId2, agreementId2)
+
+      // Add operators
+      val operatorRequest1 = s"""{"operatorId": "${operatorId1.toString}"}"""
+      val operatorRequest2 = s"""{"operatorId": "${operatorId2.toString}"}"""
+
+      Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients/${clientId1.toString}/operators",
+            method = HttpMethods.POST,
+            entity = HttpEntity(ContentTypes.`application/json`, operatorRequest1)
+          )
+        ),
+        Duration.Inf
+      )
+
+      Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients/${clientId2.toString}/operators",
+            method = HttpMethods.POST,
+            entity = HttpEntity(ContentTypes.`application/json`, operatorRequest2)
+          )
+        ),
+        Duration.Inf
+      )
+
+      // List clients
+      val response = Await.result(
+        Http()(classicSystem).singleRequest(
+          HttpRequest(
+            uri = s"$serviceURL/clients?operatorId=$operatorId1",
+            method = HttpMethods.GET
+          )
+        ),
+        Duration.Inf
+      )
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients.size shouldBe 1
+      retrievedClients.head.id shouldBe clientId1
+
+    }
+
     "correctly paginate elements" in {
       val clientId1 = UUID.fromString("a24ee7f9-f445-4e77-a77f-c21dfbce4bed")
       val clientId2 = UUID.fromString("d0b551d7-57c2-4373-afa4-ba3a3413caad")
