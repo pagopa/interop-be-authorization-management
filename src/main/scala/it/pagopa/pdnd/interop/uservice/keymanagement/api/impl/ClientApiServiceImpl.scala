@@ -137,7 +137,7 @@ class ClientApiServiceImpl(
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
         val clients: Seq[Client] = commanders.flatMap(ref => sliceClients(ref, offset, limit, agrId, opId))
-        listClients201(clients)
+        listClients200(clients)
     }
   }
 
