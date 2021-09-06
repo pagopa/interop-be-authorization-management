@@ -108,12 +108,12 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     Await.result(Unmarshal(response).to[Client], Duration.Inf)
   }
 
-  def createKey(clientId: String): KeysResponse = {
+  def createKey(clientId: UUID, operatorId: UUID): KeysResponse = {
     val data =
       s"""
          |[
          |  {
-         |    "operatorId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+         |    "operatorId": "${operatorId.toString}",
          |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
          |    "use": "sig",
          |    "alg": "123"
@@ -121,11 +121,25 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
          |]
          |""".stripMargin
 
-    val response = request(uri = s"$serviceURL/$clientId/keys", method = HttpMethods.POST, data = Some(data))
+    val response = request(uri = s"$serviceURL/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
     response.status shouldBe StatusCodes.Created
 
     Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
+  }
+
+  def addOperator(clientId: UUID, operatorId: UUID): Client = {
+    val requestBody = s"""{"operatorId": "${operatorId.toString}"}"""
+
+    val response = request(
+      uri = s"$serviceURL/clients/${clientId.toString}/operators",
+      method = HttpMethods.POST,
+      data = Some(requestBody)
+    )
+
+    response.status shouldBe StatusCodes.Created
+
+    Await.result(Unmarshal(response).to[Client], Duration.Inf)
   }
 
   def request(uri: String, method: HttpMethod, data: Option[String] = None): HttpResponse = {

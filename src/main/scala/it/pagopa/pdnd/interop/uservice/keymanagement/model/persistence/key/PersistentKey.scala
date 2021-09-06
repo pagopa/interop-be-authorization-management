@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key
 
 import cats.implicits.toTraverseOps
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ThumbprintCalculationError
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, Persistent, ValidKey}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
@@ -42,7 +43,7 @@ final case class PersistentKey(
 
 object PersistentKey {
 
-  def toPersistentKey(validKey: ValidKey): Either[Throwable, PersistentKey] = {
+  def toPersistentKey(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] = {
     for {
       kid <- KeyProcessor.calculateKid(validKey._2)
     } yield PersistentKey(

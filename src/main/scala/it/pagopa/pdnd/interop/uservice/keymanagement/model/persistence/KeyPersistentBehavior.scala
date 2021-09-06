@@ -16,7 +16,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Persi
   toPersistentKey
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, PersistentKey}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.errors.ClientNotFoundError
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{ClientNotFoundError, OperatorNotAllowedError}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -37,14 +37,16 @@ object KeyPersistentBehavior {
     command match {
       case AddKeys(clientId, validKeys, replyTo) =>
         state.clients.get(clientId) match {
-          case Some(_) =>
-            validKeys
-              .map(toPersistentKey)
-              .sequence
-              .fold(
-                t => errorMessageReply(replyTo, s"Error while calculating keys thumbprints: ${t.getLocalizedMessage}"),
-                keys => addKeys(replyTo, clientId, keys)
-              )
+          case Some(client) =>
+            val persistentKeys: Either[Throwable, Seq[PersistentKey]] = for {
+              _ <- validateOperators(client, validKeys)
+              persistentKeys <- validKeys
+                .map(toPersistentKey)
+                .sequence
+            } yield persistentKeys
+
+            persistentKeys
+              .fold(error => commandError(replyTo, error), keys => addKeys(replyTo, clientId, keys))
 
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
@@ -182,6 +184,19 @@ object KeyPersistentBehavior {
         context.log.error(s"Passivate shard: ${shard.path.name}")
         Effect.none[Event, State]
     }
+  }
+
+  private def validateOperators(
+    client: PersistentClient,
+    keys: Seq[ValidKey]
+  ): Either[OperatorNotAllowedError, Unit] = {
+    val operatorsNotInClient = keys.map(_._1.operatorId).toSet -- client.operators
+
+    Either.cond(
+      operatorsNotInClient.isEmpty,
+      (),
+      OperatorNotAllowedError(operatorsNotInClient.map(operatorId => (operatorId.toString, client.id.toString)))
+    )
   }
 
   private def errorMessageReply[T](replyTo: ActorRef[StatusReply[T]], message: String): Effect[Event, State] = {
