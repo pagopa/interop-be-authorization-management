@@ -77,8 +77,11 @@ class KeyManagementServiceSpec
     "be deleted successfully" in {
       val clientUuid    = UUID.fromString("d8803fae-daf9-4bf4-94b0-c495005b1a4b")
       val agreementUuid = UUID.fromString("d75544b4-bc16-45d4-8dbf-b0842e9f9dca")
+      val operatorUuid = UUID.fromString("ae7b1133-446a-462c-ab79-2016c1168dde")
+
       createClient(clientUuid, agreementUuid)
-      createKey(clientUuid.toString)
+      addOperator(clientUuid, operatorUuid)
+      createKey(clientUuid, operatorUuid)
 
       val deleteResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.DELETE)
       deleteResponse.status shouldBe StatusCodes.NoContent
