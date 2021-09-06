@@ -4,6 +4,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.Pe
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, KeyStatus, PersistentKey}
 
 import java.time.OffsetDateTime
+import java.util.UUID
 
 /*
     possible models
@@ -34,6 +35,11 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
   def addClient(client: PersistentClient): State = {
     copy(clients = clients + (client.id.toString -> client))
+  }
+
+  def addOperator(client: PersistentClient, operatorId: UUID): State = {
+    val updatedClient = client.copy(operators = client.operators + operatorId)
+    copy(clients = clients + (client.id.toString -> updatedClient))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))

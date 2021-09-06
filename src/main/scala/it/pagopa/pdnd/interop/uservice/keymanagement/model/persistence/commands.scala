@@ -6,6 +6,8 @@ import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse}
 
+import java.util.UUID
+
 sealed trait Command
 
 final case class AddKeys(clientId: String, keys: Seq[ValidKey], replyTo: ActorRef[StatusReply[KeysResponse]])
@@ -26,5 +28,7 @@ final case class ListClients(
   operatorId: Option[String],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command
+final case class AddOperator(clientId: String, operatorId: UUID, replyTo: ActorRef[StatusReply[PersistentClient]])
+    extends Command
 
 case object Idle extends Command

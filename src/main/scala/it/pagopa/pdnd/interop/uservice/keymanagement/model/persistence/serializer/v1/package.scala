@@ -157,7 +157,7 @@ package object v1 {
       id = clientId,
       agreementId = agreementId,
       description = client.description,
-      operators = operators
+      operators = operators.toSet
     )
 
   private def protbufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =

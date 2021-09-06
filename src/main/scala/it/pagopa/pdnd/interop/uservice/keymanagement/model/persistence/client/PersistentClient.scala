@@ -5,7 +5,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.Persisten
 
 import java.util.UUID
 
-final case class PersistentClient(id: UUID, agreementId: UUID, description: String, operators: Seq[UUID])
+final case class PersistentClient(id: UUID, agreementId: UUID, description: String, operators: Set[UUID])
     extends Persistent {
 
   def toApi: Client =
@@ -20,7 +20,7 @@ object PersistentClient {
       id = clientId,
       agreementId = seed.agreementId,
       description = seed.description,
-      operators = Seq.empty[UUID]
+      operators = Set.empty[UUID]
     )
 
 }

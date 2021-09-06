@@ -149,6 +149,24 @@ object KeyPersistentBehavior {
         replyTo ! StatusReply.Success(paginatedClients)
         Effect.none[Event, State]
 
+      case AddOperator(clientId, operatorId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        client
+          .fold {
+            commandError(replyTo, ClientNotFoundError(clientId))
+          } { c =>
+            Effect
+              .persist(OperatorAdded(c, operatorId))
+              .thenRun((s: State) =>
+                replyTo ! s.clients
+                  .get(clientId)
+                  .fold[StatusReply[PersistentClient]](
+                    StatusReply.Error(new RuntimeException(s"Client $clientId not found after add operator action"))
+                  )(updatedClient => StatusReply.Success(updatedClient))
+              )
+          }
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.error(s"Passivate shard: ${shard.path.name}")
@@ -198,6 +216,7 @@ object KeyPersistentBehavior {
       case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
       case KeyDeleted(clientId, keyId, _)          => state.delete(clientId, keyId)
       case ClientAdded(client)                     => state.addClient(client)
+      case OperatorAdded(client, operatorId)       => state.addOperator(client, operatorId)
     }
 
   val TypeKey: EntityTypeKey[Command] =
