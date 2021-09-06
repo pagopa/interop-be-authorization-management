@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.State
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted, Disabled, PersistentKey}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -211,6 +212,72 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         _.operatorId.toString
       ) should contain allOf ("27f8dce0-0a5b-476b-9fdd-a7a658eb9215", "27f8dce0-0a5b-476b-9fdd-a7a658eb9222")
       activeKeys.get.keys shouldNot contain allOf ("2", "4")
+    }
+
+    "delete a client properly" in {
+      val clientId1 = "ab1fd21e-8683-4ca8-abd7-8101eed605d1"
+      val clientId2 = "35c77b88-6a39-4bff-ae2d-31b39bc3502f"
+      val clientId3 = "b81a7732-a33d-4c2e-b9f3-cf190238c5dd"
+
+      val clientUuid1 = UUID.fromString(clientId1)
+      val clientUuid2 = UUID.fromString(clientId2)
+      val clientUuid3 = UUID.fromString(clientId3)
+
+      val agreementUuid = UUID.fromString("f4d3d3e2-e71c-4e80-8499-b555dd18bb5c")
+
+      //given
+      val client1Keys = Map(
+        "kid1" -> PersistentKey(
+          kid = "kid1",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client2Keys = Map(
+        "kid2" -> PersistentKey(
+          kid = "kid2",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client3Keys = Map(
+        "kid3" -> PersistentKey(
+          kid = "kid3",
+          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client1 = PersistentClient(clientUuid1, agreementUuid, "client 1", Set.empty)
+      val client2 = PersistentClient(clientUuid2, agreementUuid, "client 2", Set.empty)
+      val client3 = PersistentClient(clientUuid3, agreementUuid, "client 3", Set.empty)
+
+      val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys, clientId3 -> client3Keys)
+      val clients = Map(clientId1 -> client1, clientId2 -> client2, clientId3 -> client3)
+      val state   = State(keys = keys, clients = clients)
+
+      //when
+      val updatedState = state.deleteClient(clientId2)
+
+      //then
+      updatedState.keys.get(clientId2) shouldBe None
+      updatedState.keys.size shouldBe 2
+      updatedState.clients.get(clientId2) shouldBe None
+      updatedState.clients.size shouldBe 2
     }
 
   }
