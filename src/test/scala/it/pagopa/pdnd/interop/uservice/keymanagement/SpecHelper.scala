@@ -13,11 +13,12 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.persistence.typed.PersistenceId
+import com.nimbusds.jose.util.Base64
 import it.pagopa.pdnd.interop.uservice.keymanagement.api._
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
@@ -108,13 +109,33 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     Await.result(Unmarshal(response).to[Client], Duration.Inf)
   }
 
+  def generateEncodedKey(): String = {
+    import java.security.KeyPairGenerator
+    val gen = KeyPairGenerator.getInstance("RSA")
+    gen.initialize(1024)
+    val keyPair = gen.generateKeyPair
+
+    val publicKeyBytes = keyPair.getPublic.getEncoded
+
+    val publicKeyContent = Base64.encode(publicKeyBytes).toString
+
+    val header = "-----BEGIN PUBLIC KEY-----"
+    val footer = "-----END PUBLIC KEY-----"
+
+    val keyRows = (header :: publicKeyContent.grouped(64).toList) :+ footer
+    val key     = keyRows.mkString(System.lineSeparator)
+
+    Base64.encode(key).toString
+  }
+
   def createKey(clientId: UUID, operatorId: UUID): KeysResponse = {
+
     val data =
       s"""
          |[
          |  {
          |    "operatorId": "${operatorId.toString}",
-         |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
+         |    "key": "${generateEncodedKey()}",
          |    "use": "sig",
          |    "alg": "123"
          |  }
