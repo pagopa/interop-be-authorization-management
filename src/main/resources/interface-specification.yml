@@ -127,12 +127,40 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Client retrieved
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Internal server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      description: Deletes a Client
+      tags:
+        - client
+      summary: Delete a Client
+      operationId: deleteClient
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Client deleted
         '404':
           description: Client not found
           content:

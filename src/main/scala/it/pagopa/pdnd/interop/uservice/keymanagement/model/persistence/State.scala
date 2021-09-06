@@ -17,7 +17,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
     updateKey(clientId, keyId, Disabled, Some(timestamp))
 
-  def delete(clientId: String, keyId: String): State = keys.get(clientId) match {
+  def deleteKey(clientId: String, keyId: String): State = keys.get(clientId) match {
     case Some(entries) => {
       copy(keys = keys + (clientId -> (entries - keyId)))
     }
@@ -36,6 +36,9 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def addClient(client: PersistentClient): State = {
     copy(clients = clients + (client.id.toString -> client))
   }
+
+  def deleteClient(clientId: String): State =
+    copy(clients = clients - clientId, keys = keys - clientId)
 
   def addOperator(client: PersistentClient, operatorId: UUID): State = {
     val updatedClient = client.copy(operators = client.operators + operatorId)

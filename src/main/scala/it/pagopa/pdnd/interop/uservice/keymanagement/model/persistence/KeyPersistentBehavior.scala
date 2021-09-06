@@ -149,6 +149,16 @@ object KeyPersistentBehavior {
         replyTo ! StatusReply.Success(paginatedClients)
         Effect.none[Event, State]
 
+      case DeleteClient(clientId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        client
+          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(_ =>
+            Effect
+              .persist(ClientDeleted(clientId))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
+          )
+
       case AddOperator(clientId, operatorId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
@@ -214,8 +224,9 @@ object KeyPersistentBehavior {
       case KeysAdded(clientId, keys)               => state.addKeys(clientId, keys)
       case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
       case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
-      case KeyDeleted(clientId, keyId, _)          => state.delete(clientId, keyId)
+      case KeyDeleted(clientId, keyId, _)          => state.deleteKey(clientId, keyId)
       case ClientAdded(client)                     => state.addClient(client)
+      case ClientDeleted(clientId)                 => state.deleteClient(clientId)
       case OperatorAdded(client, operatorId)       => state.addOperator(client, operatorId)
     }
 
