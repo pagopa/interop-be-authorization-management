@@ -1,6 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.Duration
 
 /** Local integration test.
   *
@@ -27,11 +27,8 @@ class KeyManagementServiceSpec
   }
 
   override def afterAll(): Unit = {
-    println("****** Cleaning resources ********")
-    bindServer.foreach(_.foreach(_.unbind()))
-    ActorTestKit.shutdown(httpSystem, 5.seconds)
+    shutdownServer()
     super.afterAll()
-    println("Resources cleaned")
   }
 
   "Client" should {
@@ -121,7 +118,7 @@ class KeyManagementServiceSpec
       retrievedClient.operators shouldBe Set(operatorId)
     }
 
-    "fail if client does not exist" in {
+    "fail creation if client does not exist" in {
       val clientId   = UUID.fromString("43c2fd14-4efb-4489-8f21-ac4977abee49")
       val operatorId = UUID.fromString("4fdfc95c-b687-4d5f-83a9-f0ce01037aea")
 
