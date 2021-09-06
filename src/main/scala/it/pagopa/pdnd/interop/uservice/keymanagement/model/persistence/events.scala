@@ -15,3 +15,4 @@ final case class KeyDeleted(clientId: String, keyId: String, deactivationTimesta
 final case class ClientAdded(client: PersistentClient)                     extends Event
 final case class ClientDeleted(clientId: String)                           extends Event
 final case class OperatorAdded(client: PersistentClient, operatorId: UUID) extends Event
+final case class OperatorRemoved(clientId: String, operatorId: String)     extends Event

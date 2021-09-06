@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
+import it.pagopa.pdnd.interop.uservice.keymanagement.error.OperatorNotFoundError
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
@@ -196,11 +197,12 @@ class ClientApiServiceImpl(
 
   }
 
-  /**
-    * Code: 204, Message: Client deleted
+  /** Code: 204, Message: Client deleted
     * Code: 404, Message: Client not found, DataType: Problem
     */
-  override def deleteClient(clientId: String)(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+  override def deleteClient(
+    clientId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
     logger.info(s"Deleting client $clientId...")
 
     val commander: EntityRef[Command] =
@@ -216,12 +218,41 @@ class ClientApiServiceImpl(
           case ex: ClientNotFoundError =>
             deleteClient404(Problem(Option(ex.getMessage), status = 404, s"Error deleting client"))
           case ex =>
-            addOperator500(
-              Problem(
-                Option(ex.getMessage),
-                status = 500,
-                s"Error deleting client $clientId"
-              )
+            addOperator500(Problem(Option(ex.getMessage), status = 500, s"Error deleting client $clientId"))
+        }
+    }
+  }
+
+  /** Code: 204, Message: Operator removed
+    * Code: 404, Message: Client or operator not found, DataType: Problem
+    * Code: 500, Message: Internal server error, DataType: Problem
+    */
+  override def removeClientOperator(clientId: String, operatorId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
+  ): Route = {
+    logger.info(s"Removing operator $operatorId from client $clientId...")
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[Done]] =
+      commander.ask(ref => RemoveOperator(clientId, operatorId, ref))
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => removeClientOperator204
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case ex: ClientNotFoundError =>
+            removeClientOperator404(
+              Problem(Option(ex.getMessage), status = 404, s"Error removing operator from client")
+            )
+          case ex: OperatorNotFoundError =>
+            removeClientOperator404(
+              Problem(Option(ex.getMessage), status = 404, s"Error removing operator from client")
+            )
+          case ex =>
+            removeClientOperator500(
+              Problem(Option(ex.getMessage), status = 500, s"Error removing operator $operatorId from client $clientId")
             )
         }
     }

@@ -1,6 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ScalaTestWithActorTestKit}
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
@@ -10,13 +10,13 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.duration.Duration
 
 /** Local integration test.
   *
   * Starts a local cluster sharding and invokes REST operations on the event sourcing entity
   */
-class KeyManagementServiceSpec
+class ClientManagementSpec
     extends ScalaTestWithActorTestKit(SpecConfiguration.config)
     with AnyWordSpecLike
     with SpecConfiguration
@@ -27,11 +27,8 @@ class KeyManagementServiceSpec
   }
 
   override def afterAll(): Unit = {
-    println("****** Cleaning resources ********")
-    bindServer.foreach(_.foreach(_.unbind()))
-    ActorTestKit.shutdown(httpSystem, 5.seconds)
+    shutdownServer()
     super.afterAll()
-    println("Resources cleaned")
   }
 
   "Client" should {
@@ -77,7 +74,7 @@ class KeyManagementServiceSpec
     "be deleted successfully" in {
       val clientUuid    = UUID.fromString("d8803fae-daf9-4bf4-94b0-c495005b1a4b")
       val agreementUuid = UUID.fromString("d75544b4-bc16-45d4-8dbf-b0842e9f9dca")
-      val operatorUuid = UUID.fromString("ae7b1133-446a-462c-ab79-2016c1168dde")
+      val operatorUuid  = UUID.fromString("ae7b1133-446a-462c-ab79-2016c1168dde")
 
       createClient(clientUuid, agreementUuid)
       addOperator(clientUuid, operatorUuid)
@@ -98,42 +95,6 @@ class KeyManagementServiceSpec
       deleteResponse.status shouldBe StatusCodes.NotFound
     }
 
-  }
-
-  "Operator" should {
-    "be created on existing client" in {
-      val clientId    = UUID.fromString("29204cb0-f4a8-40a5-b447-8ba84ed988d4")
-      val agreementId = UUID.fromString("c794f9a7-5d40-40d7-8fb9-af92d2b0356c")
-      val operatorId  = UUID.fromString("7955e640-b2a1-4fe7-b0b4-e00045a83d1a")
-
-      createClient(clientId, agreementId)
-
-      val data = s"""{
-                    |  "operatorId": "${operatorId.toString}"
-                    |}""".stripMargin
-
-      val response =
-        request(uri = s"$serviceURL/clients/$clientId/operators", method = HttpMethods.POST, data = Some(data))
-
-      response.status shouldBe StatusCodes.Created
-      val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
-
-      retrievedClient.operators shouldBe Set(operatorId)
-    }
-
-    "fail if client does not exist" in {
-      val clientId   = UUID.fromString("43c2fd14-4efb-4489-8f21-ac4977abee49")
-      val operatorId = UUID.fromString("4fdfc95c-b687-4d5f-83a9-f0ce01037aea")
-
-      val data = s"""{
-                    |  "operatorId": "${operatorId.toString}"
-                    |}""".stripMargin
-
-      val response =
-        request(uri = s"$serviceURL/clients/$clientId/operators", method = HttpMethods.POST, data = Some(data))
-
-      response.status shouldBe StatusCodes.NotFound
-    }
   }
 
   "Client list" should {
@@ -230,77 +191,6 @@ class KeyManagementServiceSpec
       response.status shouldBe StatusCodes.BadRequest
     }
 
-  }
-
-  "Key creation should" should {
-    "fail if client does not exist" in {
-      val data =
-        s"""
-           |[
-           |  {
-           |    "operatorId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-           |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
-           |    "use": "sig",
-           |    "alg": "123"
-           |  }
-           |]
-           |""".stripMargin
-
-      val response =
-        request(uri = s"$serviceURL/non-existing-client-id/keys", method = HttpMethods.POST, data = Some(data))
-
-      response.status shouldBe StatusCodes.BadRequest
-    }
-
-    "fail if key operator has not been added to client" in {
-      val clientId    = UUID.fromString("d68e1f97-5185-4319-89c7-2c8224a39641")
-      val agreementId = UUID.fromString("2d756c4c-6ee7-4465-84e4-644a38d7aaa3")
-
-      createClient(clientId, agreementId)
-
-      val data =
-        s"""
-           |[
-           |  {
-           |    "operatorId": "2ce51cdd-ae78-4829-89cc-39e363270b53",
-           |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
-           |    "use": "sig",
-           |    "alg": "123"
-           |  }
-           |]
-           |""".stripMargin
-
-      val response =
-        request(uri = s"$serviceURL/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
-
-      response.status shouldBe StatusCodes.BadRequest
-    }
-
-    "succeed" in {
-      val clientId    = UUID.fromString("638f76d2-39b3-47f2-bd65-a1e6094d35e9")
-      val agreementId = UUID.fromString("5d2ca309-8871-412f-8073-3ab1da0148b7")
-      val operatorId  = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-
-      createClient(clientId, agreementId)
-      addOperator(clientId, operatorId)
-
-      val data =
-        s"""
-           |[
-           |  {
-           |    "operatorId": "$operatorId",
-           |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
-           |    "use": "sig",
-           |    "alg": "123"
-           |  }
-           |]
-           |""".stripMargin
-
-      val response =
-        request(uri = s"$serviceURL/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
-
-      response.status shouldBe StatusCodes.Created
-    }
   }
 
 }

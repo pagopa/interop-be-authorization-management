@@ -8,6 +8,7 @@ import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
+import it.pagopa.pdnd.interop.uservice.keymanagement.error.OperatorNotFoundError
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
@@ -23,7 +24,14 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.Equals",
+    "org.wartremover.warts.Any",
+    "org.wartremover.warts.Nothing",
+    "org.wartremover.warts.Product"
+  )
+)
 object KeyPersistentBehavior {
 
   final case object KeyNotFoundException extends Throwable
@@ -179,6 +187,27 @@ object KeyPersistentBehavior {
               )
           }
 
+      case RemoveOperator(clientId, operatorId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        val validations: Either[Throwable, PersistentClient] = for {
+          persistentClient <- client.toRight(ClientNotFoundError(clientId))
+          _ <- persistentClient.operators
+            .find(_.toString == operatorId)
+            .toRight(OperatorNotFoundError(clientId, operatorId))
+        } yield persistentClient
+
+        validations
+          .fold(
+            error => commandError(replyTo, error),
+            { _ =>
+              Effect
+                .persist(OperatorRemoved(clientId, operatorId))
+                .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
+
+            }
+          )
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.error(s"Passivate shard: ${shard.path.name}")
@@ -243,6 +272,7 @@ object KeyPersistentBehavior {
       case ClientAdded(client)                     => state.addClient(client)
       case ClientDeleted(clientId)                 => state.deleteClient(clientId)
       case OperatorAdded(client, operatorId)       => state.addOperator(client, operatorId)
+      case OperatorRemoved(clientId, operatorId)   => state.removeOperator(clientId, operatorId)
     }
 
   val TypeKey: EntityTypeKey[Command] =
