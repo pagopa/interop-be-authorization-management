@@ -128,6 +128,20 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
   }
 
+  def addOperator(clientId: UUID, operatorId: UUID): Client = {
+    val requestBody = s"""{"operatorId": "${operatorId.toString}"}"""
+
+    val response = request(
+      uri = s"$serviceURL/clients/${clientId.toString}/operators",
+      method = HttpMethods.POST,
+      data = Some(requestBody)
+    )
+
+    response.status shouldBe StatusCodes.Created
+
+    Await.result(Unmarshal(response).to[Client], Duration.Inf)
+  }
+
   def request(uri: String, method: HttpMethod, data: Option[String] = None): HttpResponse = {
     val httpRequest: HttpRequest = HttpRequest(uri = uri, method = method)
 
