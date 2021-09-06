@@ -1,5 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.api.impl
 
+import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
@@ -193,5 +194,36 @@ class ClientApiServiceImpl(
         }
     }
 
+  }
+
+  /**
+    * Code: 204, Message: Client deleted
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def deleteClient(clientId: String)(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+    logger.info(s"Deleting client $clientId...")
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[Done]] =
+      commander.ask(ref => DeleteClient(clientId, ref))
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => deleteClient204
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case ex: ClientNotFoundError =>
+            deleteClient404(Problem(Option(ex.getMessage), status = 404, s"Error deleting client"))
+          case ex =>
+            addOperator500(
+              Problem(
+                Option(ex.getMessage),
+                status = 500,
+                s"Error deleting client $clientId"
+              )
+            )
+        }
+    }
   }
 }

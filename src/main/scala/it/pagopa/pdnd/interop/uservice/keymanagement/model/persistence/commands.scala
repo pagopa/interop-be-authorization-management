@@ -30,5 +30,6 @@ final case class ListClients(
 ) extends Command
 final case class AddOperator(clientId: String, operatorId: UUID, replyTo: ActorRef[StatusReply[PersistentClient]])
     extends Command
+final case class DeleteClient(clientId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
 
 case object Idle extends Command
