@@ -127,7 +127,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Client retrieved
           content:
             application/json:
@@ -159,7 +159,7 @@ paths:
           schema:
             type: string
       responses:
-        "204":
+        '204':
           description: Client deleted
         '404':
           description: Client not found
