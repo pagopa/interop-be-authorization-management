@@ -17,7 +17,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
     updateKey(clientId, keyId, Disabled, Some(timestamp))
 
-  def delete(clientId: String, keyId: String): State = keys.get(clientId) match {
+  def deleteKey(clientId: String, keyId: String): State = keys.get(clientId) match {
     case Some(entries) => {
       copy(keys = keys + (clientId -> (entries - keyId)))
     }

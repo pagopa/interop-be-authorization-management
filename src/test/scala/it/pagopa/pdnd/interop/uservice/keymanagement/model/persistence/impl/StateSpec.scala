@@ -62,7 +62,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       state.keys.get("fooBarKeys").get.size shouldBe 4
 
       //when
-      val updatedState = state.delete("fooBarKeys", "2")
+      val updatedState = state.deleteKey("fooBarKeys", "2")
 
       //then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe None
