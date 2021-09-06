@@ -74,6 +74,27 @@ class KeyManagementServiceSpec
       retrievedClient shouldBe createdClient
     }
 
+    "be deleted successfully" in {
+      val clientUuid    = UUID.fromString("d8803fae-daf9-4bf4-94b0-c495005b1a4b")
+      val agreementUuid = UUID.fromString("d75544b4-bc16-45d4-8dbf-b0842e9f9dca")
+      createClient(clientUuid, agreementUuid)
+      createKey(clientUuid.toString)
+
+      val deleteResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.DELETE)
+      deleteResponse.status shouldBe StatusCodes.NoContent
+
+      val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
+      retrieveClientResponse.status shouldBe StatusCodes.NotFound
+
+      val retrieveKeysResponse = request(uri = s"$serviceURL/$clientUuid/keys", method = HttpMethods.GET)
+      retrieveKeysResponse.status shouldBe StatusCodes.NotFound
+    }
+
+    "fail on non-existing client id" in {
+      val deleteResponse = request(uri = s"$serviceURL/clients/non-existing-id", method = HttpMethods.DELETE)
+      deleteResponse.status shouldBe StatusCodes.NotFound
+    }
+
   }
 
   "Operator" should {
