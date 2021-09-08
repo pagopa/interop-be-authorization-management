@@ -142,7 +142,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
          |]
          |""".stripMargin
 
-    val response = request(uri = s"$serviceURL/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
+    val response = request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
     response.status shouldBe StatusCodes.Created
 

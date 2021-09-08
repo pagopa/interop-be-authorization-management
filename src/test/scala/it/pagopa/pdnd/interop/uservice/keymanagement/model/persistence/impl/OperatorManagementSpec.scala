@@ -89,7 +89,7 @@ class OperatorManagementSpec
       val retrievedClient        = Await.result(Unmarshal(clientRetrieveResponse).to[Client], Duration.Inf)
       retrievedClient.operators shouldBe Set(operatorId2)
 
-      val keysRetrieveResponse = request(uri = s"$serviceURL/$clientId/keys", method = HttpMethods.GET)
+      val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)
       retrievedKeys.keys shouldBe operator2Keys.keys
     }
@@ -116,7 +116,7 @@ class OperatorManagementSpec
       val retrievedClient        = Await.result(Unmarshal(clientRetrieveResponse).to[Client], Duration.Inf)
       retrievedClient.operators shouldBe Set(operatorId)
 
-      val keysRetrieveResponse = request(uri = s"$serviceURL/$clientId2/keys", method = HttpMethods.GET)
+      val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)
       retrievedKeys.keys shouldBe client2Keys.keys
     }
