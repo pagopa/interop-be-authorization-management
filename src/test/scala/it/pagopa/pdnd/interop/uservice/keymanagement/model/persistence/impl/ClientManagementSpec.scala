@@ -86,7 +86,7 @@ class ClientManagementSpec
       val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
       retrieveClientResponse.status shouldBe StatusCodes.NotFound
 
-      val retrieveKeysResponse = request(uri = s"$serviceURL/$clientUuid/keys", method = HttpMethods.GET)
+      val retrieveKeysResponse = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
       retrieveKeysResponse.status shouldBe StatusCodes.NotFound
     }
 

@@ -251,7 +251,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/{clientId}/keys':
+  '/clients/{clientId}/keys':
     post:
       tags:
         - key
@@ -319,8 +319,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-
-  '/{clientId}/keys/{keyId}':
+  '/clients/{clientId}/keys/{keyId}':
     get:
       tags:
         - key
@@ -383,7 +382,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/{clientId}/keys/{keyId}/disable':
+  '/clients/{clientId}/keys/{keyId}/disable':
     get:
       tags:
         - key
@@ -413,7 +412,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/{clientId}/keys/{keyId}/enable':
+  '/clients/{clientId}/keys/{keyId}/enable':
     get:
       tags:
         - key

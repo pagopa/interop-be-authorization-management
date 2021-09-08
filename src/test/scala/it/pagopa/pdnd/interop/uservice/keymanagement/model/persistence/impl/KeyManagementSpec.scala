@@ -41,7 +41,7 @@ class KeyManagementSpec
            |""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/non-existing-client-id/keys", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/non-existing-client-id/keys", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.BadRequest
     }
@@ -65,7 +65,7 @@ class KeyManagementSpec
            |""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.BadRequest
     }
@@ -91,7 +91,7 @@ class KeyManagementSpec
            |""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.Created
     }
