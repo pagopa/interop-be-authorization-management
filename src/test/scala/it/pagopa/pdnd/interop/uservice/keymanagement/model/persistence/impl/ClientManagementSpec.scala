@@ -38,15 +38,23 @@ class ClientManagementSpec
       (() => mockUUIDSupplier.get).expects().returning(newClientUuid).once()
 
       val agreementUuid = UUID.fromString("24772a3d-e6f2-47f2-96e5-4cbd1e4e8c85")
-      val description   = "New Client 1"
+      val name          = "New Client 1"
+      val description   = Some("New Client 1 description")
 
       val expected =
-        Client(id = newClientUuid, agreementId = agreementUuid, description = description, operators = Set.empty)
+        Client(
+          id = newClientUuid,
+          agreementId = agreementUuid,
+          name = name,
+          description = description,
+          operators = Set.empty
+        )
 
       val data =
         s"""{
            |  "agreementId": "${agreementUuid.toString}",
-           |  "description": "$description"
+           |  "name": "$name",
+           |  "description": "${description.get}"
            |}""".stripMargin
 
       val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
