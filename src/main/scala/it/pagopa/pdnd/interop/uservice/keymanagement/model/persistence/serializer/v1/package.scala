@@ -156,6 +156,7 @@ package object v1 {
     } yield PersistentClient(
       id = clientId,
       agreementId = agreementId,
+      name = client.name,
       description = client.description,
       operators = operators.toSet
     )

@@ -563,11 +563,13 @@ components:
         agreementId:
           type: string
           format: uuid
+        name:
+          type: string
         description:
           type: string
       required:
         - agreementId
-        - description
+        - name
     Client:
       description: Models a Client
       type: object
@@ -578,6 +580,8 @@ components:
         agreementId:
           type: string
           format: uuid
+        name:
+          type: string
         description:
           type: string
         operators:
@@ -589,7 +593,7 @@ components:
       required:
         - id
         - agreementId
-        - description
+        - name
         - operators
     Clients:
       type: array

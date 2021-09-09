@@ -94,11 +94,13 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     (() => mockUUIDSupplier.get).expects().returning(id).once()
 
     val agreementUuid = agreementId
-    val description   = s"New Client ${id.toString}"
+    val name          = s"New Client ${id.toString}"
+    val description   = s"New Client ${id.toString} description"
 
     val data =
       s"""{
          |  "agreementId": "${agreementUuid.toString}",
+         |  "name": "$name",
          |  "description": "$description"
          |}""".stripMargin
 
@@ -142,7 +144,8 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
          |]
          |""".stripMargin
 
-    val response = request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
+    val response =
+      request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
     response.status shouldBe StatusCodes.Created
 
