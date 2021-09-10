@@ -223,7 +223,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val clientUuid2 = UUID.fromString(clientId2)
       val clientUuid3 = UUID.fromString(clientId3)
 
-      val agreementUuid = UUID.fromString("f4d3d3e2-e71c-4e80-8499-b555dd18bb5c")
+      val eServiceUuid = UUID.fromString("f4d3d3e2-e71c-4e80-8499-b555dd18bb5c")
 
       //given
       val client1Keys = Map(
@@ -262,9 +262,9 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           status = Active
         )
       )
-      val client1 = PersistentClient(clientUuid1, agreementUuid, "client 1", Some("client 1 desc"), Set.empty)
-      val client2 = PersistentClient(clientUuid2, agreementUuid, "client 2", Some("client 2 desc"), Set.empty)
-      val client3 = PersistentClient(clientUuid3, agreementUuid, "client 3", Some("client 3 desc"), Set.empty)
+      val client1 = PersistentClient(clientUuid1, eServiceUuid, "client 1", Some("client 1 desc"), Set.empty)
+      val client2 = PersistentClient(clientUuid2, eServiceUuid, "client 2", Some("client 2 desc"), Set.empty)
+      val client3 = PersistentClient(clientUuid3, eServiceUuid, "client 3", Some("client 3 desc"), Set.empty)
 
       val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys, clientId3 -> client3Keys)
       val clients = Map(clientId1 -> client1, clientId2 -> client2, clientId3 -> client3)

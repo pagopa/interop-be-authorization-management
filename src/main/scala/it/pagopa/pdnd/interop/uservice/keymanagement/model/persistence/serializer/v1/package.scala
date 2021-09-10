@@ -150,12 +150,12 @@ package object v1 {
 
   private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] =
     for {
-      clientId    <- Try(UUID.fromString(client.id)).toEither
-      agreementId <- Try(UUID.fromString(client.agreementId)).toEither
-      operators   <- client.operators.map(id => Try(UUID.fromString(id))).sequence.toEither
+      clientId   <- Try(UUID.fromString(client.id)).toEither
+      eServiceId <- Try(UUID.fromString(client.eServiceId)).toEither
+      operators  <- client.operators.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
-      agreementId = agreementId,
+      eServiceId = eServiceId,
       name = client.name,
       description = client.description,
       operators = operators.toSet

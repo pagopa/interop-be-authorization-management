@@ -33,11 +33,11 @@ class OperatorManagementSpec
 
   "Operator creation" should {
     "be successful on existing client" in {
-      val clientId    = UUID.fromString("29204cb0-f4a8-40a5-b447-8ba84ed988d4")
-      val agreementId = UUID.fromString("c794f9a7-5d40-40d7-8fb9-af92d2b0356c")
-      val operatorId  = UUID.fromString("7955e640-b2a1-4fe7-b0b4-e00045a83d1a")
+      val clientId   = UUID.fromString("29204cb0-f4a8-40a5-b447-8ba84ed988d4")
+      val eServiceId = UUID.fromString("c794f9a7-5d40-40d7-8fb9-af92d2b0356c")
+      val operatorId = UUID.fromString("7955e640-b2a1-4fe7-b0b4-e00045a83d1a")
 
-      createClient(clientId, agreementId)
+      createClient(clientId, eServiceId)
 
       val data = s"""{
                     |  "operatorId": "${operatorId.toString}"
@@ -70,11 +70,11 @@ class OperatorManagementSpec
   "Operator deletion" should {
     "be successful and remove keys" in {
       val clientId    = UUID.fromString("edc3d72e-85d7-4d6b-a0d1-a85b0aafda7c")
-      val agreementId = UUID.fromString("5eb6143b-f9a9-4b1a-8292-0e3605fff601")
+      val eServiceId  = UUID.fromString("5eb6143b-f9a9-4b1a-8292-0e3605fff601")
       val operatorId1 = UUID.fromString("b99edf43-c8ed-43cc-9945-509d9c6bb6a3")
       val operatorId2 = UUID.fromString("f8a7d939-741d-4f2a-bbea-2aeddeaa2a61")
 
-      createClient(clientId, agreementId)
+      createClient(clientId, eServiceId)
       addOperator(clientId, operatorId1)
       addOperator(clientId, operatorId2)
       createKey(clientId, operatorId1)
@@ -95,13 +95,13 @@ class OperatorManagementSpec
     }
 
     "be successful and don't remove same operator keys of different client" in {
-      val clientId1   = UUID.fromString("8195991e-d660-4423-91cf-9a4e0603c25e")
-      val clientId2   = UUID.fromString("1118da74-ffd3-4c98-999d-3322c59894ab")
-      val agreementId = UUID.fromString("1f8b9bbf-2314-4c2f-87ef-5ce374798564")
-      val operatorId  = UUID.fromString("f17119f1-925a-4adb-9d28-cdccf8a1d932")
+      val clientId1  = UUID.fromString("8195991e-d660-4423-91cf-9a4e0603c25e")
+      val clientId2  = UUID.fromString("1118da74-ffd3-4c98-999d-3322c59894ab")
+      val eServiceId = UUID.fromString("1f8b9bbf-2314-4c2f-87ef-5ce374798564")
+      val operatorId = UUID.fromString("f17119f1-925a-4adb-9d28-cdccf8a1d932")
 
-      createClient(clientId1, agreementId)
-      createClient(clientId2, agreementId)
+      createClient(clientId1, eServiceId)
+      createClient(clientId2, eServiceId)
       addOperator(clientId1, operatorId)
       addOperator(clientId2, operatorId)
       createKey(clientId1, operatorId)

@@ -24,7 +24,7 @@ final case class GetClient(clientId: String, replyTo: ActorRef[StatusReply[Persi
 final case class ListClients(
   from: Int,
   until: Int,
-  agreementId: Option[String],
+  eServiceId: Option[String],
   operatorId: Option[String],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command
