@@ -47,8 +47,8 @@ class KeyManagementSpec
     }
 
     "fail if key operator has not been added to client" in {
-      val clientId    = UUID.fromString("d68e1f97-5185-4319-89c7-2c8224a39641")
-      val eServiceId = UUID.fromString("2d756c4c-6ee7-4465-84e4-644a38d7aaa3")
+      val clientId   = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       createClient(clientId, eServiceId)
 
@@ -71,9 +71,9 @@ class KeyManagementSpec
     }
 
     "succeed" in {
-      val clientId    = UUID.fromString("638f76d2-39b3-47f2-bd65-a1e6094d35e9")
-      val eServiceId = UUID.fromString("5d2ca309-8871-412f-8073-3ab1da0148b7")
-      val operatorId  = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+      val clientId   = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
+      val operatorId = UUID.randomUUID()
 
       createClient(clientId, eServiceId)
       addOperator(clientId, operatorId)

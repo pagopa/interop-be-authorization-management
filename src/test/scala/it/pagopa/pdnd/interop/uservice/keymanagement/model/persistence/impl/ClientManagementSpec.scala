@@ -34,10 +34,10 @@ class ClientManagementSpec
   "Client" should {
 
     "be created successfully" in {
-      val newClientUuid = UUID.fromString("8113bd7c-8c31-4912-ac05-883c25347960")
+      val newClientUuid = UUID.randomUUID()
       (() => mockUUIDSupplier.get).expects().returning(newClientUuid).once()
 
-      val eServiceUuid = UUID.fromString("24772a3d-e6f2-47f2-96e5-4cbd1e4e8c85")
+      val eServiceUuid = UUID.randomUUID()
       val name         = "New Client 1"
       val description  = Some("New Client 1 description")
 
@@ -67,8 +67,8 @@ class ClientManagementSpec
     }
 
     "be retrieved successfully" in {
-      val clientUuid    = UUID.fromString("f3447128-4695-418f-9658-959da0ee3f8c")
-      val eServiceUuid = UUID.fromString("48e948cc-a60a-4d93-97e9-bcbe1d6e5283")
+      val clientUuid    = UUID.randomUUID()
+      val eServiceUuid  = UUID.randomUUID()
       val createdClient = createClient(clientUuid, eServiceUuid)
 
       val response = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
@@ -80,9 +80,9 @@ class ClientManagementSpec
     }
 
     "be deleted successfully" in {
-      val clientUuid    = UUID.fromString("d8803fae-daf9-4bf4-94b0-c495005b1a4b")
-      val eServiceUuid = UUID.fromString("d75544b4-bc16-45d4-8dbf-b0842e9f9dca")
-      val operatorUuid  = UUID.fromString("ae7b1133-446a-462c-ab79-2016c1168dde")
+      val clientUuid   = UUID.randomUUID()
+      val eServiceUuid = UUID.randomUUID()
+      val operatorUuid = UUID.randomUUID()
 
       createClient(clientUuid, eServiceUuid)
       addOperator(clientUuid, operatorUuid)
@@ -107,11 +107,11 @@ class ClientManagementSpec
 
   "Client list" should {
     "correctly filter by E-Service id" in {
-      val clientId1   = UUID.fromString("8198d261-2e2f-4ef4-a7a2-1d7ea4cef472")
-      val clientId2   = UUID.fromString("dea175f3-3180-42cf-9c1b-048a67c6e4ff")
-      val clientId3   = UUID.fromString("d78fe4d4-9518-4ea1-bf44-e1a86db080bd")
-      val eServiceId1 = UUID.fromString("4922fcfe-206f-41a1-83ea-f2647b4eeb3c")
-      val eServiceId3 = UUID.fromString("58277d2a-8b68-4609-89d1-bae23100e964")
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val clientId3   = UUID.randomUUID()
+      val eServiceId1 = UUID.randomUUID()
+      val eServiceId3 = UUID.randomUUID()
 
       val client1 = createClient(clientId1, eServiceId1)
       val client2 = createClient(clientId2, eServiceId1)
@@ -128,12 +128,12 @@ class ClientManagementSpec
     }
 
     "correctly filter by operator id" in {
-      val clientId1    = UUID.fromString("264e0348-c465-4739-9970-3b79953a91aa")
-      val clientId2    = UUID.fromString("ef118f0d-c5a9-4b8e-8a1d-9c844efdfc3b")
-      val eServiceId1 = UUID.fromString("39e20f27-9052-4c55-9e79-a7dc2f706a6e")
-      val eServiceId2 = UUID.fromString("53ed4323-a62c-485f-956a-fc2b1ce4b90b")
-      val operatorId1  = UUID.fromString("13c91530-c015-4fa0-8631-933277d47394")
-      val operatorId2  = UUID.fromString("4fbce7d2-e382-44d1-a7cb-6436891a568e")
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val eServiceId1 = UUID.randomUUID()
+      val eServiceId2 = UUID.randomUUID()
+      val operatorId1 = UUID.randomUUID()
+      val operatorId2 = UUID.randomUUID()
 
       createClient(clientId1, eServiceId1)
       createClient(clientId2, eServiceId2)
@@ -153,10 +153,10 @@ class ClientManagementSpec
     }
 
     "correctly paginate elements" in {
-      val clientId1  = UUID.fromString("a24ee7f9-f445-4e77-a77f-c21dfbce4bed")
-      val clientId2  = UUID.fromString("d0b551d7-57c2-4373-afa4-ba3a3413caad")
-      val clientId3  = UUID.fromString("ed228675-b9db-46fc-92e7-bd6cb3f7a306")
-      val eServiceId = UUID.fromString("9fa239f7-6189-4165-a95d-64c87324b122")
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val clientId3  = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       createClient(clientId1, eServiceId)
       createClient(clientId2, eServiceId)

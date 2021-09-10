@@ -15,10 +15,11 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
     "physically delete the keys properly" in {
       //given
+      val operatorId = UUID.randomUUID()
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -28,7 +29,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -38,7 +39,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "3" -> PersistentKey(
           kid = "3",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -48,7 +49,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "4" -> PersistentKey(
           kid = "4",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -72,10 +73,11 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
     "disable the keys properly" in {
       //given
+      val operatorId = UUID.randomUUID()
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -85,7 +87,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -115,10 +117,11 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
     "disabling the key and then reactivating it should work properly" in {
       //given
+      val operatorId = UUID.randomUUID()
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -128,7 +131,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -157,10 +160,12 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
     "return only the list of active keys" in {
       //given
+      val operatorId1 = UUID.randomUUID()
+      val operatorId2 = UUID.randomUUID()
       val fooBarKeys = Map(
         "1" -> PersistentKey(
           kid = "1",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId1,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -170,7 +175,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "2" -> PersistentKey(
           kid = "2",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId1,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -180,7 +185,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "3" -> PersistentKey(
           kid = "3",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9222"),
+          operatorId = operatorId2,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -190,7 +195,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         ),
         "4" -> PersistentKey(
           kid = "4",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId1,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -208,28 +213,27 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       activeKeys shouldBe a[Some[_]]
       activeKeys.get.keys should contain allOf ("1", "3")
-      activeKeys.get.values.map(
-        _.operatorId.toString
-      ) should contain allOf ("27f8dce0-0a5b-476b-9fdd-a7a658eb9215", "27f8dce0-0a5b-476b-9fdd-a7a658eb9222")
+      activeKeys.get.values.map(_.operatorId.toString) should contain allOf (operatorId1.toString, operatorId2.toString)
       activeKeys.get.keys shouldNot contain allOf ("2", "4")
     }
 
     "delete a client properly" in {
-      val clientId1 = "ab1fd21e-8683-4ca8-abd7-8101eed605d1"
-      val clientId2 = "35c77b88-6a39-4bff-ae2d-31b39bc3502f"
-      val clientId3 = "b81a7732-a33d-4c2e-b9f3-cf190238c5dd"
+      val clientUuid1 = UUID.randomUUID()
+      val clientUuid2 = UUID.randomUUID()
+      val clientUuid3 = UUID.randomUUID()
 
-      val clientUuid1 = UUID.fromString(clientId1)
-      val clientUuid2 = UUID.fromString(clientId2)
-      val clientUuid3 = UUID.fromString(clientId3)
+      val clientId1 = clientUuid1.toString
+      val clientId2 = clientUuid2.toString
+      val clientId3 = clientUuid3.toString
 
-      val eServiceUuid = UUID.fromString("f4d3d3e2-e71c-4e80-8499-b555dd18bb5c")
+      val eServiceUuid = UUID.randomUUID()
+      val operatorId   = UUID.randomUUID()
 
       //given
       val client1Keys = Map(
         "kid1" -> PersistentKey(
           kid = "kid1",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -241,7 +245,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val client2Keys = Map(
         "kid2" -> PersistentKey(
           kid = "kid2",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
@@ -253,7 +257,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val client3Keys = Map(
         "kid3" -> PersistentKey(
           kid = "kid3",
-          operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215"),
+          operatorId = operatorId,
           encodedPem = "123",
           use = "sig",
           algorithm = "sha",
