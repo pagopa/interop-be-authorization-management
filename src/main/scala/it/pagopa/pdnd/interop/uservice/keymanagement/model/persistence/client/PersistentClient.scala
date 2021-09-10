@@ -7,14 +7,14 @@ import java.util.UUID
 
 final case class PersistentClient(
   id: UUID,
-  agreementId: UUID,
+  eServiceId: UUID,
   name: String,
   description: Option[String],
   operators: Set[UUID]
 ) extends Persistent {
 
   def toApi: Client =
-    Client(id = id, agreementId = agreementId, name = name, description = description, operators = operators)
+    Client(id = id, eServiceId = eServiceId, name = name, description = description, operators = operators)
 
 }
 
@@ -23,7 +23,7 @@ object PersistentClient {
   def toPersistentClient(clientId: UUID, seed: ClientSeed): PersistentClient =
     PersistentClient(
       id = clientId,
-      agreementId = seed.agreementId,
+      eServiceId = seed.eServiceId,
       name = seed.name,
       description = seed.description,
       operators = Set.empty[UUID]

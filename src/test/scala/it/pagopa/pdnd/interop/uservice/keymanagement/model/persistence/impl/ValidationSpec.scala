@@ -34,7 +34,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END PUBLIC KEY-----""".stripMargin),
         alg = "123",
         use = "sig",
-        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
+        operatorId = UUID.randomUUID()
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -63,7 +63,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
         use = "sig",
-        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
+        operatorId = UUID.randomUUID()
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -93,7 +93,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
         use = "sig",
-        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
+        operatorId = UUID.randomUUID()
       )
 
       val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, "enc", "123")
@@ -117,7 +117,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END RSA PRIVATE KEY-----""".stripMargin),
         alg = "123",
         use = "sig",
-        operatorId = UUID.fromString("27f8dce0-0a5b-476b-9fdd-a7a658eb9215")
+        operatorId = UUID.randomUUID()
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))

@@ -149,9 +149,9 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
-      case ListClients(from, to, agreementId, operatorId, replyTo) =>
+      case ListClients(from, to, eServiceId, operatorId, replyTo) =>
         val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
-          agreementId.forall(_ == client.agreementId.toString) &&
+          eServiceId.forall(_ == client.eServiceId.toString) &&
           operatorId.forall(operator => client.operators.map(_.toString).contains(operator))
         }
         val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)

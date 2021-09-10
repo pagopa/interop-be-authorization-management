@@ -52,7 +52,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerClient: ToEntityMarshaller[Client]
   ): Route = {
 
-    logger.info(s"Creating client for agreement ${clientSeed.agreementId}...")
+    logger.info(s"Creating client for E-Service ${clientSeed.eServiceId}...")
 
     val clientId = uuidSupplier.get
 
@@ -70,7 +70,7 @@ class ClientApiServiceImpl(
           Problem(
             Option(statusReply.getError.getMessage),
             status = 400,
-            s"Error creating client for agreement ${clientSeed.agreementId}"
+            s"Error creating client for E-Service ${clientSeed.eServiceId}"
           )
         )
     }
@@ -111,7 +111,7 @@ class ClientApiServiceImpl(
     * Code: 400, Message: Missing Required Information, DataType: Problem
     * Code: 500, Message: Missing Required Information, DataType: Problem
     */
-  override def listClients(offset: Int, limit: Int, agreementId: Option[String], operatorId: Option[String])(implicit
+  override def listClients(offset: Int, limit: Int, eServiceId: Option[String], operatorId: Option[String])(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]]
   ): Route = {
@@ -119,11 +119,11 @@ class ClientApiServiceImpl(
 
     // This could be implemented using 'anyOf' function of OpenApi, but the generetor does not support it yet
     // see https://github.com/OpenAPITools/openapi-generator/issues/634
-    (agreementId, operatorId) match {
+    (eServiceId, operatorId) match {
       case (None, None) =>
         listClients400(
           Problem(
-            Some("At least one parameter is required [ agreementId, operatorId ]"),
+            Some("At least one parameter is required [ eServiceId, operatorId ]"),
             status = 400,
             s"Error retrieving clients list for parameters"
           )
@@ -142,7 +142,7 @@ class ClientApiServiceImpl(
   private def slices(
     commander: EntityRef[Command],
     sliceSize: Int,
-    agreementId: Option[String],
+    eServiceId: Option[String],
     operatorId: Option[String]
   ): LazyList[PersistentClient] = {
     @tailrec
@@ -153,7 +153,7 @@ class ClientApiServiceImpl(
       lazyList: LazyList[PersistentClient]
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
-        Await.result(commander.ask(ref => ListClients(from, to, agreementId, operatorId, ref)), Duration.Inf).getValue
+        Await.result(commander.ask(ref => ListClients(from, to, eServiceId, operatorId, ref)), Duration.Inf).getValue
       if (slice.isEmpty)
         lazyList
       else
