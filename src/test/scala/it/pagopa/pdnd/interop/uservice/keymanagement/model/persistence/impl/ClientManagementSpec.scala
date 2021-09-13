@@ -38,6 +38,7 @@ class ClientManagementSpec
       (() => mockUUIDSupplier.get).expects().returning(newClientUuid).once()
 
       val eServiceUuid = UUID.randomUUID()
+      val consumerUuid = UUID.randomUUID()
       val name         = "New Client 1"
       val description  = Some("New Client 1 description")
 
@@ -45,6 +46,7 @@ class ClientManagementSpec
         Client(
           id = newClientUuid,
           eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
           name = name,
           description = description,
           operators = Set.empty
@@ -53,6 +55,7 @@ class ClientManagementSpec
       val data =
         s"""{
            |  "eServiceId": "${eServiceUuid.toString}",
+           |  "consumerId": "${consumerUuid.toString}",
            |  "name": "$name",
            |  "description": "${description.get}"
            |}""".stripMargin
@@ -69,7 +72,8 @@ class ClientManagementSpec
     "be retrieved successfully" in {
       val clientUuid    = UUID.randomUUID()
       val eServiceUuid  = UUID.randomUUID()
-      val createdClient = createClient(clientUuid, eServiceUuid)
+      val consumerUuid  = UUID.randomUUID()
+      val createdClient = createClient(clientUuid, eServiceUuid, consumerUuid)
 
       val response = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
 
@@ -82,9 +86,10 @@ class ClientManagementSpec
     "be deleted successfully" in {
       val clientUuid   = UUID.randomUUID()
       val eServiceUuid = UUID.randomUUID()
+      val consumerUuid = UUID.randomUUID()
       val operatorUuid = UUID.randomUUID()
 
-      createClient(clientUuid, eServiceUuid)
+      createClient(clientUuid, eServiceUuid, consumerUuid)
       addOperator(clientUuid, operatorUuid)
       createKey(clientUuid, operatorUuid)
 
@@ -111,11 +116,13 @@ class ClientManagementSpec
       val clientId2   = UUID.randomUUID()
       val clientId3   = UUID.randomUUID()
       val eServiceId1 = UUID.randomUUID()
+      val consumerId1 = UUID.randomUUID()
       val eServiceId3 = UUID.randomUUID()
+      val consumerId3 = UUID.randomUUID()
 
-      val client1 = createClient(clientId1, eServiceId1)
-      val client2 = createClient(clientId2, eServiceId1)
-      createClient(clientId3, eServiceId3)
+      val client1 = createClient(clientId1, eServiceId1, consumerId1)
+      val client2 = createClient(clientId2, eServiceId1, consumerId1)
+      createClient(clientId3, eServiceId3, consumerId3)
 
       val response = request(uri = s"$serviceURL/clients?eServiceId=$eServiceId1", method = HttpMethods.GET)
 
@@ -132,11 +139,13 @@ class ClientManagementSpec
       val clientId2   = UUID.randomUUID()
       val eServiceId1 = UUID.randomUUID()
       val eServiceId2 = UUID.randomUUID()
+      val consumerId1 = UUID.randomUUID()
+      val consumerId2 = UUID.randomUUID()
       val operatorId1 = UUID.randomUUID()
       val operatorId2 = UUID.randomUUID()
 
-      createClient(clientId1, eServiceId1)
-      createClient(clientId2, eServiceId2)
+      createClient(clientId1, eServiceId1, consumerId1)
+      createClient(clientId2, eServiceId2, consumerId2)
 
       addOperator(clientId1, operatorId1)
       addOperator(clientId2, operatorId2)
@@ -157,10 +166,11 @@ class ClientManagementSpec
       val clientId2  = UUID.randomUUID()
       val clientId3  = UUID.randomUUID()
       val eServiceId = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
 
-      createClient(clientId1, eServiceId)
-      createClient(clientId2, eServiceId)
-      createClient(clientId3, eServiceId)
+      createClient(clientId1, eServiceId, consumerId)
+      createClient(clientId2, eServiceId, consumerId)
+      createClient(clientId3, eServiceId, consumerId)
 
       // First page
       val offset1 = 0

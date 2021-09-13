@@ -60,14 +60,14 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       )
       val keys  = Map("fooBarKeys" -> fooBarKeys)
       val state = State(keys = keys, clients = Map.empty)
-      state.keys.get("fooBarKeys").get.size shouldBe 4
+      state.keys("fooBarKeys").size shouldBe 4
 
       //when
       val updatedState = state.deleteKey("fooBarKeys", "2")
 
       //then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe None
-      updatedState.keys.get("fooBarKeys").get.size shouldBe 3
+      updatedState.keys("fooBarKeys").size shouldBe 3
       updatedState.getActiveClientKeyById("fooBarKeys", "1").get.status shouldBe Active
     }
 
@@ -227,6 +227,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val clientId3 = clientUuid3.toString
 
       val eServiceUuid = UUID.randomUUID()
+      val consumerUuid = UUID.randomUUID()
       val operatorId   = UUID.randomUUID()
 
       //given
@@ -266,9 +267,9 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           status = Active
         )
       )
-      val client1 = PersistentClient(clientUuid1, eServiceUuid, "client 1", Some("client 1 desc"), Set.empty)
-      val client2 = PersistentClient(clientUuid2, eServiceUuid, "client 2", Some("client 2 desc"), Set.empty)
-      val client3 = PersistentClient(clientUuid3, eServiceUuid, "client 3", Some("client 3 desc"), Set.empty)
+      val client1 = PersistentClient(clientUuid1, eServiceUuid,consumerUuid, "client 1", Some("client 1 desc"), Set.empty)
+      val client2 = PersistentClient(clientUuid2, eServiceUuid,consumerUuid, "client 2", Some("client 2 desc"), Set.empty)
+      val client3 = PersistentClient(clientUuid3, eServiceUuid,consumerUuid, "client 3", Some("client 3 desc"), Set.empty)
 
       val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys, clientId3 -> client3Keys)
       val clients = Map(clientId1 -> client1, clientId2 -> client2, clientId3 -> client3)

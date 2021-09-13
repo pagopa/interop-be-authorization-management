@@ -35,9 +35,10 @@ class OperatorManagementSpec
     "be successful on existing client" in {
       val clientId   = UUID.randomUUID()
       val eServiceId = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
       val operatorId = UUID.randomUUID()
 
-      createClient(clientId, eServiceId)
+      createClient(clientId, eServiceId, consumerId)
 
       val data = s"""{
                     |  "operatorId": "${operatorId.toString}"
@@ -71,10 +72,11 @@ class OperatorManagementSpec
     "be successful and remove keys" in {
       val clientId    = UUID.randomUUID()
       val eServiceId  = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
       val operatorId1 = UUID.randomUUID()
       val operatorId2 = UUID.randomUUID()
 
-      createClient(clientId, eServiceId)
+      createClient(clientId, eServiceId, consumerId)
       addOperator(clientId, operatorId1)
       addOperator(clientId, operatorId2)
       createKey(clientId, operatorId1)
@@ -98,10 +100,11 @@ class OperatorManagementSpec
       val clientId1  = UUID.randomUUID()
       val clientId2  = UUID.randomUUID()
       val eServiceId = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
       val operatorId = UUID.randomUUID()
 
-      createClient(clientId1, eServiceId)
-      createClient(clientId2, eServiceId)
+      createClient(clientId1, eServiceId, consumerId)
+      createClient(clientId2, eServiceId, consumerId)
       addOperator(clientId1, operatorId)
       addOperator(clientId2, operatorId)
       createKey(clientId1, operatorId)

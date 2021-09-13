@@ -152,10 +152,12 @@ package object v1 {
     for {
       clientId   <- Try(UUID.fromString(client.id)).toEither
       eServiceId <- Try(UUID.fromString(client.eServiceId)).toEither
+      consumerId <- Try(UUID.fromString(client.consumerId)).toEither
       operators  <- client.operators.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
       eServiceId = eServiceId,
+      consumerId = consumerId,
       name = client.name,
       description = client.description,
       operators = operators.toSet

@@ -90,16 +90,18 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     println("Server shut down - Resources cleaned")
   }
 
-  def createClient(id: UUID, eServiceId: UUID): Client = {
+  def createClient(id: UUID, eServiceId: UUID, consumerId: UUID): Client = {
     (() => mockUUIDSupplier.get).expects().returning(id).once()
 
     val eServiceUuid = eServiceId
+    val consumerUuid = consumerId
     val name         = s"New Client ${id.toString}"
     val description  = s"New Client ${id.toString} description"
 
     val data =
       s"""{
          |  "eServiceId": "${eServiceUuid.toString}",
+         |  "consumerId": "${consumerUuid.toString}",
          |  "name": "$name",
          |  "description": "$description"
          |}""".stripMargin
