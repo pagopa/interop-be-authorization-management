@@ -49,8 +49,9 @@ class KeyManagementSpec
     "fail if key operator has not been added to client" in {
       val clientId   = UUID.randomUUID()
       val eServiceId = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
 
-      createClient(clientId, eServiceId)
+      createClient(clientId, eServiceId, consumerId)
 
       val data =
         s"""
@@ -73,9 +74,10 @@ class KeyManagementSpec
     "succeed" in {
       val clientId   = UUID.randomUUID()
       val eServiceId = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
       val operatorId = UUID.randomUUID()
 
-      createClient(clientId, eServiceId)
+      createClient(clientId, eServiceId, consumerId)
       addOperator(clientId, operatorId)
 
       val data =

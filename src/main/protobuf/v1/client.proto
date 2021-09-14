@@ -9,7 +9,8 @@ option (scalapb.options) = {
 message PersistentClientV1 {
   required string id = 1;
   required string eServiceId = 2;
-  required string name = 3;
-  optional string description = 4;
-  repeated string operators = 5;
+  required string consumerId = 3;
+  required string name = 4;
+  optional string description = 5;
+  repeated string operators = 6;
 }
