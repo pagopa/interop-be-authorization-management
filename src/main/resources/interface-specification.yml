@@ -346,7 +346,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Key'
+                $ref: '#/components/schemas/ClientKey'
         '404':
           description: Key not found
           content:
@@ -450,7 +450,7 @@ components:
         keys:
           type: array
           items:
-            $ref: '#/components/schemas/Key'
+            $ref: '#/components/schemas/ClientKey'
       required:
         - keys
     Keys:
@@ -482,6 +482,18 @@ components:
         - key
         - use
         - alg
+    ClientKey:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/Key'
+        status:
+          type: string
+          description: 'Key status'
+          enum: [ 'active', 'disabled', 'deleted' ]
+      required:
+        - key
+        - status
     Key:
       description: 'Models a JWK'
       type: object
