@@ -14,7 +14,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeySeed, KeysResponse, Problem}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, KeySeed, KeysResponse, Problem}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.tailrec
@@ -99,14 +99,14 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def getClientKeyById(clientId: String, keyId: String)(implicit
-    toEntityMarshallerKey: ToEntityMarshaller[Key],
+    toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Getting key ${keyId} for client ${clientId}...")
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
-    val result: Future[StatusReply[Key]] = commander.ask(ref => GetKey(clientId, keyId, ref))
+    val result: Future[StatusReply[ClientKey]] = commander.ask(ref => GetKey(clientId, keyId, ref))
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)

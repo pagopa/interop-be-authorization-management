@@ -2,8 +2,8 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key
 
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ThumbprintCalculationError
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Keys, Persistent, ValidKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 import java.time.OffsetDateTime
@@ -58,19 +58,36 @@ object PersistentKey {
     )
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
+  @SuppressWarnings(
+    Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing", "org.wartremover.warts.ToString")
+  )
   def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] = {
     val processed = for {
-      key <- keys.map(entry =>
-        KeyProcessor.fromBase64encodedPEMToAPIKey(entry._2.kid, entry._2.encodedPem, entry._2.use, entry._2.algorithm)
-      )
+      key <- keys.map { case (_, persistentKey) =>
+        KeyProcessor
+          .fromBase64encodedPEMToAPIKey(
+            persistentKey.kid,
+            persistentKey.encodedPem,
+            persistentKey.use,
+            persistentKey.algorithm
+          )
+          .map(ClientKey(_, persistentKey.status.toString))
+      }
     } yield key
 
     processed.toSeq.sequence.map(elem => KeysResponse(keys = elem))
   }
 
-  def toAPI(key: PersistentKey): Either[Throwable, Key] = {
-    KeyProcessor.fromBase64encodedPEMToAPIKey(key.kid, key.encodedPem, key.use, key.algorithm)
+  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
+  def toAPI(persistentKey: PersistentKey): Either[Throwable, ClientKey] = {
+    KeyProcessor
+      .fromBase64encodedPEMToAPIKey(
+        persistentKey.kid,
+        persistentKey.encodedPem,
+        persistentKey.use,
+        persistentKey.algorithm
+      )
+      .map(ClientKey(_, persistentKey.status.toString))
   }
 
 }
