@@ -12,5 +12,5 @@ message PersistentClientV1 {
   required string consumerId = 3;
   required string name = 4;
   optional string description = 5;
-  repeated string operators = 6;
+  repeated string relationships = 6;
 }

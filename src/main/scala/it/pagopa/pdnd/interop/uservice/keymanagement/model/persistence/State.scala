@@ -41,15 +41,15 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def deleteClient(clientId: String): State =
     copy(clients = clients - clientId, keys = keys - clientId)
 
-  def addOperator(client: PersistentClient, operatorId: UUID): State = {
-    val updatedClient = client.copy(operators = client.operators + operatorId)
+  def addRelationship(client: PersistentClient, relationshipId: UUID): State = {
+    val updatedClient = client.copy(relationships = client.relationships + relationshipId)
     copy(clients = clients + (client.id.toString -> updatedClient))
   }
 
-  def removeOperator(clientId: String, operatorId: String): State = {
+  def removeRelationship(clientId: String, relationshipId: String): State = {
     val updatedClients = clients.get(clientId) match {
       case Some(client) =>
-        val updated = client.copy(operators = client.operators.filter(_.toString != operatorId))
+        val updated = client.copy(relationships = client.relationships.filter(_.toString != relationshipId))
         clients + (clientId -> updated)
       case None =>
         clients
@@ -57,7 +57,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
     val updatedKeys = keys.get(clientId) match {
       case Some(ks) =>
-        val updated = ks.filter { case (_, key) => key.operatorId.toString =!= operatorId }
+        val updated = ks.filter { case (_, key) => key.relationshipId.toString =!= relationshipId }
         keys + (clientId -> updated)
       case None =>
         keys

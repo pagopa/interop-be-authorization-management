@@ -43,11 +43,9 @@ package object v1 {
     state => {
       for {
         keys <- state.keys
-          .traverse[ErrorOr, (String, Keys)] {
-            case key => {
-              protoEntryToKey(key.keyEntries)
-                .map(entry => key.clientId -> entry.toMap)
-            }
+          .traverse[ErrorOr, (String, Keys)] { key =>
+            protoEntryToKey(key.keyEntries)
+              .map(entry => key.clientId -> entry.toMap)
           }
           .map(_.toMap)
         clients <- state.clients
@@ -60,10 +58,8 @@ package object v1 {
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
       for {
-        clients <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] {
-          case (client, keys) => {
-            keyToEntry(keys).map(entries => StateKeysEntryV1(client, entries))
-          }
+        clients <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
+          keyToEntry(keys).map(entries => StateKeysEntryV1(client, entries))
         }
       } yield StateV1(clients)
 
@@ -131,7 +127,7 @@ package object v1 {
         .toRight(new RuntimeException("Protobuf serialization failed"))
     } yield PersistentKeyV1(
       kid = key.kid,
-      operatorId = key.operatorId.toString,
+      relationshipId = key.relationshipId.toString,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = key.use,
@@ -150,26 +146,26 @@ package object v1 {
 
   private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] =
     for {
-      clientId   <- Try(UUID.fromString(client.id)).toEither
-      eServiceId <- Try(UUID.fromString(client.eServiceId)).toEither
-      consumerId <- Try(UUID.fromString(client.consumerId)).toEither
-      operators  <- client.operators.map(id => Try(UUID.fromString(id))).sequence.toEither
+      clientId      <- Try(UUID.fromString(client.id)).toEither
+      eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
+      consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
+      relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
       description = client.description,
-      operators = operators.toSet
+      relationships = relationships.toSet
     )
 
   private def protbufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      keyStatus  <- KeyStatus.fromText(key.status.name)
-      operatorId <- Try(UUID.fromString(key.operatorId)).toEither
+      keyStatus      <- KeyStatus.fromText(key.status.name)
+      relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
     } yield PersistentKey(
       kid = key.kid,
-      operatorId = operatorId,
+      relationshipId = relationshipId,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = key.use,

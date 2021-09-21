@@ -11,7 +11,7 @@ final case class PersistentClient(
   consumerId: UUID,
   name: String,
   description: Option[String],
-  operators: Set[UUID]
+  relationships: Set[UUID]
 ) extends Persistent {
 
   def toApi: Client =
@@ -21,7 +21,7 @@ final case class PersistentClient(
       consumerId = consumerId,
       name = name,
       description = description,
-      operators = operators
+      relationships = relationships
     )
 
 }
@@ -35,7 +35,7 @@ object PersistentClient {
       consumerId = seed.consumerId,
       name = seed.name,
       description = seed.description,
-      operators = Set.empty[UUID]
+      relationships = Set.empty[UUID]
     )
 
 }

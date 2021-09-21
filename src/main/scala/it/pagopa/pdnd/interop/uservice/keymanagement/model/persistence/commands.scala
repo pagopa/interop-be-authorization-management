@@ -25,13 +25,16 @@ final case class ListClients(
   from: Int,
   until: Int,
   eServiceId: Option[String],
-  operatorId: Option[String],
+  relationshipId: Option[String],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command
-final case class AddOperator(clientId: String, operatorId: UUID, replyTo: ActorRef[StatusReply[PersistentClient]])
-    extends Command
+final case class AddRelationship(
+  clientId: String,
+  relationshipId: UUID,
+  replyTo: ActorRef[StatusReply[PersistentClient]]
+)                                                                                     extends Command
 final case class DeleteClient(clientId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
-final case class RemoveOperator(clientId: String, operatorId: String, replyTo: ActorRef[StatusReply[Done]])
+final case class RemoveRelationship(clientId: String, relationshipId: String, replyTo: ActorRef[StatusReply[Done]])
     extends Command
 
 case object Idle extends Command

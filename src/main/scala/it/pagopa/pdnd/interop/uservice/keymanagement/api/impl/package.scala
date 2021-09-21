@@ -8,7 +8,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.{
   Key,
   KeySeed,
   KeysResponse,
-  OperatorSeed,
+  PartyRelationshipSeed,
   OtherPrimeInfo,
   Problem
 }
@@ -44,9 +44,9 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val clientKeyFormat: RootJsonFormat[ClientKey]           = jsonFormat2(ClientKey)
   implicit val keyResponseFormat: RootJsonFormat[KeysResponse]      = jsonFormat1(KeysResponse)
 
-  implicit val clientSeedFormat: RootJsonFormat[ClientSeed]     = jsonFormat4(ClientSeed)
-  implicit val clientFormat: RootJsonFormat[Client]             = jsonFormat6(Client)
-  implicit val operatorSeedFormat: RootJsonFormat[OperatorSeed] = jsonFormat1(OperatorSeed)
+  implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat4(ClientSeed)
+  implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat6(Client)
+  implicit val relationshipSeedFormat: RootJsonFormat[PartyRelationshipSeed] = jsonFormat1(PartyRelationshipSeed)
 
   private def customKeyFormat: RootJsonFormat[Key] = {
     val arrayFields = extractFieldNames(classTag[Key])
