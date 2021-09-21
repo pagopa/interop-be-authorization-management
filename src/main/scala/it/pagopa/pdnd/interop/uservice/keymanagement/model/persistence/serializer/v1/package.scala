@@ -4,12 +4,7 @@ import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.PersistentClientV1
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events.{
-  KeyDeletedV1,
-  KeyDisabledV1,
-  KeyEnabledV1,
-  KeysAddedV1
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
   KeyStatusV1,
   PersistentKeyEntryV1,
@@ -20,17 +15,10 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serialize
   StateKeysEntryV1,
   StateV1
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
-  KeyDeleted,
-  KeyDisabled,
-  KeyEnabled,
-  Keys,
-  KeysAdded,
-  State
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.util.Try
 
@@ -115,6 +103,44 @@ package object v1 {
   implicit def keyEnabledV1PersistEventSerializer: PersistEventSerializer[KeyEnabled, KeyEnabledV1] = event =>
     Right[Throwable, KeyEnabledV1](KeyEnabledV1(clientId = event.clientId, keyId = event.keyId))
 
+  implicit def clientAddedV1PersistEventDeserializer: PersistEventDeserializer[ClientAddedV1, ClientAdded] = event =>
+    protobufToClient(event.client).map(ClientAdded)
+
+  implicit def clientAddedV1PersistEventSerializer: PersistEventSerializer[ClientAdded, ClientAddedV1] = event =>
+    clientToProtobuf(event.client).map(client => ClientAddedV1(client = client))
+
+  implicit def clientDeletedV1PersistEventDeserializer: PersistEventDeserializer[ClientDeletedV1, ClientDeleted] =
+    event => Right[Throwable, ClientDeleted](ClientDeleted(clientId = event.clientId))
+
+  implicit def clientDeletedV1PersistEventSerializer: PersistEventSerializer[ClientDeleted, ClientDeletedV1] = event =>
+    Right[Throwable, ClientDeletedV1](ClientDeletedV1(clientId = event.clientId))
+
+  implicit def relationshipAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
+    for {
+      client         <- protobufToClient(event.client)
+      relationshipId <- Try(UUID.fromString(event.relationshipId)).toEither
+    } yield RelationshipAdded(client = client, relationshipId = relationshipId)
+
+  implicit def relationshipAddedV1PersistEventSerializer
+    : PersistEventSerializer[RelationshipAdded, RelationshipAddedV1] = event =>
+    for {
+      client <- clientToProtobuf(event.client)
+    } yield RelationshipAddedV1(client = client, relationshipId = event.relationshipId.toString)
+
+  implicit def relationshipRemovedV1PersistEventDeserializer
+    : PersistEventDeserializer[RelationshipRemovedV1, RelationshipRemoved] =
+    event =>
+      Right[Throwable, RelationshipRemoved](
+        RelationshipRemoved(clientId = event.clientId, relationshipId = event.relationshipId)
+      )
+
+  implicit def relationshipRemovedV1PersistEventSerializer
+    : PersistEventSerializer[RelationshipRemoved, RelationshipRemovedV1] = event =>
+    Right[Throwable, RelationshipRemovedV1](
+      RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
+    )
+
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
     val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq
     entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)
@@ -134,6 +160,18 @@ package object v1 {
       creationTimestamp = fromTime(key.creationTimestamp),
       deactivationTimestamp = key.deactivationTimestamp.map(fromTime),
       status = keyStatus
+    )
+
+  private def clientToProtobuf(client: PersistentClient): ErrorOr[PersistentClientV1] =
+    Right[Throwable, PersistentClientV1](
+      PersistentClientV1(
+        id = client.id.toString,
+        eServiceId = client.eServiceId.toString,
+        consumerId = client.consumerId.toString,
+        name = client.name,
+        description = client.description,
+        relationships = client.relationships.map(_.toString).toSeq
+      )
     )
 
   private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
