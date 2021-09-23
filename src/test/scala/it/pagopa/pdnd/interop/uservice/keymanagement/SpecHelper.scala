@@ -132,13 +132,13 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     Base64.encode(key).toString
   }
 
-  def createKey(clientId: UUID, operatorId: UUID): KeysResponse = {
+  def createKey(clientId: UUID, relationshipId: UUID): KeysResponse = {
 
     val data =
       s"""
          |[
          |  {
-         |    "operatorId": "${operatorId.toString}",
+         |    "relationshipId": "${relationshipId.toString}",
          |    "key": "${generateEncodedKey()}",
          |    "use": "sig",
          |    "alg": "123"
@@ -154,11 +154,11 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
   }
 
-  def addOperator(clientId: UUID, operatorId: UUID): Client = {
-    val requestBody = s"""{"operatorId": "${operatorId.toString}"}"""
+  def addRelationship(clientId: UUID, relationshipId: UUID): Client = {
+    val requestBody = s"""{"relationshipId": "${relationshipId.toString}"}"""
 
     val response = request(
-      uri = s"$serviceURL/clients/${clientId.toString}/operators",
+      uri = s"$serviceURL/clients/${clientId.toString}/relationships",
       method = HttpMethods.POST,
       data = Some(requestBody)
     )

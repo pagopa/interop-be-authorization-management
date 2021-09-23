@@ -12,7 +12,7 @@ message PersistentKeyEntryV1 {
 }
 
 message PersistentKeyV1 {
-  required string operatorId = 1;
+  required string relationshipId = 1;
   required string kid = 2;
   required string encodedPem = 3;
   required string use = 4;

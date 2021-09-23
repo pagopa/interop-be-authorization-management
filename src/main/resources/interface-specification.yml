@@ -106,9 +106,9 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: operatorId
+        - name: relationshipId
           in: query
-          description: ID of operator that MUST be related to the Client
+          description: ID of Party Relationship that MUST be related to the Client
           schema:
             type: string
             format: uuid
@@ -173,12 +173,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/operators':
+  '/clients/{clientId}/relationships':
     post:
       tags:
         - client
-      summary: Add an Operator to a Client
-      operationId: addOperator
+      summary: Add a Party Relationship to a Client
+      operationId: addRelationship
       parameters:
         - name: clientId
           in: path
@@ -189,7 +189,7 @@ paths:
             format: uuid
       responses:
         '201':
-          description: Operator added
+          description: Relationship added
           content:
             application/json:
               schema:
@@ -208,19 +208,19 @@ paths:
                 $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
-        description: An Operator seed
+        description: An Party Relationship seed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OperatorSeed'
-      description: Adds an Operator to a Client
-  '/clients/{clientId}/operators/{operatorId}':
+              $ref: '#/components/schemas/PartyRelationshipSeed'
+      description: Adds a Party Relationship to a Client
+  '/clients/{clientId}/relationships/{relationshipId}':
     delete:
-      description: Removes an operator from a Client
+      description: Removes a Party Relationship from a Client
       tags:
         - client
-      summary: Remove an operator from a Client
-      operationId: removeClientOperator
+      summary: Remove a Party Relationship from a Client
+      operationId: removeClientRelationship
       parameters:
         - name: clientId
           in: path
@@ -229,18 +229,18 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: operatorId
+        - name: relationshipId
           in: path
-          description: The Operator Id
+          description: The Party Relationship Id
           required: true
           schema:
             type: string
             format: uuid
       responses:
         '204':
-          description: Operator removed
+          description: Party Relationship removed
         '404':
-          description: Client or operator not found
+          description: Client or Relationship not found
           content:
             application/problem+json:
               schema:
@@ -461,10 +461,10 @@ components:
       description: 'Models the seed for a public key to be persisted'
       type: object
       properties:
-        operatorId:
+        relationshipId:
           type: string
           format: uuid
-          description: 'Represents the identifier of the platform security operator that is uploading the key'
+          description: 'Represents the identifier of the party relationship whose platform security operator is uploading the key'
         key:
           type: string
           description: 'Base64 UTF-8 encoding of a public key in PEM format'
@@ -478,7 +478,7 @@ components:
           type: string
           description: 'The algorithm type of the key.'
       required:
-        - operatorId
+        - relationshipId
         - key
         - use
         - alg
@@ -603,7 +603,7 @@ components:
           type: string
         description:
           type: string
-        operators:
+        relationships:
           type: array
           items:
             type: string
@@ -614,20 +614,20 @@ components:
         - eServiceId
         - consumerId
         - name
-        - operators
+        - relationships
     Clients:
       type: array
       items:
         $ref: '#/components/schemas/Client'
-    OperatorSeed:
-      description: Models the seed for an Operator-Client relationship to be persisted
+    PartyRelationshipSeed:
+      description: Models the seed for a Party Relationship-Client correlation to be persisted
       type: object
       properties:
-        operatorId:
+        relationshipId:
           type: string
           format: uuid
       required:
-        - operatorId
+        - relationshipId
     Problem:
       properties:
         detail:

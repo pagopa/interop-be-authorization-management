@@ -49,7 +49,7 @@ class ClientManagementSpec
           consumerId = consumerUuid,
           name = name,
           description = description,
-          operators = Set.empty
+          relationships = Set.empty
         )
 
       val data =
@@ -84,14 +84,14 @@ class ClientManagementSpec
     }
 
     "be deleted successfully" in {
-      val clientUuid   = UUID.randomUUID()
-      val eServiceUuid = UUID.randomUUID()
-      val consumerUuid = UUID.randomUUID()
-      val operatorUuid = UUID.randomUUID()
+      val clientUuid       = UUID.randomUUID()
+      val eServiceUuid     = UUID.randomUUID()
+      val consumerUuid     = UUID.randomUUID()
+      val relationshipUuid = UUID.randomUUID()
 
       createClient(clientUuid, eServiceUuid, consumerUuid)
-      addOperator(clientUuid, operatorUuid)
-      createKey(clientUuid, operatorUuid)
+      addRelationship(clientUuid, relationshipUuid)
+      createKey(clientUuid, relationshipUuid)
 
       val deleteResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.DELETE)
       deleteResponse.status shouldBe StatusCodes.NoContent
@@ -134,24 +134,24 @@ class ClientManagementSpec
 
     }
 
-    "correctly filter by operator id" in {
-      val clientId1   = UUID.randomUUID()
-      val clientId2   = UUID.randomUUID()
-      val eServiceId1 = UUID.randomUUID()
-      val eServiceId2 = UUID.randomUUID()
-      val consumerId1 = UUID.randomUUID()
-      val consumerId2 = UUID.randomUUID()
-      val operatorId1 = UUID.randomUUID()
-      val operatorId2 = UUID.randomUUID()
+    "correctly filter by relationship id" in {
+      val clientId1       = UUID.randomUUID()
+      val clientId2       = UUID.randomUUID()
+      val eServiceId1     = UUID.randomUUID()
+      val eServiceId2     = UUID.randomUUID()
+      val consumerId1     = UUID.randomUUID()
+      val consumerId2     = UUID.randomUUID()
+      val relationshipId1 = UUID.randomUUID()
+      val relationshipId2 = UUID.randomUUID()
 
       createClient(clientId1, eServiceId1, consumerId1)
       createClient(clientId2, eServiceId2, consumerId2)
 
-      addOperator(clientId1, operatorId1)
-      addOperator(clientId2, operatorId2)
+      addRelationship(clientId1, relationshipId1)
+      addRelationship(clientId2, relationshipId2)
 
       // List clients
-      val response = request(uri = s"$serviceURL/clients?operatorId=$operatorId1", method = HttpMethods.GET)
+      val response = request(uri = s"$serviceURL/clients?relationshipId=$relationshipId1", method = HttpMethods.GET)
 
       response.status shouldBe StatusCodes.OK
       val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)

@@ -33,3 +33,17 @@ message KeyDeletedV1 {
 message ClientAddedV1 {
   required PersistentClientV1 client = 1;
 }
+
+message ClientDeletedV1 {
+  required string clientId = 1;
+}
+
+message RelationshipAddedV1 {
+  required PersistentClientV1 client = 1;
+  required string relationshipId = 2;
+}
+
+message RelationshipRemovedV1 {
+  required string clientId = 1;
+  required string relationshipId = 2;
+}

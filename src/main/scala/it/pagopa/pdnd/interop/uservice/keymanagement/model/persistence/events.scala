@@ -12,7 +12,8 @@ final case class KeyDisabled(clientId: String, keyId: String, deactivationTimest
 final case class KeyEnabled(clientId: String, keyId: String)                                         extends Event
 final case class KeyDeleted(clientId: String, keyId: String, deactivationTimestamp: OffsetDateTime)  extends Event
 
-final case class ClientAdded(client: PersistentClient)                     extends Event
-final case class ClientDeleted(clientId: String)                           extends Event
-final case class OperatorAdded(client: PersistentClient, operatorId: UUID) extends Event
-final case class OperatorRemoved(clientId: String, operatorId: String)     extends Event
+final case class ClientAdded(client: PersistentClient) extends Event
+final case class ClientDeleted(clientId: String)       extends Event
+
+final case class RelationshipAdded(client: PersistentClient, relationshipId: UUID) extends Event
+final case class RelationshipRemoved(clientId: String, relationshipId: String)     extends Event

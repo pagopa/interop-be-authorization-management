@@ -16,7 +16,7 @@ import scala.concurrent.duration.Duration
   *
   * Starts a local cluster sharding and invokes REST operations on the event sourcing entity
   */
-class OperatorManagementSpec
+class RelationshipManagementSpec
     extends ScalaTestWithActorTestKit(SpecConfiguration.config)
     with AnyWordSpecLike
     with SpecConfiguration
@@ -31,93 +31,93 @@ class OperatorManagementSpec
     super.afterAll()
   }
 
-  "Operator creation" should {
+  "Relationship creation" should {
     "be successful on existing client" in {
-      val clientId   = UUID.randomUUID()
-      val eServiceId = UUID.randomUUID()
-      val consumerId = UUID.randomUUID()
-      val operatorId = UUID.randomUUID()
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
 
       createClient(clientId, eServiceId, consumerId)
 
       val data = s"""{
-                    |  "operatorId": "${operatorId.toString}"
+                    |  "relationshipId": "${relationshipId.toString}"
                     |}""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId/operators", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/$clientId/relationships", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.Created
       val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
 
-      retrievedClient.operators shouldBe Set(operatorId)
+      retrievedClient.relationships shouldBe Set(relationshipId)
     }
 
     "fail if client does not exist" in {
-      val clientId   = UUID.randomUUID()
-      val operatorId = UUID.randomUUID()
+      val clientId       = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
 
       val data = s"""{
-                    |  "operatorId": "${operatorId.toString}"
+                    |  "relationshipId": "${relationshipId.toString}"
                     |}""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId/operators", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/$clientId/relationships", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.NotFound
     }
   }
 
-  "Operator deletion" should {
+  "Relationship deletion" should {
     "be successful and remove keys" in {
-      val clientId    = UUID.randomUUID()
-      val eServiceId  = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val operatorId1 = UUID.randomUUID()
-      val operatorId2 = UUID.randomUUID()
+      val clientId        = UUID.randomUUID()
+      val eServiceId      = UUID.randomUUID()
+      val consumerId      = UUID.randomUUID()
+      val relationshipId1 = UUID.randomUUID()
+      val relationshipId2 = UUID.randomUUID()
 
       createClient(clientId, eServiceId, consumerId)
-      addOperator(clientId, operatorId1)
-      addOperator(clientId, operatorId2)
-      createKey(clientId, operatorId1)
-      val operator2Keys = createKey(clientId, operatorId2)
+      addRelationship(clientId, relationshipId1)
+      addRelationship(clientId, relationshipId2)
+      createKey(clientId, relationshipId1)
+      val relationship2Keys = createKey(clientId, relationshipId2)
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId/operators/$operatorId1", method = HttpMethods.DELETE)
+        request(uri = s"$serviceURL/clients/$clientId/relationships/$relationshipId1", method = HttpMethods.DELETE)
 
       response.status shouldBe StatusCodes.NoContent
 
       val clientRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId", method = HttpMethods.GET)
       val retrievedClient        = Await.result(Unmarshal(clientRetrieveResponse).to[Client], Duration.Inf)
-      retrievedClient.operators shouldBe Set(operatorId2)
+      retrievedClient.relationships shouldBe Set(relationshipId2)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)
-      retrievedKeys.keys shouldBe operator2Keys.keys
+      retrievedKeys.keys shouldBe relationship2Keys.keys
     }
 
-    "be successful and don't remove same operator keys of different client" in {
-      val clientId1  = UUID.randomUUID()
-      val clientId2  = UUID.randomUUID()
-      val eServiceId = UUID.randomUUID()
-      val consumerId = UUID.randomUUID()
-      val operatorId = UUID.randomUUID()
+    "be successful and don't remove same relationship keys of different client" in {
+      val clientId1      = UUID.randomUUID()
+      val clientId2      = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
 
       createClient(clientId1, eServiceId, consumerId)
       createClient(clientId2, eServiceId, consumerId)
-      addOperator(clientId1, operatorId)
-      addOperator(clientId2, operatorId)
-      createKey(clientId1, operatorId)
-      val client2Keys = createKey(clientId2, operatorId)
+      addRelationship(clientId1, relationshipId)
+      addRelationship(clientId2, relationshipId)
+      createKey(clientId1, relationshipId)
+      val client2Keys = createKey(clientId2, relationshipId)
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId1/operators/$operatorId", method = HttpMethods.DELETE)
+        request(uri = s"$serviceURL/clients/$clientId1/relationships/$relationshipId", method = HttpMethods.DELETE)
 
       response.status shouldBe StatusCodes.NoContent
 
       val clientRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2", method = HttpMethods.GET)
       val retrievedClient        = Await.result(Unmarshal(clientRetrieveResponse).to[Client], Duration.Inf)
-      retrievedClient.operators shouldBe Set(operatorId)
+      retrievedClient.relationships shouldBe Set(relationshipId)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)

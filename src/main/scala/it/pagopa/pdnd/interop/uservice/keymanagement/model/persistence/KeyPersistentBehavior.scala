@@ -8,7 +8,7 @@ import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
-import it.pagopa.pdnd.interop.uservice.keymanagement.error.OperatorNotFoundError
+import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotFoundError
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
@@ -17,7 +17,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Persi
   toPersistentKey
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, PersistentKey}
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{ClientNotFoundError, OperatorNotAllowedError}
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{ClientNotFoundError, PartyRelationshipNotAllowedError}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -47,7 +47,7 @@ object KeyPersistentBehavior {
         state.clients.get(clientId) match {
           case Some(client) =>
             val persistentKeys: Either[Throwable, Seq[PersistentKey]] = for {
-              _ <- validateOperators(client, validKeys)
+              _ <- validateRelationships(client, validKeys)
               persistentKeys <- validKeys
                 .map(toPersistentKey)
                 .sequence
@@ -76,26 +76,24 @@ object KeyPersistentBehavior {
       case DisableKey(clientId, keyId, replyTo) =>
         state.getActiveClientKeyById(clientId, keyId) match {
           case Some(key) if !key.status.equals(Active) =>
-            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is already disabled")
+            replyTo ! StatusReply.Error[Done](s"Key $keyId of client $clientId is already disabled")
             Effect.none[KeyDisabled, State]
-          case Some(_) => {
+          case Some(_) =>
             Effect
               .persist(KeyDisabled(clientId, keyId, OffsetDateTime.now()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
-          }
           case None => commandKeyNotFoundError(replyTo)
         }
 
       case EnableKey(clientId, keyId, replyTo) =>
         state.getActiveClientKeyById(clientId, keyId) match {
           case Some(key) if !key.status.equals(Disabled) =>
-            replyTo ! StatusReply.Error[Done](s"Key ${keyId} of client ${clientId} is not disabled")
+            replyTo ! StatusReply.Error[Done](s"Key $keyId of client $clientId is not disabled")
             Effect.none[KeyEnabled, State]
-          case Some(_) => {
+          case Some(_) =>
             Effect
               .persist(KeyEnabled(clientId, keyId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
-          }
           case None => commandKeyNotFoundError(replyTo)
         }
 
@@ -149,10 +147,10 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
-      case ListClients(from, to, eServiceId, operatorId, replyTo) =>
+      case ListClients(from, to, eServiceId, relationshipId, replyTo) =>
         val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
           eServiceId.forall(_ == client.eServiceId.toString) &&
-          operatorId.forall(operator => client.operators.map(_.toString).contains(operator))
+          relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship))
         }
         val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)
 
@@ -169,7 +167,7 @@ object KeyPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
           )
 
-      case AddOperator(clientId, operatorId, replyTo) =>
+      case AddRelationship(clientId, relationshipId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
         client
@@ -177,24 +175,24 @@ object KeyPersistentBehavior {
             commandError(replyTo, ClientNotFoundError(clientId))
           } { c =>
             Effect
-              .persist(OperatorAdded(c, operatorId))
+              .persist(RelationshipAdded(c, relationshipId))
               .thenRun((s: State) =>
                 replyTo ! s.clients
                   .get(clientId)
                   .fold[StatusReply[PersistentClient]](
-                    StatusReply.Error(new RuntimeException(s"Client $clientId not found after add operator action"))
+                    StatusReply.Error(new RuntimeException(s"Client $clientId not found after add relationship action"))
                   )(updatedClient => StatusReply.Success(updatedClient))
               )
           }
 
-      case RemoveOperator(clientId, operatorId, replyTo) =>
+      case RemoveRelationship(clientId, relationshipId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
         val validations: Either[Throwable, PersistentClient] = for {
           persistentClient <- client.toRight(ClientNotFoundError(clientId))
-          _ <- persistentClient.operators
-            .find(_.toString == operatorId)
-            .toRight(OperatorNotFoundError(clientId, operatorId))
+          _ <- persistentClient.relationships
+            .find(_.toString == relationshipId)
+            .toRight(PartyRelationshipNotFoundError(clientId, relationshipId))
         } yield persistentClient
 
         validations
@@ -202,7 +200,7 @@ object KeyPersistentBehavior {
             error => commandError(replyTo, error),
             { _ =>
               Effect
-                .persist(OperatorRemoved(clientId, operatorId))
+                .persist(RelationshipRemoved(clientId, relationshipId))
                 .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
 
             }
@@ -215,16 +213,18 @@ object KeyPersistentBehavior {
     }
   }
 
-  private def validateOperators(
+  private def validateRelationships(
     client: PersistentClient,
     keys: Seq[ValidKey]
-  ): Either[OperatorNotAllowedError, Unit] = {
-    val operatorsNotInClient = keys.map(_._1.operatorId).toSet -- client.operators
+  ): Either[PartyRelationshipNotAllowedError, Unit] = {
+    val relationshipsNotInClient = keys.map(_._1.relationshipId).toSet -- client.relationships
 
     Either.cond(
-      operatorsNotInClient.isEmpty,
+      relationshipsNotInClient.isEmpty,
       (),
-      OperatorNotAllowedError(operatorsNotInClient.map(operatorId => (operatorId.toString, client.id.toString)))
+      PartyRelationshipNotAllowedError(
+        relationshipsNotInClient.map(relationshipId => (relationshipId.toString, client.id.toString))
+      )
     )
   }
 
@@ -271,8 +271,8 @@ object KeyPersistentBehavior {
       case KeyDeleted(clientId, keyId, _)          => state.deleteKey(clientId, keyId)
       case ClientAdded(client)                     => state.addClient(client)
       case ClientDeleted(clientId)                 => state.deleteClient(clientId)
-      case OperatorAdded(client, operatorId)       => state.addOperator(client, operatorId)
-      case OperatorRemoved(clientId, operatorId)   => state.removeOperator(clientId, operatorId)
+      case RelationshipAdded(client, relationshipId)       => state.addRelationship(client, relationshipId)
+      case RelationshipRemoved(clientId, relationshipId)   => state.removeRelationship(clientId, relationshipId)
     }
 
   val TypeKey: EntityTypeKey[Command] =

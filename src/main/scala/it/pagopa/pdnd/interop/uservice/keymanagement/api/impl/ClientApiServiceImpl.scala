@@ -10,12 +10,12 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
-import it.pagopa.pdnd.interop.uservice.keymanagement.error.OperatorNotFoundError
+import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotFoundError
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ClientNotFoundError
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, OperatorSeed, Problem}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -111,19 +111,19 @@ class ClientApiServiceImpl(
     * Code: 400, Message: Missing Required Information, DataType: Problem
     * Code: 500, Message: Missing Required Information, DataType: Problem
     */
-  override def listClients(offset: Int, limit: Int, eServiceId: Option[String], operatorId: Option[String])(implicit
+  override def listClients(offset: Int, limit: Int, eServiceId: Option[String], relationshipId: Option[String])(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]]
   ): Route = {
     val sliceSize = 1000
 
-    // This could be implemented using 'anyOf' function of OpenApi, but the generetor does not support it yet
+    // This could be implemented using 'anyOf' function of OpenApi, but the generator does not support it yet
     // see https://github.com/OpenAPITools/openapi-generator/issues/634
-    (eServiceId, operatorId) match {
+    (eServiceId, relationshipId) match {
       case (None, None) =>
         listClients400(
           Problem(
-            Some("At least one parameter is required [ eServiceId, operatorId ]"),
+            Some("At least one parameter is required [ eServiceId, relationshipId ]"),
             status = 400,
             s"Error retrieving clients list for parameters"
           )
@@ -143,7 +143,7 @@ class ClientApiServiceImpl(
     commander: EntityRef[Command],
     sliceSize: Int,
     eServiceId: Option[String],
-    operatorId: Option[String]
+    relationshipId: Option[String]
   ): LazyList[PersistentClient] = {
     @tailrec
     def readSlice(
@@ -153,7 +153,9 @@ class ClientApiServiceImpl(
       lazyList: LazyList[PersistentClient]
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
-        Await.result(commander.ask(ref => ListClients(from, to, eServiceId, operatorId, ref)), Duration.Inf).getValue
+        Await
+          .result(commander.ask(ref => ListClients(from, to, eServiceId, relationshipId, ref)), Duration.Inf)
+          .getValue
       if (slice.isEmpty)
         lazyList
       else
@@ -162,34 +164,34 @@ class ClientApiServiceImpl(
     readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
-  /** Code: 201, Message: Operator added, DataType: Client
+  /** Code: 201, Message: Party Relationship added, DataType: Client
     * Code: 400, Message: Missing Required Information, DataType: Problem
     * Code: 404, Message: Missing Required Information, DataType: Problem
     */
-  override def addOperator(clientId: String, operatorSeed: OperatorSeed)(implicit
+  override def addRelationship(clientId: String, relationshipSeed: PartyRelationshipSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client]
   ): Route = {
-    logger.info(s"Adding operator ${operatorSeed.operatorId} to client $clientId...")
+    logger.info(s"Adding relationship ${relationshipSeed.relationshipId} to client $clientId...")
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
     val result: Future[StatusReply[PersistentClient]] =
-      commander.ask(ref => AddOperator(clientId, operatorSeed.operatorId, ref))
+      commander.ask(ref => AddRelationship(clientId, relationshipSeed.relationshipId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => addOperator201(statusReply.getValue.toApi)
+      case statusReply if statusReply.isSuccess => addRelationship201(statusReply.getValue.toApi)
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            addOperator404(Problem(Option(ex.getMessage), status = 404, s"Error adding operator to client"))
+            addRelationship404(Problem(Option(ex.getMessage), status = 404, s"Error adding relationship to client"))
           case ex =>
-            addOperator500(
+            addRelationship500(
               Problem(
                 Option(ex.getMessage),
                 status = 500,
-                s"Error adding operator ${operatorSeed.operatorId.toString} to client $clientId"
+                s"Error adding relationship ${relationshipSeed.relationshipId.toString} to client $clientId"
               )
             )
         }
@@ -218,41 +220,45 @@ class ClientApiServiceImpl(
           case ex: ClientNotFoundError =>
             deleteClient404(Problem(Option(ex.getMessage), status = 404, s"Error deleting client"))
           case ex =>
-            addOperator500(Problem(Option(ex.getMessage), status = 500, s"Error deleting client $clientId"))
+            deleteClient500(Problem(Option(ex.getMessage), status = 500, s"Error deleting client $clientId"))
         }
     }
   }
 
-  /** Code: 204, Message: Operator removed
-    * Code: 404, Message: Client or operator not found, DataType: Problem
+  /** Code: 204, Message: Party Relationship removed
+    * Code: 404, Message: Client or Party Relationship not found, DataType: Problem
     * Code: 500, Message: Internal server error, DataType: Problem
     */
-  override def removeClientOperator(clientId: String, operatorId: String)(implicit
+  override def removeClientRelationship(clientId: String, relationshipId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Removing operator $operatorId from client $clientId...")
+    logger.info(s"Removing relationship $relationshipId from client $clientId...")
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
     val result: Future[StatusReply[Done]] =
-      commander.ask(ref => RemoveOperator(clientId, operatorId, ref))
+      commander.ask(ref => RemoveRelationship(clientId, relationshipId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => removeClientOperator204
+      case statusReply if statusReply.isSuccess => removeClientRelationship204
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            removeClientOperator404(
-              Problem(Option(ex.getMessage), status = 404, s"Error removing operator from client")
+            removeClientRelationship404(
+              Problem(Option(ex.getMessage), status = 404, s"Error removing relationship from client")
             )
-          case ex: OperatorNotFoundError =>
-            removeClientOperator404(
-              Problem(Option(ex.getMessage), status = 404, s"Error removing operator from client")
+          case ex: PartyRelationshipNotFoundError =>
+            removeClientRelationship404(
+              Problem(Option(ex.getMessage), status = 404, s"Error removing relationship from client")
             )
           case ex =>
-            removeClientOperator500(
-              Problem(Option(ex.getMessage), status = 500, s"Error removing operator $operatorId from client $clientId")
+            removeClientRelationship500(
+              Problem(
+                Option(ex.getMessage),
+                status = 500,
+                s"Error removing relationship $relationshipId from client $clientId"
+              )
             )
         }
     }

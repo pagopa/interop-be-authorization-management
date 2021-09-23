@@ -31,7 +31,7 @@ case object Disabled extends KeyStatus
 case object Deleted  extends KeyStatus
 
 final case class PersistentKey(
-  operatorId: UUID,
+  relationshipId: UUID,
   kid: String,
   encodedPem: String,
   algorithm: String,
@@ -47,7 +47,7 @@ object PersistentKey {
     for {
       kid <- KeyProcessor.calculateKid(validKey._2)
     } yield PersistentKey(
-      operatorId = validKey._1.operatorId,
+      relationshipId = validKey._1.relationshipId,
       kid = kid,
       encodedPem = validKey._1.key,
       algorithm = validKey._1.alg,
