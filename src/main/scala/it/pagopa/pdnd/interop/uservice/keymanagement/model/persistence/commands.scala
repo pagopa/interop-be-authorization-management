@@ -26,6 +26,7 @@ final case class ListClients(
   until: Int,
   eServiceId: Option[String],
   relationshipId: Option[String],
+  consumerId: Option[String],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command
 final case class AddRelationship(

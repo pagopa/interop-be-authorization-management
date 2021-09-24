@@ -111,7 +111,13 @@ class ClientApiServiceImpl(
     * Code: 400, Message: Missing Required Information, DataType: Problem
     * Code: 500, Message: Missing Required Information, DataType: Problem
     */
-  override def listClients(offset: Int, limit: Int, eServiceId: Option[String], relationshipId: Option[String])(implicit
+  override def listClients(
+    offset: Int,
+    limit: Int,
+    eServiceId: Option[String],
+    relationshipId: Option[String],
+    consumerId: Option[String]
+  )(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]]
   ): Route = {
@@ -119,21 +125,21 @@ class ClientApiServiceImpl(
 
     // This could be implemented using 'anyOf' function of OpenApi, but the generator does not support it yet
     // see https://github.com/OpenAPITools/openapi-generator/issues/634
-    (eServiceId, relationshipId) match {
-      case (None, None) =>
+    (eServiceId, relationshipId, consumerId) match {
+      case (None, None, None) =>
         listClients400(
           Problem(
-            Some("At least one parameter is required [ eServiceId, relationshipId ]"),
+            Some("At least one parameter is required [ eServiceId, relationshipId, consumerId ]"),
             status = 400,
             s"Error retrieving clients list for parameters"
           )
         )
-      case (agrId, opId) =>
+      case (agrId, opId, conId) =>
         val commanders: Seq[EntityRef[Command]] =
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
-        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, agrId, opId).map(_.toApi))
+        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, agrId, opId, conId).map(_.toApi))
         val paginatedClients     = clients.sortBy(_.id).slice(offset, offset + limit)
         listClients200(paginatedClients)
     }
@@ -143,7 +149,8 @@ class ClientApiServiceImpl(
     commander: EntityRef[Command],
     sliceSize: Int,
     eServiceId: Option[String],
-    relationshipId: Option[String]
+    relationshipId: Option[String],
+    consumerId: Option[String]
   ): LazyList[PersistentClient] = {
     @tailrec
     def readSlice(
@@ -154,7 +161,10 @@ class ClientApiServiceImpl(
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
         Await
-          .result(commander.ask(ref => ListClients(from, to, eServiceId, relationshipId, ref)), Duration.Inf)
+          .result(
+            commander.ask(ref => ListClients(from, to, eServiceId, relationshipId, consumerId, ref)),
+            Duration.Inf
+          )
           .getValue
       if (slice.isEmpty)
         lazyList

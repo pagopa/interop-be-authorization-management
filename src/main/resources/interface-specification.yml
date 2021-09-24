@@ -112,6 +112,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: consumerId
+          in: query
+          description: Consumer ID that MUST be related to the Client
+          schema:
+            type: string
+            format: uuid
   /clients/{clientId}:
     get:
       description: Retrieves a Client
