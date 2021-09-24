@@ -161,6 +161,29 @@ class ClientManagementSpec
 
     }
 
+    "correctly filter by consumer id" in {
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val clientId3   = UUID.randomUUID()
+      val eServiceId1 = UUID.randomUUID()
+      val consumerId1 = UUID.randomUUID()
+      val eServiceId3 = UUID.randomUUID()
+      val consumerId3 = UUID.randomUUID()
+
+      val client1 = createClient(clientId1, eServiceId1, consumerId1)
+      val client2 = createClient(clientId2, eServiceId1, consumerId1)
+      createClient(clientId3, eServiceId3, consumerId3)
+
+      val response = request(uri = s"$serviceURL/clients?consumerId=$consumerId1", method = HttpMethods.GET)
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients.size shouldBe 2
+      retrievedClients should contain only (client1, client2)
+
+    }
+
     "correctly paginate elements" in {
       val clientId1  = UUID.randomUUID()
       val clientId2  = UUID.randomUUID()

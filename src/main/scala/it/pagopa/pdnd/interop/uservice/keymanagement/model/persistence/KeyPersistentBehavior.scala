@@ -147,10 +147,11 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
-      case ListClients(from, to, eServiceId, relationshipId, replyTo) =>
+      case ListClients(from, to, eServiceId, relationshipId, consumerId, replyTo) =>
         val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
           eServiceId.forall(_ == client.eServiceId.toString) &&
-          relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship))
+          relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
+          consumerId.forall(_ == client.consumerId.toString)
         }
         val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)
 
@@ -265,14 +266,14 @@ object KeyPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case KeysAdded(clientId, keys)               => state.addKeys(clientId, keys)
-      case KeyDisabled(clientId, keyId, timestamp) => state.disable(clientId, keyId, timestamp)
-      case KeyEnabled(clientId, keyId)             => state.enable(clientId, keyId)
-      case KeyDeleted(clientId, keyId, _)          => state.deleteKey(clientId, keyId)
-      case ClientAdded(client)                     => state.addClient(client)
-      case ClientDeleted(clientId)                 => state.deleteClient(clientId)
-      case RelationshipAdded(client, relationshipId)       => state.addRelationship(client, relationshipId)
-      case RelationshipRemoved(clientId, relationshipId)   => state.removeRelationship(clientId, relationshipId)
+      case KeysAdded(clientId, keys)                     => state.addKeys(clientId, keys)
+      case KeyDisabled(clientId, keyId, timestamp)       => state.disable(clientId, keyId, timestamp)
+      case KeyEnabled(clientId, keyId)                   => state.enable(clientId, keyId)
+      case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
+      case ClientAdded(client)                           => state.addClient(client)
+      case ClientDeleted(clientId)                       => state.deleteClient(clientId)
+      case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
+      case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
     }
 
   val TypeKey: EntityTypeKey[Command] =
