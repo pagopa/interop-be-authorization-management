@@ -275,7 +275,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceUuid,
           consumerUuid,
           "client 1",
-          "objectives",
+          "purposes",
           Some("client 1 desc"),
           Set.empty
         )
@@ -285,7 +285,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceUuid,
           consumerUuid,
           "client 2",
-          "objectives",
+          "purposes",
           Some("client 2 desc"),
           Set.empty
         )
@@ -295,7 +295,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceUuid,
           consumerUuid,
           "client 3",
-          "objectives",
+          "purposes",
           Some("client 3 desc"),
           Set.empty
         )

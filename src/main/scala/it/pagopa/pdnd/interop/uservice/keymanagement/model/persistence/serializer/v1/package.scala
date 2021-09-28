@@ -169,7 +169,7 @@ package object v1 {
         eServiceId = client.eServiceId.toString,
         consumerId = client.consumerId.toString,
         name = client.name,
-        objectives = client.objectives,
+        purposes = client.purposes,
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq
       )
@@ -194,7 +194,7 @@ package object v1 {
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
-      objectives = client.objectives,
+      purposes = client.purposes,
       description = client.description,
       relationships = relationships.toSet
     )
