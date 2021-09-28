@@ -40,6 +40,7 @@ class ClientManagementSpec
       val eServiceUuid = UUID.randomUUID()
       val consumerUuid = UUID.randomUUID()
       val name         = "New Client 1"
+      val purposes     = "Purposes 1"
       val description  = Some("New Client 1 description")
 
       val expected =
@@ -48,6 +49,7 @@ class ClientManagementSpec
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = name,
+          purposes = purposes,
           description = description,
           relationships = Set.empty
         )
@@ -57,6 +59,7 @@ class ClientManagementSpec
            |  "eServiceId": "${eServiceUuid.toString}",
            |  "consumerId": "${consumerUuid.toString}",
            |  "name": "$name",
+           |  "purposes": "$purposes",
            |  "description": "${description.get}"
            |}""".stripMargin
 

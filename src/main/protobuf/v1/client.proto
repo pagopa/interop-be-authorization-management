@@ -13,4 +13,5 @@ message PersistentClientV1 {
   required string name = 4;
   optional string description = 5;
   repeated string relationships = 6;
+  required string purposes = 7;
 }

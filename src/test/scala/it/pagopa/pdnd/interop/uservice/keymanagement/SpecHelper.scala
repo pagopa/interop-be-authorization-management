@@ -96,6 +96,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     val eServiceUuid = eServiceId
     val consumerUuid = consumerId
     val name         = s"New Client ${id.toString}"
+    val purposes   = s"Purposes ${id.toString}"
     val description  = s"New Client ${id.toString} description"
 
     val data =
@@ -103,6 +104,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
          |  "eServiceId": "${eServiceUuid.toString}",
          |  "consumerId": "${consumerUuid.toString}",
          |  "name": "$name",
+         |  "purposes": "$purposes",
          |  "description": "$description"
          |}""".stripMargin
 
