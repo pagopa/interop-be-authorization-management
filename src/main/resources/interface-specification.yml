@@ -497,9 +497,13 @@ components:
           type: string
           description: 'Key status'
           enum: [ 'active', 'disabled', 'deleted' ]
+        relationshipId:
+          type: string
+          format: uuid
       required:
         - key
         - status
+        - relationshipId
     Key:
       description: 'Models a JWK'
       type: object

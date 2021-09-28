@@ -71,7 +71,7 @@ object PersistentKey {
             persistentKey.use,
             persistentKey.algorithm
           )
-          .map(ClientKey(_, persistentKey.status.toString))
+          .map(ClientKey(_, persistentKey.status.toString, persistentKey.relationshipId))
       }
     } yield key
 
@@ -87,7 +87,7 @@ object PersistentKey {
         persistentKey.use,
         persistentKey.algorithm
       )
-      .map(ClientKey(_, persistentKey.status.toString))
+      .map(ClientKey(_, persistentKey.status.toString, persistentKey.relationshipId))
   }
 
 }
