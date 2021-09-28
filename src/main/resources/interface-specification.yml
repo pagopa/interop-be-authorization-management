@@ -588,10 +588,13 @@ components:
           type: string
         description:
           type: string
+        objectives:
+          type: string
       required:
         - eServiceId
         - consumerId
         - name
+        - objectives
     Client:
       description: Models a Client
       type: object
@@ -609,6 +612,8 @@ components:
           type: string
         description:
           type: string
+        objectives:
+          type: string
         relationships:
           type: array
           items:
@@ -620,6 +625,7 @@ components:
         - eServiceId
         - consumerId
         - name
+        - objectives
         - relationships
     Clients:
       type: array

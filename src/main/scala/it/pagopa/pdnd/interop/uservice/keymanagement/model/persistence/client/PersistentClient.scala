@@ -10,6 +10,7 @@ final case class PersistentClient(
   eServiceId: UUID,
   consumerId: UUID,
   name: String,
+  objectives: String,
   description: Option[String],
   relationships: Set[UUID]
 ) extends Persistent {
@@ -20,6 +21,7 @@ final case class PersistentClient(
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = name,
+      objectives = objectives,
       description = description,
       relationships = relationships
     )
@@ -34,6 +36,7 @@ object PersistentClient {
       eServiceId = seed.eServiceId,
       consumerId = seed.consumerId,
       name = seed.name,
+      objectives = seed.objectives,
       description = seed.description,
       relationships = Set.empty[UUID]
     )
