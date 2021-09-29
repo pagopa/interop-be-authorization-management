@@ -107,7 +107,7 @@ object KeyPersistentBehavior {
         }
 
       case GetKeys(clientId, replyTo) =>
-        state.getClientActiveKeys(clientId) match {
+        state.keys.get(clientId) match {
           case Some(keys) =>
             toAPIResponse(keys).fold(
               error => errorMessageReply(replyTo, s"Error while retrieving keys: ${error.getLocalizedMessage}"),
