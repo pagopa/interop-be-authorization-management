@@ -389,7 +389,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys/{keyId}/disable':
-    get:
+    patch:
       tags:
         - key
       summary: Disable a client key by key identifier (kid).
@@ -419,7 +419,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys/{keyId}/enable':
-    get:
+    patch:
       tags:
         - key
       summary: Enables a client key by key identifier (kid).
