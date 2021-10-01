@@ -112,7 +112,7 @@ class KeyManagementSpec
       val keyKid       = keysResponse.keys.head.key.kid
 
       val response =
-        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.POST)
 
       response.status shouldBe StatusCodes.NoContent
     }
@@ -127,7 +127,7 @@ class KeyManagementSpec
       addRelationship(clientId, relationshipId)
 
       val response =
-        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/some-kid/disable", method = HttpMethods.PATCH)
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/some-kid/disable", method = HttpMethods.POST)
 
       response.status shouldBe StatusCodes.NotFound
     }
@@ -143,10 +143,10 @@ class KeyManagementSpec
       val keysResponse = createKey(clientId, relationshipId)
       val keyKid       = keysResponse.keys.head.key.kid
 
-      request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+      request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.POST)
 
       val response =
-        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.POST)
 
       response.status shouldBe StatusCodes.NotFound
     }
@@ -164,10 +164,10 @@ class KeyManagementSpec
       val keysResponse = createKey(clientId, relationshipId)
       val keyKid       = keysResponse.keys.head.key.kid
 
-      request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+      request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.POST)
 
       val response =
-        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/enable", method = HttpMethods.PATCH)
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/enable", method = HttpMethods.POST)
 
       response.status shouldBe StatusCodes.NoContent
     }
@@ -182,7 +182,7 @@ class KeyManagementSpec
       addRelationship(clientId, relationshipId)
 
       val response =
-        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/some-kid/enable", method = HttpMethods.PATCH)
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/some-kid/enable", method = HttpMethods.POST)
 
       response.status shouldBe StatusCodes.NotFound
     }
@@ -199,7 +199,7 @@ class KeyManagementSpec
       val keyKid       = keysResponse.keys.head.key.kid
 
       val response =
-        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/enable", method = HttpMethods.PATCH)
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/enable", method = HttpMethods.POST)
 
       response.status shouldBe StatusCodes.NotFound
     }
