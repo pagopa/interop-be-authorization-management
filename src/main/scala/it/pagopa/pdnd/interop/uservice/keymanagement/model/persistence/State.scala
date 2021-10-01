@@ -76,6 +76,9 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def getActiveClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     getClientActiveKeys(clientId).flatMap(_.get(keyId))
 
+  def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
+    keys.get(clientId).flatMap(_.get(keyId))
+
   private def updateKey(
     clientId: String,
     keyId: String,

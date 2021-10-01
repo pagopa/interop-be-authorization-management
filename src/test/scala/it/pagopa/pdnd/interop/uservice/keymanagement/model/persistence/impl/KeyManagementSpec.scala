@@ -26,7 +26,7 @@ class KeyManagementSpec
     super.afterAll()
   }
 
-  "Key creation should" should {
+  "Key creation" should {
     "fail if client does not exist" in {
       val data =
         s"""
@@ -96,6 +96,112 @@ class KeyManagementSpec
         request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.Created
+    }
+  }
+
+  "Key disable" should {
+    "succeed" in {
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, eServiceId, consumerId)
+      addRelationship(clientId, relationshipId)
+      val keysResponse = createKey(clientId, relationshipId)
+      val keyKid       = keysResponse.keys.head.key.kid
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+
+      response.status shouldBe StatusCodes.NoContent
+    }
+
+    "fail if key does not exist" in {
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, eServiceId, consumerId)
+      addRelationship(clientId, relationshipId)
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/some-kid/disable", method = HttpMethods.PATCH)
+
+      response.status shouldBe StatusCodes.NotFound
+    }
+
+    "fail if key is already disabled" in {
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, eServiceId, consumerId)
+      addRelationship(clientId, relationshipId)
+      val keysResponse = createKey(clientId, relationshipId)
+      val keyKid       = keysResponse.keys.head.key.kid
+
+      request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+
+      response.status shouldBe StatusCodes.NotFound
+    }
+  }
+
+  "Key enable" should {
+    "succeed" in {
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, eServiceId, consumerId)
+      addRelationship(clientId, relationshipId)
+      val keysResponse = createKey(clientId, relationshipId)
+      val keyKid       = keysResponse.keys.head.key.kid
+
+      request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/disable", method = HttpMethods.PATCH)
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/enable", method = HttpMethods.PATCH)
+
+      response.status shouldBe StatusCodes.NoContent
+    }
+
+    "fail if key does not exist" in {
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, eServiceId, consumerId)
+      addRelationship(clientId, relationshipId)
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/some-kid/enable", method = HttpMethods.PATCH)
+
+      response.status shouldBe StatusCodes.NotFound
+    }
+
+    "fail if key is already enabled" in {
+      val clientId       = UUID.randomUUID()
+      val eServiceId     = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, eServiceId, consumerId)
+      addRelationship(clientId, relationshipId)
+      val keysResponse = createKey(clientId, relationshipId)
+      val keyKid       = keysResponse.keys.head.key.kid
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys/$keyKid/enable", method = HttpMethods.PATCH)
+
+      response.status shouldBe StatusCodes.NotFound
     }
   }
 

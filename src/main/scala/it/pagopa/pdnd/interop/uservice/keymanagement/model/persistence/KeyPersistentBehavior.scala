@@ -86,19 +86,19 @@ object KeyPersistentBehavior {
         }
 
       case EnableKey(clientId, keyId, replyTo) =>
-        state.getActiveClientKeyById(clientId, keyId) match {
-          case Some(key) if !key.status.equals(Disabled) =>
-            replyTo ! StatusReply.Error[Done](s"Key $keyId of client $clientId is not disabled")
-            Effect.none[KeyEnabled, State]
-          case Some(_) =>
+        state.getClientKeyById(clientId, keyId) match {
+          case Some(key) if key.status.equals(Disabled) =>
             Effect
               .persist(KeyEnabled(clientId, keyId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
+          case Some(_) =>
+            replyTo ! StatusReply.Error[Done](s"Key $keyId of client $clientId is not disabled")
+            Effect.none[KeyEnabled, State]
           case None => commandKeyNotFoundError(replyTo)
         }
 
       case DeleteKey(clientId, keyId, replyTo) =>
-        state.getActiveClientKeyById(clientId, keyId) match {
+        state.getClientKeyById(clientId, keyId) match {
           case Some(_) =>
             Effect
               .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
