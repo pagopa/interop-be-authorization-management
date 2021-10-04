@@ -318,6 +318,151 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       updatedState.clients.size shouldBe 2
     }
 
+    "activate a client" in {
+      val clientUuid1 = UUID.randomUUID()
+      val clientUuid2 = UUID.randomUUID()
+
+      val clientId1 = clientUuid1.toString
+      val clientId2 = clientUuid2.toString
+
+      val eServiceUuid   = UUID.randomUUID()
+      val consumerUuid   = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      //given
+      val client1Keys = Map(
+        "kid1" -> PersistentKey(
+          kid = "kid1",
+          relationshipId = relationshipId,
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client2Keys = Map(
+        "kid2" -> PersistentKey(
+          kid = "kid2",
+          relationshipId = relationshipId,
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client1 =
+        PersistentClient(
+          id = clientUuid1,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 1",
+          status = client.Active,
+          purposes = "purposes",
+          description = Some("client 1 desc"),
+          relationships = Set.empty
+        )
+      val client2 =
+        PersistentClient(
+          id = clientUuid2,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 2",
+          status = client.Suspended,
+          purposes = "purposes",
+          description = Some("client 2 desc"),
+          relationships = Set.empty
+        )
+
+      val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys)
+      val clients = Map(clientId1 -> client1, clientId2 -> client2)
+      val state   = State(keys = keys, clients = clients)
+
+      //when
+      val updatedState = state.activateClient(clientId2)
+
+      //then
+      updatedState.keys shouldBe keys
+      updatedState.clients.get(clientId1) should contain (client1)
+      updatedState.clients.get(clientId2) should contain (client2.copy(status = client.Active))
+      updatedState.clients.size shouldBe 2
+    }
+
+    "suspend a client" in {
+      val clientUuid1 = UUID.randomUUID()
+      val clientUuid2 = UUID.randomUUID()
+
+      val clientId1 = clientUuid1.toString
+      val clientId2 = clientUuid2.toString
+
+      val eServiceUuid   = UUID.randomUUID()
+      val consumerUuid   = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      //given
+      val client1Keys = Map(
+        "kid1" -> PersistentKey(
+          kid = "kid1",
+          relationshipId = relationshipId,
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client2Keys = Map(
+        "kid2" -> PersistentKey(
+          kid = "kid2",
+          relationshipId = relationshipId,
+          encodedPem = "123",
+          use = "sig",
+          algorithm = "sha",
+          creationTimestamp = OffsetDateTime.now(),
+          deactivationTimestamp = None,
+          status = Active
+        )
+      )
+      val client1 =
+        PersistentClient(
+          id = clientUuid1,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 1",
+          status = client.Active,
+          purposes = "purposes",
+          description = Some("client 1 desc"),
+          relationships = Set.empty
+        )
+      val client2 =
+        PersistentClient(
+          id = clientUuid2,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 2",
+          status = client.Active,
+          purposes = "purposes",
+          description = Some("client 2 desc"),
+          relationships = Set.empty
+        )
+
+      val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys)
+      val clients = Map(clientId1 -> client1, clientId2 -> client2)
+      val state   = State(keys = keys, clients = clients)
+
+      //when
+      val updatedState = state.suspendClient(clientId2)
+
+      //then
+      updatedState.keys shouldBe keys
+      updatedState.clients.get(clientId1) should contain (client1)
+      updatedState.clients.get(clientId2) should contain (client2.copy(status = client.Suspended))
+      updatedState.clients.size shouldBe 2
+    }
   }
 
 }
