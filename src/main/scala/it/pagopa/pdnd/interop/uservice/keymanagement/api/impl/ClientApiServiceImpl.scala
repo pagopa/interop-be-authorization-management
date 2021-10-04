@@ -287,7 +287,7 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateClientById204
       case statusReply if statusReply.isError =>
-        activateClientById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+        activateClientById404(Problem(Option(statusReply.getError.getMessage), status = 404, "Not found"))
     }
   }
 
@@ -304,7 +304,7 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendClientById204
       case statusReply if statusReply.isError =>
-        suspendClientById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+        suspendClientById404(Problem(Option(statusReply.getError.getMessage), status = 404, "Not found"))
     }
   }
 }
