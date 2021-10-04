@@ -5,6 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Client
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.Active
 import it.pagopa.pdnd.interop.uservice.keymanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -49,6 +50,7 @@ class ClientManagementSpec
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = name,
+          status = Active.stringify,
           purposes = purposes,
           description = description,
           relationships = Set.empty

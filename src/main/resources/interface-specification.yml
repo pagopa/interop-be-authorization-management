@@ -616,6 +616,9 @@ components:
           type: string
         description:
           type: string
+        status:
+          type: string
+          enum: [ 'active', 'suspended' ]
         purposes:
           type: string
         relationships:
@@ -629,6 +632,7 @@ components:
         - eServiceId
         - consumerId
         - name
+        - status
         - purposes
         - relationships
     Clients:

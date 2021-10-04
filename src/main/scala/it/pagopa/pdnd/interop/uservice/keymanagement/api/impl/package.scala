@@ -45,7 +45,7 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val keyResponseFormat: RootJsonFormat[KeysResponse]      = jsonFormat1(KeysResponse)
 
   implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat5(ClientSeed)
-  implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat7(Client)
+  implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat8(Client)
   implicit val relationshipSeedFormat: RootJsonFormat[PartyRelationshipSeed] = jsonFormat1(PartyRelationshipSeed)
 
   private def customKeyFormat: RootJsonFormat[Key] = {

@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.State
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Deleted, Disabled, PersistentKey}
 import org.scalatest.matchers.should.Matchers
@@ -271,33 +272,36 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       )
       val client1 =
         PersistentClient(
-          clientUuid1,
-          eServiceUuid,
-          consumerUuid,
-          "client 1",
-          "purposes",
-          Some("client 1 desc"),
-          Set.empty
+          id = clientUuid1,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 1",
+          status = client.Active,
+          purposes = "purposes",
+          description = Some("client 1 desc"),
+          relationships = Set.empty
         )
       val client2 =
         PersistentClient(
-          clientUuid2,
-          eServiceUuid,
-          consumerUuid,
-          "client 2",
-          "purposes",
-          Some("client 2 desc"),
-          Set.empty
+          id = clientUuid2,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 2",
+          status = client.Active,
+          purposes = "purposes",
+          description = Some("client 2 desc"),
+          relationships = Set.empty
         )
       val client3 =
         PersistentClient(
-          clientUuid3,
-          eServiceUuid,
-          consumerUuid,
-          "client 3",
-          "purposes",
-          Some("client 3 desc"),
-          Set.empty
+          id = clientUuid3,
+          eServiceId = eServiceUuid,
+          consumerId = consumerUuid,
+          name = "client 3",
+          status = client.Active,
+          purposes = "purposes",
+          description = Some("client 3 desc"),
+          relationships = Set.empty
         )
 
       val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys, clientId3 -> client3Keys)
