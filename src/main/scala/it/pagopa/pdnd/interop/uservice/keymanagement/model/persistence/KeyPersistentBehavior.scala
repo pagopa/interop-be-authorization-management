@@ -168,6 +168,26 @@ object KeyPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
           )
 
+      case ActivateClient(clientId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        client
+          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(_ =>
+            Effect
+              .persist(ClientActivated(clientId))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
+          )
+
+      case SuspendClient(clientId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        client
+          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(_ =>
+            Effect
+              .persist(ClientSuspended(clientId))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
+          )
+
       case AddRelationship(clientId, relationshipId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
@@ -272,6 +292,8 @@ object KeyPersistentBehavior {
       case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
       case ClientAdded(client)                           => state.addClient(client)
       case ClientDeleted(clientId)                       => state.deleteClient(clientId)
+      case ClientActivated(clientId)                     => state.activateClient(clientId)
+      case ClientSuspended(clientId)                     => state.suspendClient(clientId)
       case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
       case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
     }

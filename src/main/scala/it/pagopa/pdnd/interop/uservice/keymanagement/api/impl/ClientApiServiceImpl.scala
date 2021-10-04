@@ -273,4 +273,38 @@ class ClientApiServiceImpl(
         }
     }
   }
+
+  /** Code: 204, Message: the client has been activated.
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def activateClientById(
+    clientId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+    logger.info(s"Activating client $clientId...")
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => ActivateClient(clientId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => activateClientById204
+      case statusReply if statusReply.isError =>
+        activateClientById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
+
+  /** Code: 204, Message: the corresponding client has been suspended.
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def suspendClientById(
+    clientId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+    logger.info(s"Suspending client $clientId...")
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => SuspendClient(clientId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => suspendClientById204
+      case statusReply if statusReply.isError =>
+        suspendClientById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
 }

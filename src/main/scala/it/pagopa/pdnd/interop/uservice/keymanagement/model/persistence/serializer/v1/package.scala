@@ -118,6 +118,18 @@ package object v1 {
   implicit def clientDeletedV1PersistEventSerializer: PersistEventSerializer[ClientDeleted, ClientDeletedV1] = event =>
     Right[Throwable, ClientDeletedV1](ClientDeletedV1(clientId = event.clientId))
 
+  implicit def clientActivatedV1PersistEventDeserializer: PersistEventDeserializer[ClientActivatedV1, ClientActivated] =
+    event => Right[Throwable, ClientActivated](ClientActivated(clientId = event.clientId))
+
+  implicit def clientActivatedV1PersistEventSerializer: PersistEventSerializer[ClientActivated, ClientActivatedV1] = event =>
+    Right[Throwable, ClientActivatedV1](ClientActivatedV1(clientId = event.clientId))
+
+  implicit def clientSuspendedV1PersistEventDeserializer: PersistEventDeserializer[ClientSuspendedV1, ClientSuspended] =
+    event => Right[Throwable, ClientSuspended](ClientSuspended(clientId = event.clientId))
+
+  implicit def clientSuspendedV1PersistEventSerializer: PersistEventSerializer[ClientSuspended, ClientSuspendedV1] = event =>
+    Right[Throwable, ClientSuspendedV1](ClientSuspendedV1(clientId = event.clientId))
+
   implicit def relationshipAddedV1PersistEventDeserializer
     : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
     for {

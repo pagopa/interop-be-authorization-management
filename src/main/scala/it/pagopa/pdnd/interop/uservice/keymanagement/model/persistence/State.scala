@@ -1,11 +1,11 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
+import cats.implicits._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientStatus, PersistentClient}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import cats.implicits._
 
 /*
     possible models
@@ -38,6 +38,12 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
   def deleteClient(clientId: String): State =
     copy(clients = clients - clientId, keys = keys - clientId)
+
+  def activateClient(clientId: String): State =
+    updateClientStatus(clientId, client.Active)
+
+  def suspendClient(clientId: String): State =
+    updateClientStatus(clientId, client.Suspended)
 
   def addRelationship(client: PersistentClient, relationshipId: UUID): State = {
     val updatedClient = client.copy(relationships = client.relationships + relationshipId)
@@ -90,6 +96,14 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
         val updatedKey = key.copy(status = status, deactivationTimestamp = timestamp)
         addKeys(clientId, Map(updatedKey.kid -> updatedKey))
       })
+  }
+
+  private def updateClientStatus(clientId: String, newStatus: ClientStatus): State = {
+    val updatedClient = clients.get(clientId).map(_.copy(status = newStatus))
+    updatedClient match {
+      case None         => this
+      case Some(client) => copy(clients = clients + (clientId -> client))
+    }
   }
 
 }

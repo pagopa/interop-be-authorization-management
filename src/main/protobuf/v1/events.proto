@@ -38,6 +38,14 @@ message ClientDeletedV1 {
   required string clientId = 1;
 }
 
+message ClientActivatedV1 {
+  required string clientId = 1;
+}
+
+message ClientSuspendedV1 {
+  required string clientId = 1;
+}
+
 message RelationshipAddedV1 {
   required PersistentClientV1 client = 1;
   required string relationshipId = 2;

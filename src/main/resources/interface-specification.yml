@@ -179,6 +179,54 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/suspend':
+    post:
+      tags:
+        - client
+      summary: Suspend a client by id.
+      description: 'Suspend the given client'
+      operationId: suspendClientById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: the corresponding client has been suspended.
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/activate':
+    post:
+      tags:
+        - client
+      summary: Activates a client by id.
+      description: 'Activate the given client'
+      operationId: activateClientById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client holding the key
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: the client has been activated.
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/relationships':
     post:
       tags:
