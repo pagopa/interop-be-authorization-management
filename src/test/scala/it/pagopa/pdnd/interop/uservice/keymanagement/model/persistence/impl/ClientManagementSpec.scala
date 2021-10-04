@@ -5,7 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Client
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.Active
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{Active, Suspended}
 import it.pagopa.pdnd.interop.uservice.keymanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -106,6 +106,45 @@ class ClientManagementSpec
 
       val retrieveKeysResponse = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
       retrieveKeysResponse.status shouldBe StatusCodes.NotFound
+    }
+
+    "be activated successfully" in {
+      val clientUuid       = UUID.randomUUID()
+      val eServiceUuid     = UUID.randomUUID()
+      val consumerUuid     = UUID.randomUUID()
+      val relationshipUuid = UUID.randomUUID()
+
+      createClient(clientUuid, eServiceUuid, consumerUuid)
+      val client = addRelationship(clientUuid, relationshipUuid)
+      createKey(clientUuid, relationshipUuid)
+
+      val suspendResponse = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
+      suspendResponse.status shouldBe StatusCodes.NoContent
+
+      val activateResponse = request(uri = s"$serviceURL/clients/$clientUuid/activate", method = HttpMethods.POST)
+      activateResponse.status shouldBe StatusCodes.NoContent
+
+      val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
+      val retrievedClient = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
+      retrievedClient shouldBe client
+    }
+
+    "be suspended successfully" in {
+      val clientUuid       = UUID.randomUUID()
+      val eServiceUuid     = UUID.randomUUID()
+      val consumerUuid     = UUID.randomUUID()
+      val relationshipUuid = UUID.randomUUID()
+
+      createClient(clientUuid, eServiceUuid, consumerUuid)
+      val client = addRelationship(clientUuid, relationshipUuid)
+      createKey(clientUuid, relationshipUuid)
+
+      val suspendResponse = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
+      suspendResponse.status shouldBe StatusCodes.NoContent
+
+      val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
+      val retrievedClient = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
+      retrievedClient shouldBe client.copy(status = Suspended.stringify)
     }
 
     "fail on non-existing client id" in {
