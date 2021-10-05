@@ -88,7 +88,11 @@ class ClientManagementSpec
       retrievedClient shouldBe createdClient
     }
 
-    "be deleted successfully" in {
+  }
+
+  "Client deletion" should {
+
+    "succeed" in {
       val clientUuid       = UUID.randomUUID()
       val eServiceUuid     = UUID.randomUUID()
       val consumerUuid     = UUID.randomUUID()
@@ -108,7 +112,16 @@ class ClientManagementSpec
       retrieveKeysResponse.status shouldBe StatusCodes.NotFound
     }
 
-    "be activated successfully" in {
+    "fail on non-existing client id" in {
+      val deleteResponse = request(uri = s"$serviceURL/clients/non-existing-id", method = HttpMethods.DELETE)
+      deleteResponse.status shouldBe StatusCodes.NotFound
+    }
+
+  }
+
+  "Client activation" should {
+
+    "succeed" in {
       val clientUuid       = UUID.randomUUID()
       val eServiceUuid     = UUID.randomUUID()
       val consumerUuid     = UUID.randomUUID()
@@ -129,7 +142,30 @@ class ClientManagementSpec
       retrievedClient shouldBe client
     }
 
-    "be suspended successfully" in {
+    "fail on non-existing client id" in {
+      val response = request(uri = s"$serviceURL/clients/non-existing-id/activate", method = HttpMethods.POST)
+      response.status shouldBe StatusCodes.NotFound
+    }
+
+    "fail if client is already active" in {
+      val clientUuid       = UUID.randomUUID()
+      val eServiceUuid     = UUID.randomUUID()
+      val consumerUuid     = UUID.randomUUID()
+      val relationshipUuid = UUID.randomUUID()
+
+      createClient(clientUuid, eServiceUuid, consumerUuid)
+      addRelationship(clientUuid, relationshipUuid)
+      createKey(clientUuid, relationshipUuid)
+
+      val response = request(uri = s"$serviceURL/clients/$clientUuid/activate", method = HttpMethods.POST)
+      response.status shouldBe StatusCodes.BadRequest
+    }
+
+  }
+
+  "Client suspension" should {
+
+    "succeed" in {
       val clientUuid       = UUID.randomUUID()
       val eServiceUuid     = UUID.randomUUID()
       val consumerUuid     = UUID.randomUUID()
@@ -148,8 +184,25 @@ class ClientManagementSpec
     }
 
     "fail on non-existing client id" in {
-      val deleteResponse = request(uri = s"$serviceURL/clients/non-existing-id", method = HttpMethods.DELETE)
-      deleteResponse.status shouldBe StatusCodes.NotFound
+      val response = request(uri = s"$serviceURL/clients/non-existing-id/suspend", method = HttpMethods.POST)
+      response.status shouldBe StatusCodes.NotFound
+    }
+
+    "fail if client is already suspended" in {
+      val clientUuid       = UUID.randomUUID()
+      val eServiceUuid     = UUID.randomUUID()
+      val consumerUuid     = UUID.randomUUID()
+      val relationshipUuid = UUID.randomUUID()
+
+      createClient(clientUuid, eServiceUuid, consumerUuid)
+      addRelationship(clientUuid, relationshipUuid)
+      createKey(clientUuid, relationshipUuid)
+
+      val prepareDataResponse = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
+      prepareDataResponse.status shouldBe StatusCodes.NoContent
+
+      val response = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
+      response.status shouldBe StatusCodes.BadRequest
     }
 
   }

@@ -5,7 +5,7 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.server.Directives.onSuccess
+import akka.http.scaladsl.server.Directives.{complete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
@@ -14,7 +14,11 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotF
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ClientNotFoundError
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
+  ClientAlreadyActiveError,
+  ClientAlreadySuspendedError,
+  ClientNotFoundError
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.slf4j.{Logger, LoggerFactory}
@@ -287,7 +291,15 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateClientById204
       case statusReply if statusReply.isError =>
-        activateClientById404(Problem(Option(statusReply.getError.getMessage), status = 404, "Not found"))
+        statusReply.getError match {
+          case err: ClientNotFoundError =>
+            activateClientById404(Problem(Some(err.getMessage), status = 404, "Not found"))
+          case err: ClientAlreadyActiveError =>
+            activateClientById400(Problem(Some(err.getMessage), status = 400, "Bad Request"))
+          case err =>
+            complete((500, Problem(Option(err.getMessage), status = 500, "Unexpected error")))
+        }
+
     }
   }
 
@@ -304,7 +316,15 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendClientById204
       case statusReply if statusReply.isError =>
-        suspendClientById404(Problem(Option(statusReply.getError.getMessage), status = 404, "Not found"))
+        statusReply.getError match {
+          case err: ClientNotFoundError =>
+            suspendClientById404(Problem(Some(err.getMessage), status = 404, "Not found"))
+          case err: ClientAlreadySuspendedError =>
+            suspendClientById400(Problem(Some(err.getMessage), status = 400, "Bad Request"))
+          case err =>
+            complete((500, Problem(Option(err.getMessage), status = 500, "Unexpected error")))
+        }
+
     }
   }
 }

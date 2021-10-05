@@ -197,6 +197,12 @@ paths:
       responses:
         '204':
           description: the corresponding client has been suspended.
+        '400':
+          description: Client already suspended
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '404':
           description: Client not found
           content:
@@ -221,6 +227,12 @@ paths:
       responses:
         '204':
           description: the client has been activated.
+        '400':
+          description: Client already active
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '404':
           description: Client not found
           content:
