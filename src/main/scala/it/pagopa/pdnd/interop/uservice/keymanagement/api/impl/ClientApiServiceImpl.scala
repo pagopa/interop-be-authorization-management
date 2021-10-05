@@ -5,7 +5,7 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.server.Directives.onSuccess
+import akka.http.scaladsl.server.Directives.{complete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
@@ -14,7 +14,11 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotF
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ClientNotFoundError
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
+  ClientAlreadyActiveError,
+  ClientAlreadySuspendedError,
+  ClientNotFoundError
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.slf4j.{Logger, LoggerFactory}
@@ -271,6 +275,56 @@ class ClientApiServiceImpl(
               )
             )
         }
+    }
+  }
+
+  /** Code: 204, Message: the client has been activated.
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def activateClientById(
+    clientId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+    logger.info(s"Activating client $clientId...")
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => ActivateClient(clientId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => activateClientById204
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case err: ClientNotFoundError =>
+            activateClientById404(Problem(Some(err.getMessage), status = 404, "Not found"))
+          case err: ClientAlreadyActiveError =>
+            activateClientById400(Problem(Some(err.getMessage), status = 400, "Bad Request"))
+          case err =>
+            complete((500, Problem(Option(err.getMessage), status = 500, "Unexpected error")))
+        }
+
+    }
+  }
+
+  /** Code: 204, Message: the corresponding client has been suspended.
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def suspendClientById(
+    clientId: String
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+    logger.info(s"Suspending client $clientId...")
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val result: Future[StatusReply[Done]] = commander.ask(ref => SuspendClient(clientId, ref))
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => suspendClientById204
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case err: ClientNotFoundError =>
+            suspendClientById404(Problem(Some(err.getMessage), status = 404, "Not found"))
+          case err: ClientAlreadySuspendedError =>
+            suspendClientById400(Problem(Some(err.getMessage), status = 400, "Bad Request"))
+          case err =>
+            complete((500, Problem(Option(err.getMessage), status = 500, "Unexpected error")))
+        }
+
     }
   }
 }

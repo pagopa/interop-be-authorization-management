@@ -17,7 +17,16 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Persi
   toPersistentKey
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, PersistentKey}
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{ClientNotFoundError, PartyRelationshipNotAllowedError}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  Active => ClientStatusActive,
+  Suspended => ClientStatusSuspended
+}
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
+  ClientAlreadyActiveError,
+  ClientAlreadySuspendedError,
+  ClientNotFoundError,
+  PartyRelationshipNotAllowedError
+}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
@@ -168,6 +177,36 @@ object KeyPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
           )
 
+      case ActivateClient(clientId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        client
+          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(client =>
+            client.status match {
+              case ClientStatusActive =>
+                commandError(replyTo, ClientAlreadyActiveError(clientId))
+              case ClientStatusSuspended =>
+                Effect
+                  .persist(ClientActivated(clientId))
+                  .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
+            }
+          )
+
+      case SuspendClient(clientId, replyTo) =>
+        val client: Option[PersistentClient] = state.clients.get(clientId)
+
+        client
+          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(client =>
+            client.status match {
+              case ClientStatusActive =>
+                Effect
+                  .persist(ClientSuspended(clientId))
+                  .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
+              case ClientStatusSuspended =>
+                commandError(replyTo, ClientAlreadySuspendedError(clientId))
+            }
+          )
+
       case AddRelationship(clientId, relationshipId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
@@ -272,6 +311,8 @@ object KeyPersistentBehavior {
       case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
       case ClientAdded(client)                           => state.addClient(client)
       case ClientDeleted(clientId)                       => state.deleteClient(clientId)
+      case ClientActivated(clientId)                     => state.activateClient(clientId)
+      case ClientSuspended(clientId)                     => state.suspendClient(clientId)
       case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
       case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
     }

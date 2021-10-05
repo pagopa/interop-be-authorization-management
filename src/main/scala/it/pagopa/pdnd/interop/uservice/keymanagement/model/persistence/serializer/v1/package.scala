@@ -1,9 +1,12 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer
 
 import cats.implicits._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientStatus, PersistentClient}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.PersistentClientV1
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
+  ClientStatusV1,
+  PersistentClientV1
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
   KeyStatusV1,
@@ -115,6 +118,18 @@ package object v1 {
   implicit def clientDeletedV1PersistEventSerializer: PersistEventSerializer[ClientDeleted, ClientDeletedV1] = event =>
     Right[Throwable, ClientDeletedV1](ClientDeletedV1(clientId = event.clientId))
 
+  implicit def clientActivatedV1PersistEventDeserializer: PersistEventDeserializer[ClientActivatedV1, ClientActivated] =
+    event => Right[Throwable, ClientActivated](ClientActivated(clientId = event.clientId))
+
+  implicit def clientActivatedV1PersistEventSerializer: PersistEventSerializer[ClientActivated, ClientActivatedV1] = event =>
+    Right[Throwable, ClientActivatedV1](ClientActivatedV1(clientId = event.clientId))
+
+  implicit def clientSuspendedV1PersistEventDeserializer: PersistEventDeserializer[ClientSuspendedV1, ClientSuspended] =
+    event => Right[Throwable, ClientSuspended](ClientSuspended(clientId = event.clientId))
+
+  implicit def clientSuspendedV1PersistEventSerializer: PersistEventSerializer[ClientSuspended, ClientSuspendedV1] = event =>
+    Right[Throwable, ClientSuspendedV1](ClientSuspendedV1(clientId = event.clientId))
+
   implicit def relationshipAddedV1PersistEventDeserializer
     : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
     for {
@@ -163,20 +178,23 @@ package object v1 {
     )
 
   private def clientToProtobuf(client: PersistentClient): ErrorOr[PersistentClientV1] =
-    Right[Throwable, PersistentClientV1](
-      PersistentClientV1(
-        id = client.id.toString,
-        eServiceId = client.eServiceId.toString,
-        consumerId = client.consumerId.toString,
-        name = client.name,
-        purposes = client.purposes,
-        description = client.description,
-        relationships = client.relationships.map(_.toString).toSeq
-      )
+    for {
+      clientStatus <- ClientStatusV1
+        .fromName(client.status.stringify)
+        .toRight(new RuntimeException("Protobuf serialization failed"))
+    } yield PersistentClientV1(
+      id = client.id.toString,
+      eServiceId = client.eServiceId.toString,
+      consumerId = client.consumerId.toString,
+      name = client.name,
+      status = clientStatus,
+      purposes = client.purposes,
+      description = client.description,
+      relationships = client.relationships.map(_.toString).toSeq
     )
 
   private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
-    val entries = keys.map(entry => protbufToKey(entry.value).map(key => (entry.keyId, key)))
+    val entries = keys.map(entry => protobufToKey(entry.value).map(key => (entry.keyId, key)))
     entries.traverse[ErrorOr, (String, PersistentKey)](identity)
   }
 
@@ -188,18 +206,20 @@ package object v1 {
       clientId      <- Try(UUID.fromString(client.id)).toEither
       eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
+      clientStatus  <- ClientStatus.fromText(client.status.name)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
+      status = clientStatus,
       purposes = client.purposes,
       description = client.description,
       relationships = relationships.toSet
     )
 
-  private def protbufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
+  private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
       keyStatus      <- KeyStatus.fromText(key.status.name)
       relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither

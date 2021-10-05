@@ -1,7 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client
 
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.Persistent
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed}
 
 import java.util.UUID
 
@@ -10,6 +10,7 @@ final case class PersistentClient(
   eServiceId: UUID,
   consumerId: UUID,
   name: String,
+  status: ClientStatus,
   purposes: String,
   description: Option[String],
   relationships: Set[UUID]
@@ -21,6 +22,7 @@ final case class PersistentClient(
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = name,
+      status = status.stringify,
       purposes = purposes,
       description = description,
       relationships = relationships
@@ -36,6 +38,7 @@ object PersistentClient {
       eServiceId = seed.eServiceId,
       consumerId = seed.consumerId,
       name = seed.name,
+      status = Active,
       purposes = seed.purposes,
       description = seed.description,
       relationships = Set.empty[UUID]
