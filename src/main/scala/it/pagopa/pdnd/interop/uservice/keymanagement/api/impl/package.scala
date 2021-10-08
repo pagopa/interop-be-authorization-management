@@ -5,11 +5,12 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.{
   Client,
   ClientKey,
   ClientSeed,
+  EncodedClientKey,
   Key,
   KeySeed,
   KeysResponse,
-  PartyRelationshipSeed,
   OtherPrimeInfo,
+  PartyRelationshipSeed,
   Problem
 }
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError}
@@ -38,11 +39,12 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val problemFormat: RootJsonFormat[Problem] = jsonFormat3(Problem)
 
-  implicit val otherPrimeInfoFormat: RootJsonFormat[OtherPrimeInfo] = jsonFormat3(OtherPrimeInfo)
-  implicit val keySeedFormat: RootJsonFormat[KeySeed]               = jsonFormat4(KeySeed)
-  implicit val keyFormat: RootJsonFormat[Key]                       = customKeyFormat
-  implicit val clientKeyFormat: RootJsonFormat[ClientKey]           = jsonFormat3(ClientKey)
-  implicit val keyResponseFormat: RootJsonFormat[KeysResponse]      = jsonFormat1(KeysResponse)
+  implicit val otherPrimeInfoFormat: RootJsonFormat[OtherPrimeInfo]     = jsonFormat3(OtherPrimeInfo)
+  implicit val keySeedFormat: RootJsonFormat[KeySeed]                   = jsonFormat4(KeySeed)
+  implicit val keyFormat: RootJsonFormat[Key]                           = customKeyFormat
+  implicit val clientKeyFormat: RootJsonFormat[ClientKey]               = jsonFormat3(ClientKey)
+  implicit val encodedClientKeyFormat: RootJsonFormat[EncodedClientKey] = jsonFormat1(EncodedClientKey)
+  implicit val keyResponseFormat: RootJsonFormat[KeysResponse]          = jsonFormat1(KeysResponse)
 
   implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat5(ClientSeed)
   implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat8(Client)

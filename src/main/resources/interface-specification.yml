@@ -145,12 +145,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
     delete:
       description: Deletes a Client
       tags:
@@ -169,12 +163,6 @@ paths:
           description: Client deleted
         '404':
           description: Client not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
           content:
             application/problem+json:
               schema:
@@ -266,12 +254,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
         description: An Party Relationship seed
@@ -307,12 +289,6 @@ paths:
           description: Party Relationship removed
         '404':
           description: Client or Relationship not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
           content:
             application/problem+json:
               schema:
@@ -448,6 +424,40 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/encoded/keys/{keyId}':
+    get:
+      tags:
+        - key
+      summary: Returns a base64 encoded key by client and key identifier (kid).
+      description: 'Given a client and key identifiers it returns the corresponding encoded key, if any'
+      operationId: getEncodedClientKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to lookup
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: returns the corresponding base 64 encoded key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncodedClientKey'
+        "404":
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys/{keyId}/disable':
     post:
       tags:
@@ -564,6 +574,14 @@ components:
         - key
         - status
         - relationshipId
+    EncodedClientKey:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 'base64 encoded key'
+      required:
+        - key
     Key:
       description: 'Models a JWK'
       type: object

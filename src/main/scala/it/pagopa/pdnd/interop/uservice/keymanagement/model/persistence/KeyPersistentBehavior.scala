@@ -9,7 +9,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotFoundError
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeysResponse
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{EncodedClientKey, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
   toAPI,
@@ -79,6 +79,14 @@ object KeyPersistentBehavior {
               }
             )
 
+          case None => commandKeyNotFoundError(replyTo)
+        }
+
+      case GetEncodedKey(clientId, keyId, replyTo) =>
+        state.getActiveClientKeyById(clientId, keyId) match {
+          case Some(key) =>
+            replyTo ! StatusReply.Success(EncodedClientKey(key = key.encodedPem))
+            Effect.none[Event, State]
           case None => commandKeyNotFoundError(replyTo)
         }
 

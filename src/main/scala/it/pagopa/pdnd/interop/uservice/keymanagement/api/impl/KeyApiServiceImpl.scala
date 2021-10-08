@@ -14,7 +14,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, KeySeed, KeysResponse, Problem}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeySeed, KeysResponse, Problem}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.annotation.tailrec
@@ -183,6 +183,28 @@ class KeyApiServiceImpl(
       case statusReply if statusReply.isSuccess => enableKeyById204
       case statusReply if statusReply.isError =>
         enableKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+    }
+  }
+
+  /** Code: 200, Message: returns the corresponding base 64 encoded key, DataType: EncodedClientKey
+    * Code: 401, Message: Unauthorized, DataType: Problem
+    * Code: 404, Message: Key not found, DataType: Problem
+    * Code: 500, Message: Internal Server Error, DataType: Problem
+    */
+  override def getEncodedClientKeyById(clientId: String, keyId: String)(implicit
+    toEntityMarshallerEncodedClientKey: ToEntityMarshaller[EncodedClientKey],
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
+  ): Route = {
+    logger.info(s"Getting encoded key ${keyId} for client ${clientId}...")
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[EncodedClientKey]] = commander.ask(ref => GetEncodedKey(clientId, keyId, ref))
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
+      case statusReply if statusReply.isError =>
+        getEncodedClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
     }
   }
 }
