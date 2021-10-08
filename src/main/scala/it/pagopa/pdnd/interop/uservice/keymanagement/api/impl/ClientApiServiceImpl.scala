@@ -48,6 +48,11 @@ class ClientApiServiceImpl(
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
+  def internalServerError(responseProblem: Problem)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
+  ): Route =
+    complete((500, responseProblem))
+
   /** Code: 201, Message: Client created, DataType: Client
     * Code: 400, Message: Missing Required Information, DataType: Problem
     */
@@ -103,11 +108,11 @@ class ClientApiServiceImpl(
           case ex: ClientNotFoundError =>
             getClient404(Problem(Option(ex.getMessage), status = 404, s"Error on client retrieve"))
           case ex =>
-            getClient500(Problem(Option(ex.getMessage), 500, s"Error while retrieving client $clientId"))
+            internalServerError(Problem(Option(ex.getMessage), 500, s"Error while retrieving client $clientId"))
         }
       // This should never occur, but with this check the pattern matching is exhaustive
       case unknownReply =>
-        getClient500(Problem(Option(unknownReply.toString()), 500, s"Error while retrieving client $clientId"))
+        internalServerError(Problem(Option(unknownReply.toString()), 500, s"Error while retrieving client $clientId"))
     }
   }
 
@@ -201,7 +206,7 @@ class ClientApiServiceImpl(
           case ex: ClientNotFoundError =>
             addRelationship404(Problem(Option(ex.getMessage), status = 404, s"Error adding relationship to client"))
           case ex =>
-            addRelationship500(
+            internalServerError(
               Problem(
                 Option(ex.getMessage),
                 status = 500,
@@ -234,7 +239,7 @@ class ClientApiServiceImpl(
           case ex: ClientNotFoundError =>
             deleteClient404(Problem(Option(ex.getMessage), status = 404, s"Error deleting client"))
           case ex =>
-            deleteClient500(Problem(Option(ex.getMessage), status = 500, s"Error deleting client $clientId"))
+            internalServerError(Problem(Option(ex.getMessage), status = 500, s"Error deleting client $clientId"))
         }
     }
   }
@@ -267,7 +272,7 @@ class ClientApiServiceImpl(
               Problem(Option(ex.getMessage), status = 404, s"Error removing relationship from client")
             )
           case ex =>
-            removeClientRelationship500(
+            internalServerError(
               Problem(
                 Option(ex.getMessage),
                 status = 500,

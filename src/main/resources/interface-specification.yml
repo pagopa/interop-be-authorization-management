@@ -145,12 +145,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
     delete:
       description: Deletes a Client
       tags:
@@ -169,12 +163,6 @@ paths:
           description: Client deleted
         '404':
           description: Client not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
           content:
             application/problem+json:
               schema:
@@ -266,12 +254,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
         description: An Party Relationship seed
@@ -307,12 +289,6 @@ paths:
           description: Party Relationship removed
         '404':
           description: Client or Relationship not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '500':
-          description: Internal server error
           content:
             application/problem+json:
               schema:
@@ -476,20 +452,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EncodedClientKey'
-        "401":
-          description: Unauthorized
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         "404":
           description: Key not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        "500":
-          description: Internal Server Error
           content:
             application/problem+json:
               schema:
