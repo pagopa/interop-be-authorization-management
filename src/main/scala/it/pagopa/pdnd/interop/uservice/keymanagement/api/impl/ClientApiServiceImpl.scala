@@ -57,6 +57,7 @@ class ClientApiServiceImpl(
     * Code: 400, Message: Missing Required Information, DataType: Problem
     */
   override def createClient(clientSeed: ClientSeed)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client]
   ): Route = {
@@ -91,6 +92,7 @@ class ClientApiServiceImpl(
     * Code: 400, Message: Bad request, DataType: Problem
     */
   override def getClient(clientId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client]
   ): Route = {
@@ -127,6 +129,7 @@ class ClientApiServiceImpl(
     relationshipId: Option[String],
     consumerId: Option[String]
   )(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]]
   ): Route = {
@@ -188,6 +191,7 @@ class ClientApiServiceImpl(
     * Code: 404, Message: Missing Required Information, DataType: Problem
     */
   override def addRelationship(clientId: String, relationshipSeed: PartyRelationshipSeed)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client]
   ): Route = {
@@ -223,7 +227,7 @@ class ClientApiServiceImpl(
     */
   override def deleteClient(
     clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+  )(implicit contexts: Seq[(String, String)], toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
     logger.info(s"Deleting client $clientId...")
 
     val commander: EntityRef[Command] =
@@ -249,6 +253,7 @@ class ClientApiServiceImpl(
     * Code: 500, Message: Internal server error, DataType: Problem
     */
   override def removeClientRelationship(clientId: String, relationshipId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Removing relationship $relationshipId from client $clientId...")
@@ -288,7 +293,7 @@ class ClientApiServiceImpl(
     */
   override def activateClientById(
     clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+  )(implicit contexts: Seq[(String, String)], toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
     logger.info(s"Activating client $clientId...")
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
@@ -313,7 +318,7 @@ class ClientApiServiceImpl(
     */
   override def suspendClientById(
     clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
+  )(implicit contexts: Seq[(String, String)], toEntityMarshallerProblem: ToEntityMarshaller[Problem]): Route = {
     logger.info(s"Suspending client $clientId...")
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))

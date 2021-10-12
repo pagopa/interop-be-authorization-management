@@ -1,3 +1,5 @@
+import ProjectSettings.ProjectFrom
+
 ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / organization := "it.pagopa"
 ThisBuild / organizationName := "Pagopa S.p.A."
@@ -8,7 +10,7 @@ ThisBuild / libraryDependencies := Dependencies.Jars.`server`.map(m =>
     m
 )
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := ComputeVersion.version
 
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
 
@@ -52,6 +54,7 @@ cleanFiles += baseDirectory.value / "client" / "src"
 lazy val generated = project
   .in(file("generated"))
   .settings(scalacOptions := Seq())
+  .setupBuildInfo
 
 lazy val client = project
   .in(file("client"))
@@ -94,5 +97,6 @@ lazy val root = (project in file("."))
   .aggregate(client)
   .dependsOn(generated)
   .enablePlugins(JavaAppPackaging, JavaAgent)
+  .setupBuildInfo
 
 javaAgents += "io.kamon" % "kanela-agent" % "1.0.7"

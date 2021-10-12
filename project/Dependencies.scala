@@ -79,6 +79,10 @@ object Dependencies {
     lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
   }
 
+  private[this] object mustache {
+    lazy val mustache = "com.github.spullara.mustache.java" % "compiler" % mustacheVersion
+  }
+
   private[this] object openapi4j {
     lazy val namespace          = "org.openapi4j"
     lazy val operationValidator = namespace % "openapi-operation-validator" % openapi4jVersion
@@ -140,6 +144,7 @@ object Dependencies {
       openapi4j.operationValidator % Compile,
       kamon.bundle                 % Compile,
       kamon.prometheus             % Compile,
+      mustache.mustache            % Compile,
       cats.core                    % Compile,
       nimbus.joseJwt               % Compile,
       bouncycastle.provider        % Compile,

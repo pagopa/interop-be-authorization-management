@@ -27,7 +27,7 @@ trait SpecConfiguration {
     """)
 
   val config: Config = ConfigFactory
-    .parseResourcesAnySyntax("test")
+    .parseResourcesAnySyntax("application-test")
     .withFallback(testData)
 
   def serviceURL: String = config.getString("pdnd-interop-uservice-key-management.url")

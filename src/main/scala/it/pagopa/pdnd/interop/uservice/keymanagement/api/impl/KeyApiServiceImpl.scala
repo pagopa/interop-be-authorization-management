@@ -45,12 +45,13 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Client id not found, DataType: Problem
     */
   override def createKeys(clientId: String, key: Seq[KeySeed])(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     //TODO consider a preauthorize for user rights validations...
 
-    logger.info(s"Creating keys for client ${clientId}...")
+    logger.info(s"Creating keys for client $clientId...")
 
     val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
@@ -99,10 +100,11 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def getClientKeyById(clientId: String, keyId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Getting key ${keyId} for client ${clientId}...")
+    logger.info(s"Getting key $keyId for client $clientId...")
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
@@ -119,10 +121,11 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Client id not found, DataType: Problem
     */
   override def getClientKeys(clientId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerKeysCreatedResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Getting keys for client ${clientId}...")
+    logger.info(s"Getting keys for client $clientId...")
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
@@ -139,6 +142,7 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def deleteClientKeyById(clientId: String, keyId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Delete key $keyId belonging to $clientId...")
@@ -156,6 +160,7 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def disableKeyById(clientId: String, keyId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Disabling key $keyId belonging to $clientId...")
@@ -173,6 +178,7 @@ class KeyApiServiceImpl(
     * Code: 404, Message: Key not found, DataType: Problem
     */
   override def enableKeyById(clientId: String, keyId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
     logger.info(s"Enabling key $keyId belonging to $clientId...")
@@ -192,10 +198,11 @@ class KeyApiServiceImpl(
     * Code: 500, Message: Internal Server Error, DataType: Problem
     */
   override def getEncodedClientKeyById(clientId: String, keyId: String)(implicit
+    contexts: Seq[(String, String)],
     toEntityMarshallerEncodedClientKey: ToEntityMarshaller[EncodedClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem]
   ): Route = {
-    logger.info(s"Getting encoded key ${keyId} for client ${clientId}...")
+    logger.info(s"Getting encoded key $keyId for client $clientId...")
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
