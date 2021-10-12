@@ -33,11 +33,6 @@ object Dependencies {
     lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
   }
 
-  private[this] object postgres {
-    lazy val namespace = "org.postgresql"
-    lazy val jdbc      = namespace % "postgresql" % "42.2.21"
-  }
-
   private[this] object awssdk {
     lazy val namespace = "software.amazon.awssdk"
     lazy val s3        = namespace % "s3" % awsSdkVersion
@@ -130,7 +125,6 @@ object Dependencies {
       akka.projectionCassandra     % Compile,
       akka.persistenceCassandra    % Compile,
       akka.persistenceJdbc         % Compile,
-      postgres.jdbc                % Compile,
       akka.slick                   % Compile,
       akka.slickHikari             % Compile,
       akka.s3Journal               % Compile,
