@@ -6,9 +6,6 @@ import com.typesafe.config.{Config, ConfigFactory}
   */
 trait SpecConfiguration {
 
-  System.setProperty("AWS_ACCESS_KEY_ID", "foo")
-  System.setProperty("AWS_SECRET_ACCESS_KEY", "bar")
-
   val testData: Config = ConfigFactory.parseString(s"""
       akka.actor.provider = cluster
 
@@ -27,10 +24,11 @@ trait SpecConfiguration {
     """)
 
   val config: Config = ConfigFactory
-    .parseResourcesAnySyntax("test")
+    .parseResourcesAnySyntax("application-test")
     .withFallback(testData)
 
-  def serviceURL: String = config.getString("pdnd-interop-uservice-key-management.url")
+  def serviceURL: String =
+    s"${config.getString("pdnd-interop-uservice-key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
 
 }
 

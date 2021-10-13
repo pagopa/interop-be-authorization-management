@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Key management microservice
-  version: 0.0.1
+  version: '{{version}}'
   contact:
     name: API Support
     url: 'http://www.example.com/support'
@@ -11,8 +11,7 @@ info:
   x-api-id: an x-api-id
   x-summary: an x-summary
 servers:
-#  - url: 'https://gateway.interop.pdnd.dev/pdnd-interop-uservice-key-management/0.0.1'
-  - url: 'http://localhost:8088/pdnd-interop-uservice-key-management/0.0.1'
+  - url: '/pdnd-interop-uservice-key-management/{{version}}'
     description: This contains key management routes
 tags:
   - name: key

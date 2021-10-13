@@ -33,11 +33,6 @@ object Dependencies {
     lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
   }
 
-  private[this] object postgres {
-    lazy val namespace = "org.postgresql"
-    lazy val jdbc      = namespace % "postgresql" % "42.2.21"
-  }
-
   private[this] object awssdk {
     lazy val namespace = "software.amazon.awssdk"
     lazy val s3        = namespace % "s3" % awsSdkVersion
@@ -77,6 +72,10 @@ object Dependencies {
     lazy val namespace  = "io.kamon"
     lazy val bundle     = namespace %% "kamon-bundle"     % kamonVersion
     lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
+  }
+
+  private[this] object mustache {
+    lazy val mustache = "com.github.spullara.mustache.java" % "compiler" % mustacheVersion
   }
 
   private[this] object openapi4j {
@@ -126,7 +125,6 @@ object Dependencies {
       akka.projectionCassandra     % Compile,
       akka.persistenceCassandra    % Compile,
       akka.persistenceJdbc         % Compile,
-      postgres.jdbc                % Compile,
       akka.slick                   % Compile,
       akka.slickHikari             % Compile,
       akka.s3Journal               % Compile,
@@ -140,6 +138,7 @@ object Dependencies {
       openapi4j.operationValidator % Compile,
       kamon.bundle                 % Compile,
       kamon.prometheus             % Compile,
+      mustache.mustache            % Compile,
       cats.core                    % Compile,
       nimbus.joseJwt               % Compile,
       bouncycastle.provider        % Compile,

@@ -10,6 +10,7 @@ import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.persistence.typed.PersistenceId
@@ -31,6 +32,9 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSupport with DefaultJsonProtocol {
   self: ScalaTestWithActorTestKit =>
 
+  val bearerToken: String               = "token"
+  val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken(bearerToken)))
+
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
 
@@ -39,7 +43,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
 
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
-  val wrappingDirective: AuthenticationDirective[Unit] =
+  val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
     SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
 
   val sharding: ClusterSharding = ClusterSharding(system)
@@ -74,7 +78,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
 
     controller foreach { controller =>
       bindServer = Some(
-        Http()
+        Http()(classicSystem)
           .newServerAt("0.0.0.0", 18088)
           .bind(controller.routes)
       )
@@ -96,7 +100,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     val eServiceUuid = eServiceId
     val consumerUuid = consumerId
     val name         = s"New Client ${id.toString}"
-    val purposes   = s"Purposes ${id.toString}"
+    val purposes     = s"Purposes ${id.toString}"
     val description  = s"New Client ${id.toString} description"
 
     val data =
@@ -171,7 +175,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
   }
 
   def request(uri: String, method: HttpMethod, data: Option[String] = None): HttpResponse = {
-    val httpRequest: HttpRequest = HttpRequest(uri = uri, method = method)
+    val httpRequest: HttpRequest = HttpRequest(uri = uri, method = method, headers = authorization)
 
     val requestWithEntity: HttpRequest =
       data.fold(httpRequest)(d => httpRequest.withEntity(HttpEntity(ContentTypes.`application/json`, d)))
