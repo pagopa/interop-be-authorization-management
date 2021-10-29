@@ -12,7 +12,7 @@ class RelationshipRemovedSerializer extends SerializerWithStringManifest {
 
   final val currentVersion: String = version1
 
-  override def identifier: Int = 10007
+  override def identifier: Int = 10005
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 

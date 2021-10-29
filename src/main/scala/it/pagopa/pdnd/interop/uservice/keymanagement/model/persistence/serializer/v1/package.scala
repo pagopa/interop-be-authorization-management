@@ -1,15 +1,15 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer
 
 import cats.implicits._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientStatus, PersistentClient}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
   ClientStatusV1,
   PersistentClientV1
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
-  KeyStatusV1,
   PersistentKeyEntryV1,
   PersistentKeyV1
 }
@@ -18,7 +18,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serialize
   StateKeysEntryV1,
   StateV1
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
@@ -82,30 +81,6 @@ package object v1 {
       )
     )
 
-  implicit def keyDisabledV1PersistEventDeserializer: PersistEventDeserializer[KeyDisabledV1, KeyDisabled] = event =>
-    Right[Throwable, KeyDisabled](
-      KeyDisabled(
-        clientId = event.clientId,
-        keyId = event.keyId,
-        deactivationTimestamp = toTime(event.deactivationTimestamp)
-      )
-    )
-
-  implicit def keyDisabledV1PersistEventSerializer: PersistEventSerializer[KeyDisabled, KeyDisabledV1] = event =>
-    Right[Throwable, KeyDisabledV1](
-      KeyDisabledV1(
-        clientId = event.clientId,
-        keyId = event.keyId,
-        deactivationTimestamp = fromTime(event.deactivationTimestamp)
-      )
-    )
-
-  implicit def keyEnabledV1PersistEventDeserializer: PersistEventDeserializer[KeyEnabledV1, KeyEnabled] = event =>
-    Right[Throwable, KeyEnabled](KeyEnabled(clientId = event.clientId, keyId = event.keyId))
-
-  implicit def keyEnabledV1PersistEventSerializer: PersistEventSerializer[KeyEnabled, KeyEnabledV1] = event =>
-    Right[Throwable, KeyEnabledV1](KeyEnabledV1(clientId = event.clientId, keyId = event.keyId))
-
   implicit def clientAddedV1PersistEventDeserializer: PersistEventDeserializer[ClientAddedV1, ClientAdded] = event =>
     protobufToClient(event.client).map(ClientAdded)
 
@@ -121,14 +96,14 @@ package object v1 {
   implicit def clientActivatedV1PersistEventDeserializer: PersistEventDeserializer[ClientActivatedV1, ClientActivated] =
     event => Right[Throwable, ClientActivated](ClientActivated(clientId = event.clientId))
 
-  implicit def clientActivatedV1PersistEventSerializer: PersistEventSerializer[ClientActivated, ClientActivatedV1] = event =>
-    Right[Throwable, ClientActivatedV1](ClientActivatedV1(clientId = event.clientId))
+  implicit def clientActivatedV1PersistEventSerializer: PersistEventSerializer[ClientActivated, ClientActivatedV1] =
+    event => Right[Throwable, ClientActivatedV1](ClientActivatedV1(clientId = event.clientId))
 
   implicit def clientSuspendedV1PersistEventDeserializer: PersistEventDeserializer[ClientSuspendedV1, ClientSuspended] =
     event => Right[Throwable, ClientSuspended](ClientSuspended(clientId = event.clientId))
 
-  implicit def clientSuspendedV1PersistEventSerializer: PersistEventSerializer[ClientSuspended, ClientSuspendedV1] = event =>
-    Right[Throwable, ClientSuspendedV1](ClientSuspendedV1(clientId = event.clientId))
+  implicit def clientSuspendedV1PersistEventSerializer: PersistEventSerializer[ClientSuspended, ClientSuspendedV1] =
+    event => Right[Throwable, ClientSuspendedV1](ClientSuspendedV1(clientId = event.clientId))
 
   implicit def relationshipAddedV1PersistEventDeserializer
     : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
@@ -162,19 +137,15 @@ package object v1 {
   }
 
   private def keyToProtobuf(key: PersistentKey): ErrorOr[PersistentKeyV1] =
-    for {
-      keyStatus <- KeyStatusV1
-        .fromName(key.status.stringify)
-        .toRight(new RuntimeException("Protobuf serialization failed"))
-    } yield PersistentKeyV1(
-      kid = key.kid,
-      relationshipId = key.relationshipId.toString,
-      encodedPem = key.encodedPem,
-      algorithm = key.algorithm,
-      use = key.use,
-      creationTimestamp = fromTime(key.creationTimestamp),
-      deactivationTimestamp = key.deactivationTimestamp.map(fromTime),
-      status = keyStatus
+    Right(
+      PersistentKeyV1(
+        kid = key.kid,
+        relationshipId = key.relationshipId.toString,
+        encodedPem = key.encodedPem,
+        algorithm = key.algorithm,
+        use = key.use,
+        creationTimestamp = fromTime(key.creationTimestamp)
+      )
     )
 
   private def clientToProtobuf(client: PersistentClient): ErrorOr[PersistentClientV1] =
@@ -221,7 +192,6 @@ package object v1 {
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      keyStatus      <- KeyStatus.fromText(key.status.name)
       relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
     } yield PersistentKey(
       kid = key.kid,
@@ -229,9 +199,7 @@ package object v1 {
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = key.use,
-      creationTimestamp = toTime(key.creationTimestamp),
-      deactivationTimestamp = key.deactivationTimestamp.map(toTime),
-      status = keyStatus
+      creationTimestamp = toTime(key.creationTimestamp)
     )
 
   private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME

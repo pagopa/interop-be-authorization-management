@@ -457,66 +457,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/keys/{keyId}/disable':
-    post:
-      tags:
-        - key
-      summary: Disable a client key by key identifier (kid).
-      description: 'Given a client and an enabled key identifier it disables the corresponding key, if any'
-      operationId: disableKeyById
-      parameters:
-        - name: clientId
-          in: path
-          description: ID of the client holding the key
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: keyId
-          in: path
-          description: the unique identifier of the key (kid) to disable
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: the corresponding key has been disabled.
-        '404':
-          description: Key not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/keys/{keyId}/enable':
-    post:
-      tags:
-        - key
-      summary: Enables a client key by key identifier (kid).
-      description: 'Given a client and a disabled key identifier it enables the corresponding key, if any'
-      operationId: enableKeyById
-      parameters:
-        - name: clientId
-          in: path
-          description: ID of the client holding the key
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: keyId
-          in: path
-          description: the unique identifier of the key (kid) to enable
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: the corresponding key has been enabled.
-        '404':
-          description: Key not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
 components:
   schemas:
     KeysResponse:
@@ -562,10 +502,6 @@ components:
       properties:
         key:
           $ref: '#/components/schemas/Key'
-        status:
-          type: string
-          description: 'Key status'
-          enum: [ 'Active', 'Disabled', 'Deleted' ]
         relationshipId:
           type: string
           format: uuid
