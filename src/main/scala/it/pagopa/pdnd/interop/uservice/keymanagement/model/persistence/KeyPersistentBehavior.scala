@@ -33,14 +33,6 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Product"
-  )
-)
 object KeyPersistentBehavior {
 
   final case object KeyNotFoundException extends Throwable

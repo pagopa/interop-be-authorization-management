@@ -8,7 +8,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 
 trait Validation {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing"))
   def validateKeys(keys: Seq[KeySeed]): ValidatedNel[String, Seq[ValidKey]] = {
     keys.traverse(validateKey)
   }

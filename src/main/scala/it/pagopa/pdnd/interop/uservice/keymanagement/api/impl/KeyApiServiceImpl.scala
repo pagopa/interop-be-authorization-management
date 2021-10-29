@@ -21,14 +21,6 @@ import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Recursion"
-  )
-)
 class KeyApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,

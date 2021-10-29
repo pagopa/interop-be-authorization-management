@@ -23,7 +23,6 @@ class ClientAddedSerializer extends SerializerWithStringManifest {
       serialize(event, ClientAddedManifest, currentVersion)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case ClientAddedManifest :: `version1` :: Nil =>
       deserialize(v1.events.ClientAddedV1, bytes, manifest, currentVersion)

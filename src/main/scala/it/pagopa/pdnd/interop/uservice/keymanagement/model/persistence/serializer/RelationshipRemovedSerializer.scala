@@ -23,7 +23,6 @@ class RelationshipRemovedSerializer extends SerializerWithStringManifest {
       serialize(event, RelationshipRemovedManifest, currentVersion)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case RelationshipRemovedManifest :: `version1` :: Nil =>
       deserialize(v1.events.RelationshipRemovedV1, bytes, manifest, currentVersion)
