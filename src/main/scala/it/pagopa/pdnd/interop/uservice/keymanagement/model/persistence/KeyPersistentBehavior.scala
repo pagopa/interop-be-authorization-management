@@ -9,38 +9,30 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotFoundError
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{EncodedClientKey, KeysResponse}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
-  toAPI,
-  toAPIResponse,
-  toPersistentKey
-}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Active, Disabled, PersistentKey}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
-  Active => ClientStatusActive,
-  Suspended => ClientStatusSuspended
-}
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
   ClientAlreadyActiveError,
   ClientAlreadySuspendedError,
   ClientNotFoundError,
   PartyRelationshipNotAllowedError
 }
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  PersistentClient,
+  Active => ClientStatusActive,
+  Suspended => ClientStatusSuspended
+}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
+  toAPI,
+  toAPIResponse,
+  toPersistentKey
+}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{EncodedClientKey, KeysResponse}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Product"
-  )
-)
 object KeyPersistentBehavior {
 
   final case object KeyNotFoundException extends Throwable
@@ -69,7 +61,7 @@ object KeyPersistentBehavior {
         }
 
       case GetKey(clientId, keyId, replyTo) =>
-        state.getActiveClientKeyById(clientId, keyId) match {
+        state.getClientKeyById(clientId, keyId) match {
           case Some(key) =>
             toAPI(key).fold(
               error => errorMessageReply(replyTo, s"Error while retrieving key: ${error.getLocalizedMessage}"),
@@ -83,34 +75,10 @@ object KeyPersistentBehavior {
         }
 
       case GetEncodedKey(clientId, keyId, replyTo) =>
-        state.getActiveClientKeyById(clientId, keyId) match {
+        state.getClientKeyById(clientId, keyId) match {
           case Some(key) =>
             replyTo ! StatusReply.Success(EncodedClientKey(key = key.encodedPem))
             Effect.none[Event, State]
-          case None => commandKeyNotFoundError(replyTo)
-        }
-
-      case DisableKey(clientId, keyId, replyTo) =>
-        state.getActiveClientKeyById(clientId, keyId) match {
-          case Some(key) if !key.status.equals(Active) =>
-            replyTo ! StatusReply.Error[Done](s"Key $keyId of client $clientId is already disabled")
-            Effect.none[KeyDisabled, State]
-          case Some(_) =>
-            Effect
-              .persist(KeyDisabled(clientId, keyId, OffsetDateTime.now()))
-              .thenRun(_ => replyTo ! StatusReply.Success(Done))
-          case None => commandKeyNotFoundError(replyTo)
-        }
-
-      case EnableKey(clientId, keyId, replyTo) =>
-        state.getClientKeyById(clientId, keyId) match {
-          case Some(key) if key.status.equals(Disabled) =>
-            Effect
-              .persist(KeyEnabled(clientId, keyId))
-              .thenRun(_ => replyTo ! StatusReply.Success(Done))
-          case Some(_) =>
-            replyTo ! StatusReply.Error[Done](s"Key $keyId of client $clientId is not disabled")
-            Effect.none[KeyEnabled, State]
           case None => commandKeyNotFoundError(replyTo)
         }
 
@@ -314,8 +282,6 @@ object KeyPersistentBehavior {
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
       case KeysAdded(clientId, keys)                     => state.addKeys(clientId, keys)
-      case KeyDisabled(clientId, keyId, timestamp)       => state.disable(clientId, keyId, timestamp)
-      case KeyEnabled(clientId, keyId)                   => state.enable(clientId, keyId)
       case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
       case ClientAdded(client)                           => state.addClient(client)
       case ClientDeleted(clientId)                       => state.deleteClient(clientId)

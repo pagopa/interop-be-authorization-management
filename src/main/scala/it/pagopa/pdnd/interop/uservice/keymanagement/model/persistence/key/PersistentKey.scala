@@ -36,9 +36,7 @@ final case class PersistentKey(
   encodedPem: String,
   algorithm: String,
   use: String,
-  creationTimestamp: OffsetDateTime,
-  deactivationTimestamp: Option[OffsetDateTime],
-  status: KeyStatus
+  creationTimestamp: OffsetDateTime
 ) extends Persistent
 
 object PersistentKey {
@@ -52,15 +50,10 @@ object PersistentKey {
       encodedPem = validKey._1.key,
       algorithm = validKey._1.alg,
       use = validKey._1.use,
-      creationTimestamp = OffsetDateTime.now(),
-      deactivationTimestamp = None,
-      status = Active
+      creationTimestamp = OffsetDateTime.now()
     )
   }
 
-  @SuppressWarnings(
-    Array("org.wartremover.warts.Any", "org.wartremover.warts.Nothing", "org.wartremover.warts.ToString")
-  )
   def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] = {
     val processed = for {
       key <- keys.map { case (_, persistentKey) =>
@@ -71,14 +64,13 @@ object PersistentKey {
             persistentKey.use,
             persistentKey.algorithm
           )
-          .map(ClientKey(_, persistentKey.status.stringify, persistentKey.relationshipId))
+          .map(ClientKey(_, persistentKey.relationshipId))
       }
     } yield key
 
     processed.toSeq.sequence.map(elem => KeysResponse(keys = elem))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   def toAPI(persistentKey: PersistentKey): Either[Throwable, ClientKey] = {
     KeyProcessor
       .fromBase64encodedPEMToAPIKey(
@@ -87,7 +79,7 @@ object PersistentKey {
         persistentKey.use,
         persistentKey.algorithm
       )
-      .map(ClientKey(_, persistentKey.status.toString, persistentKey.relationshipId))
+      .map(ClientKey(_, persistentKey.relationshipId))
   }
 
 }

@@ -13,17 +13,6 @@ message KeysAddedV1 {
   repeated PersistentKeyEntryV1 keys = 2;
 }
 
-message KeyEnabledV1 {
-  required string clientId = 1;
-  required string keyId = 2;
-}
-
-message KeyDisabledV1 {
-  required string clientId = 1;
-  required string keyId = 2;
-  required string deactivationTimestamp = 3;
-}
-
 message KeyDeletedV1 {
   required string clientId = 1;
   required string keyId = 2;

@@ -12,7 +12,7 @@ class RelationshipAddedSerializer extends SerializerWithStringManifest {
 
   final val currentVersion: String = version1
 
-  override def identifier: Int = 10006
+  override def identifier: Int = 10004
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
@@ -23,7 +23,6 @@ class RelationshipAddedSerializer extends SerializerWithStringManifest {
       serialize(event, RelationshipAddedManifest, currentVersion)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case RelationshipAddedManifest :: `version1` :: Nil =>
       deserialize(v1.events.RelationshipAddedV1, bytes, manifest, currentVersion)

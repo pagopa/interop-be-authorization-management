@@ -23,7 +23,6 @@ class KeyDeletedSerializer extends SerializerWithStringManifest {
       serialize(event, KeyDeletedManifest, currentVersion)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case KeyDeletedManifest :: `version1` :: Nil =>
       deserialize(v1.events.KeyDeletedV1, bytes, manifest, currentVersion)

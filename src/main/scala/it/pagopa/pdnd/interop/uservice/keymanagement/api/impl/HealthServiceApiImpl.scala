@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Route
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.HealthApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
 
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
 class HealthServiceApiImpl extends HealthApiService {
 
   override def getStatus()(implicit

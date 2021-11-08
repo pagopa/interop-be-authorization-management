@@ -21,14 +21,6 @@ import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Any",
-    "org.wartremover.warts.Nothing",
-    "org.wartremover.warts.Recursion"
-  )
-)
 class KeyApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
@@ -153,42 +145,6 @@ class KeyApiServiceImpl(
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
       case statusReply if statusReply.isError =>
         deleteClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
-    }
-  }
-
-  /** Code: 204, Message: the corresponding key has been disabled.
-    * Code: 404, Message: Key not found, DataType: Problem
-    */
-  override def disableKeyById(clientId: String, keyId: String)(implicit
-    contexts: Seq[(String, String)],
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
-  ): Route = {
-    logger.info(s"Disabling key $keyId belonging to $clientId...")
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => DisableKey(clientId, keyId, ref))
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => disableKeyById204
-      case statusReply if statusReply.isError =>
-        disableKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
-    }
-  }
-
-  /** Code: 204, Message: the corresponding key has been enabled.
-    * Code: 404, Message: Key not found, DataType: Problem
-    */
-  override def enableKeyById(clientId: String, keyId: String)(implicit
-    contexts: Seq[(String, String)],
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem]
-  ): Route = {
-    logger.info(s"Enabling key $keyId belonging to $clientId...")
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => EnableKey(clientId, keyId, ref))
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => enableKeyById204
-      case statusReply if statusReply.isError =>
-        enableKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
     }
   }
 

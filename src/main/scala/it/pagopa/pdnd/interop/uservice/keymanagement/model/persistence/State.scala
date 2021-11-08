@@ -2,9 +2,8 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
 import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientStatus, PersistentClient}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{KeyStatus, PersistentKey}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
 /*
@@ -14,10 +13,6 @@ import java.util.UUID
  */
 
 final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, PersistentClient]) extends Persistable {
-  def enable(clientId: String, keyId: String): State = updateKey(clientId, keyId, key.Active, None)
-  def disable(clientId: String, keyId: String, timestamp: OffsetDateTime): State =
-    updateKey(clientId, keyId, key.Disabled, Some(timestamp))
-
   def deleteKey(clientId: String, keyId: String): State = keys.get(clientId) match {
     case Some(entries) =>
       copy(keys = keys + (clientId -> (entries - keyId)))
@@ -70,33 +65,8 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     copy(clients = updatedClients, keys = updatedKeys)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  def getClientActiveKeys(clientId: String): Option[Keys] = {
-    for {
-      keys <- keys.get(clientId)
-      enabledKeys = keys.filter(_._2.status.equals(key.Active))
-    } yield enabledKeys
-  }
-  def getActiveClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
-    getClientActiveKeys(clientId).flatMap(_.get(keyId))
-
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
-
-  private def updateKey(
-    clientId: String,
-    keyId: String,
-    status: KeyStatus,
-    timestamp: Option[OffsetDateTime]
-  ): State = {
-    val keyToChange = keys.get(clientId).flatMap(_.get(keyId))
-
-    keyToChange
-      .fold(this)(key => {
-        val updatedKey = key.copy(status = status, deactivationTimestamp = timestamp)
-        addKeys(clientId, Map(updatedKey.kid -> updatedKey))
-      })
-  }
 
   private def updateClientStatus(clientId: String, newStatus: ClientStatus): State = {
     val updatedClient = clients.get(clientId).map(_.copy(status = newStatus))

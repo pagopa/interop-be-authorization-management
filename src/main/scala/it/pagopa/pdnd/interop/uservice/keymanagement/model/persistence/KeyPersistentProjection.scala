@@ -16,7 +16,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.shardingSetti
 
 import scala.concurrent.duration.DurationInt
 
-@SuppressWarnings(Array("org.wartremover.warts.StringPlusAny"))
 class KeyPersistentProjection(system: ActorSystem[_], entity: Entity[Command, ShardingEnvelope[Command]]) {
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
