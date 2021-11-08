@@ -18,6 +18,6 @@ message PersistentClientV1 {
 }
 
 enum ClientStatusV1 {
-  active = 0;
-  suspended = 1;
+  CLIENT_STATUS_ACTIVE = 1;
+  CLIENT_STATUS_SUSPENDED = 2;
 }

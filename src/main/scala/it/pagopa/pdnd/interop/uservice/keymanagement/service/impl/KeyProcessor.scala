@@ -3,6 +3,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.service.impl
 import com.nimbusds.jose.jwk._
 import com.nimbusds.jose.util.X509CertUtils
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ThumbprintCalculationError
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKeyUse
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, OtherPrimeInfo}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.utils.decodeBase64
 
@@ -18,7 +19,7 @@ trait KeyProcessor {
   def fromBase64encodedPEMToAPIKey(
     kid: String,
     base64PEM: String,
-    use: String,
+    use: PersistentKeyUse,
     algorithm: String
   ): Either[Throwable, Key]
 }
@@ -59,7 +60,7 @@ object KeyProcessor extends KeyProcessor {
   override def fromBase64encodedPEMToAPIKey(
     kid: String,
     base64PEM: String,
-    use: String,
+    use: PersistentKeyUse,
     algorithm: String
   ): Either[Throwable, Key] = {
     val key = for {
@@ -71,7 +72,7 @@ object KeyProcessor extends KeyProcessor {
       case KeyType.OCT => oct(kid, jwk.toOctetSequenceKey)
     }
 
-    key.map(_.copy(alg = Some(algorithm), use = Some(use)))
+    key.map(_.copy(alg = Some(algorithm), use = Some(use.toRfcValue)))
   }
 
   private def rsa(kid: String, key: RSAKey): Key = {

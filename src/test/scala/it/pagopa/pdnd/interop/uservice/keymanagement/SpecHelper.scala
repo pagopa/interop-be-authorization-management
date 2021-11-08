@@ -146,7 +146,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
          |  {
          |    "relationshipId": "${relationshipId.toString}",
          |    "key": "${generateEncodedKey()}",
-         |    "use": "sig",
+         |    "use": "SIG",
          |    "alg": "123"
          |  }
          |]

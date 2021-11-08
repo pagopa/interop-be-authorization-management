@@ -1,17 +1,18 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client
 
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ACTIVE, ClientStatusEnum, SUSPENDED}
+
 sealed trait ClientStatus {
-  def stringify: String = this match {
-    case Active    => "active"
-    case Suspended => "suspended"
+  def toApi: ClientStatusEnum = this match {
+    case Active    => ACTIVE
+    case Suspended => SUSPENDED
   }
 }
 
 object ClientStatus {
-  def fromText(str: String): Either[Throwable, ClientStatus] = str match {
-    case "active"    => Right[Throwable, ClientStatus](Active)
-    case "suspended" => Right[Throwable, ClientStatus](Suspended)
-    case _           => Left[Throwable, ClientStatus](new RuntimeException("Deserialization from protobuf failed"))
+  def fromApi(value: ClientStatusEnum): ClientStatus = value match {
+    case ACTIVE    => Active
+    case SUSPENDED => Suspended
   }
 }
 

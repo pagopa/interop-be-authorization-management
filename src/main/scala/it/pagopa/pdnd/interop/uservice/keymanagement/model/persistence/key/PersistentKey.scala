@@ -9,33 +9,12 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 import java.time.OffsetDateTime
 import java.util.UUID
 
-sealed trait KeyStatus {
-  def stringify: String = this match {
-    case Active   => "Active"
-    case Disabled => "Disabled"
-    case Deleted  => "Deleted"
-  }
-}
-
-object KeyStatus {
-  def fromText(str: String): Either[Throwable, KeyStatus] = str match {
-    case "Active"   => Right[Throwable, KeyStatus](Active)
-    case "Disabled" => Right[Throwable, KeyStatus](Disabled)
-    case "Deleted"  => Right[Throwable, KeyStatus](Deleted)
-    case _          => Left[Throwable, KeyStatus](new RuntimeException("Deserialization from protobuf failed"))
-  }
-}
-
-case object Active   extends KeyStatus
-case object Disabled extends KeyStatus
-case object Deleted  extends KeyStatus
-
 final case class PersistentKey(
   relationshipId: UUID,
   kid: String,
   encodedPem: String,
   algorithm: String,
-  use: String,
+  use: PersistentKeyUse,
   creationTimestamp: OffsetDateTime
 ) extends Persistent
 
@@ -49,7 +28,7 @@ object PersistentKey {
       kid = kid,
       encodedPem = validKey._1.key,
       algorithm = validKey._1.alg,
-      use = validKey._1.use,
+      use = PersistentKeyUse.fromApi(validKey._1.use),
       creationTimestamp = OffsetDateTime.now()
     )
   }

@@ -22,7 +22,7 @@ final case class PersistentClient(
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = name,
-      status = status.stringify,
+      status = status.toApi,
       purposes = purposes,
       description = description,
       relationships = relationships
