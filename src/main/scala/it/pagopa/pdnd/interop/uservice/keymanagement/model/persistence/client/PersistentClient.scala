@@ -10,7 +10,7 @@ final case class PersistentClient(
   eServiceId: UUID,
   consumerId: UUID,
   name: String,
-  status: ClientStatus,
+  status: PersistedClientStatus,
   purposes: String,
   description: Option[String],
   relationships: Set[UUID]

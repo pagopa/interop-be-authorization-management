@@ -4,14 +4,14 @@ import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   Active,
-  ClientStatus,
+  PersistedClientStatus,
   PersistentClient,
   Suspended
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.ClientStatusV1.{
-  CLIENT_STATUS_ACTIVE,
-  CLIENT_STATUS_SUSPENDED,
+  ACTIVE,
+  SUSPENDED,
   Unrecognized => UnrecognizedClientStatus
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
@@ -221,24 +221,24 @@ package object v1 {
     OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
-    case Sig => KEY_USE_SIG
-    case Enc => KEY_USE_ENC
+    case Sig => SIG
+    case Enc => ENC
   }
 
   def persistentKeyUseFromProtobuf(use: KeyUseV1): Either[Throwable, PersistentKeyUse] = use match {
-    case KEY_USE_SIG           => Right(Sig)
-    case KEY_USE_ENC           => Right(Enc)
+    case SIG                   => Right(Sig)
+    case ENC                   => Right(Enc)
     case UnrecognizedKeyUse(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
   }
 
-  def clientStatusToProtobuf(status: ClientStatus): ClientStatusV1 = status match {
-    case Active    => CLIENT_STATUS_ACTIVE
-    case Suspended => CLIENT_STATUS_SUSPENDED
+  def clientStatusToProtobuf(status: PersistedClientStatus): ClientStatusV1 = status match {
+    case Active    => ACTIVE
+    case Suspended => SUSPENDED
   }
 
-  def clientStatusFromProtobuf(status: ClientStatusV1): Either[Throwable, ClientStatus] = status match {
-    case CLIENT_STATUS_ACTIVE        => Right(Active)
-    case CLIENT_STATUS_SUSPENDED     => Right(Suspended)
+  def clientStatusFromProtobuf(status: ClientStatusV1): Either[Throwable, PersistedClientStatus] = status match {
+    case ACTIVE                      => Right(Active)
+    case SUSPENDED                   => Right(Suspended)
     case UnrecognizedClientStatus(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))
   }
 }

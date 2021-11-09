@@ -138,7 +138,7 @@ class ClientManagementSpec
       activateResponse.status shouldBe StatusCodes.NoContent
 
       val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
-      val retrievedClient = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
+      val retrievedClient        = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
       retrievedClient shouldBe client
     }
 
@@ -179,7 +179,7 @@ class ClientManagementSpec
       suspendResponse.status shouldBe StatusCodes.NoContent
 
       val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
-      val retrievedClient = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
+      val retrievedClient        = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
       retrievedClient shouldBe client.copy(status = Suspended.toApi)
     }
 

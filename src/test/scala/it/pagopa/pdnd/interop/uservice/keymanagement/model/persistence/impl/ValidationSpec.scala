@@ -3,7 +3,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 import cats.data.Validated.{Invalid, Valid}
 import com.nimbusds.jose.util.StandardCharset
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.Enc
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{KeySeed, SIG}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{KeySeed, KeyUse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.KeyProcessor
 import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
@@ -34,7 +34,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |lQIDAQAB
                                      |-----END PUBLIC KEY-----""".stripMargin),
         alg = "123",
-        use = SIG,
+        use = KeyUse.SIG,
         relationshipId = UUID.randomUUID()
       )
 
@@ -63,7 +63,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |gujPVi0wH0Oo/zXTJ9G+6slRDsFO6LdQrjf04eCP
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
-        use = SIG,
+        use = KeyUse.SIG,
         relationshipId = UUID.randomUUID()
       )
 
@@ -93,7 +93,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |Xq3dfXqqnHpThqcNNnoZX0jSwT/o62zGtvGvybbL
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
-        use = SIG,
+        use = KeyUse.SIG,
         relationshipId = UUID.randomUUID()
       )
 
@@ -117,7 +117,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |37sJ5QsW+sJyoNde3xH8vdXhzU7eT82D6X/scw9RZz+/6rCJ4p0=
                                      |-----END RSA PRIVATE KEY-----""".stripMargin),
         alg = "123",
-        use = SIG,
+        use = KeyUse.SIG,
         relationshipId = UUID.randomUUID()
       )
 

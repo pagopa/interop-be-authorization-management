@@ -18,8 +18,8 @@ package object system {
     override def apply(credentials: Credentials): Option[Seq[(String, String)]] =
       credentials match {
         case Provided(identifier) => Some(Seq("bearer" -> identifier))
-          // TODO Bypass auth. Update this once necessary
-        case Missing              => Some(Seq.empty[(String, String)])
+        // TODO Bypass auth. Update this once necessary
+        case Missing => Some(Seq.empty[(String, String)])
       }
   }
 

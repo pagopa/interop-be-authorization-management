@@ -484,7 +484,7 @@ components:
           type: string
           description: 'Base64 UTF-8 encoding of a public key in PEM format'
         use:
-          $ref: '#/components/schemas/KeyUseEnum'
+          $ref: '#/components/schemas/KeyUse'
         alg:
           type: string
           description: 'The algorithm type of the key.'
@@ -626,7 +626,7 @@ components:
         description:
           type: string
         status:
-          $ref: '#/components/schemas/ClientStatusEnum'
+          $ref: '#/components/schemas/ClientStatus'
         purposes:
           type: string
         relationships:
@@ -647,13 +647,13 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Client'
-    ClientStatusEnum:
+    ClientStatus:
       type: string
       description: Represents the Client status
       enum:
         - ACTIVE
         - SUSPENDED
-    KeyUseEnum:
+    KeyUse:
       type: string
       description: Represents the Use field of key
       enum:

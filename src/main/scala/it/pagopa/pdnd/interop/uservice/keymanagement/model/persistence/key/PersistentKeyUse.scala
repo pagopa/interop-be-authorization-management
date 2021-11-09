@@ -1,6 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key
 
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ENC, KeyUseEnum, SIG}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.KeyUse
 
 sealed trait PersistentKeyUse {
   def toRfcValue: String = this match {
@@ -10,9 +10,9 @@ sealed trait PersistentKeyUse {
 }
 
 object PersistentKeyUse {
-  def fromApi(value: KeyUseEnum): PersistentKeyUse = value match {
-    case SIG => Sig
-    case ENC => Enc
+  def fromApi(value: KeyUse): PersistentKeyUse = value match {
+    case KeyUse.SIG => Sig
+    case KeyUse.ENC => Enc
   }
 }
 

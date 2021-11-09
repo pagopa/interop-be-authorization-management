@@ -21,6 +21,6 @@ message PersistentKeyV1 {
 }
 
 enum KeyUseV1 {
-  KEY_USE_SIG = 1;
-  KEY_USE_ENC = 2;
+  SIG = 1;
+  ENC = 2;
 }
