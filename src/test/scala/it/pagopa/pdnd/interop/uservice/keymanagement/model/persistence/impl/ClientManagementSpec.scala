@@ -50,7 +50,7 @@ class ClientManagementSpec
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = name,
-          status = Active.toApi,
+          state = Active.toApi,
           purposes = purposes,
           description = description,
           relationships = Set.empty
@@ -180,7 +180,7 @@ class ClientManagementSpec
 
       val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
       val retrievedClient        = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
-      retrievedClient shouldBe client.copy(status = Suspended.toApi)
+      retrievedClient shouldBe client.copy(state = Suspended.toApi)
     }
 
     "fail on non-existing client id" in {

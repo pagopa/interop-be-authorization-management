@@ -10,7 +10,7 @@ final case class PersistentClient(
   eServiceId: UUID,
   consumerId: UUID,
   name: String,
-  status: PersistedClientStatus,
+  state: PersistedClientState,
   purposes: String,
   description: Option[String],
   relationships: Set[UUID]
@@ -22,7 +22,7 @@ final case class PersistentClient(
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = name,
-      status = status.toApi,
+      state = state.toApi,
       purposes = purposes,
       description = description,
       relationships = relationships
@@ -38,7 +38,7 @@ object PersistentClient {
       eServiceId = seed.eServiceId,
       consumerId = seed.consumerId,
       name = seed.name,
-      status = Active,
+      state = Active,
       purposes = seed.purposes,
       description = seed.description,
       relationships = Set.empty[UUID]

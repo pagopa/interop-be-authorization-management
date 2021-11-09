@@ -112,7 +112,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 1",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 1 desc"),
           relationships = Set.empty
@@ -123,7 +123,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 2",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 2 desc"),
           relationships = Set.empty
@@ -134,7 +134,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 3",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 3 desc"),
           relationships = Set.empty
@@ -192,7 +192,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 1",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 1 desc"),
           relationships = Set.empty
@@ -203,7 +203,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 2",
-          status = client.Suspended,
+          state = client.Suspended,
           purposes = "purposes",
           description = Some("client 2 desc"),
           relationships = Set.empty
@@ -219,7 +219,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       updatedState.keys shouldBe keys
       updatedState.clients.get(clientId1) should contain(client1)
-      updatedState.clients.get(clientId2) should contain(client2.copy(status = client.Active))
+      updatedState.clients.get(clientId2) should contain(client2.copy(state = client.Active))
       updatedState.clients.size shouldBe 2
     }
 
@@ -261,7 +261,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 1",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 1 desc"),
           relationships = Set.empty
@@ -272,7 +272,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 2",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 2 desc"),
           relationships = Set.empty
@@ -288,7 +288,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       updatedState.keys shouldBe keys
       updatedState.clients.get(clientId1) should contain(client1)
-      updatedState.clients.get(clientId2) should contain(client2.copy(status = client.Suspended))
+      updatedState.clients.get(clientId2) should contain(client2.copy(state = client.Suspended))
       updatedState.clients.size shouldBe 2
     }
   }

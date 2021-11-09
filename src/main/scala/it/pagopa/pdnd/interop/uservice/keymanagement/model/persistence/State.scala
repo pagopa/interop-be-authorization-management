@@ -1,7 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
 import cats.implicits._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{PersistedClientStatus, PersistentClient}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{PersistedClientState, PersistentClient}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
 
 import java.util.UUID
@@ -68,8 +68,8 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
 
-  private def updateClientStatus(clientId: String, newStatus: PersistedClientStatus): State = {
-    val updatedClient = clients.get(clientId).map(_.copy(status = newStatus))
+  private def updateClientStatus(clientId: String, newStatus: PersistedClientState): State = {
+    val updatedClient = clients.get(clientId).map(_.copy(state = newStatus))
     updatedClient match {
       case None         => this
       case Some(client) => copy(clients = clients + (clientId -> client))

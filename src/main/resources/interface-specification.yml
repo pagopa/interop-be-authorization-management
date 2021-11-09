@@ -625,8 +625,8 @@ components:
           type: string
         description:
           type: string
-        status:
-          $ref: '#/components/schemas/ClientStatus'
+        state:
+          $ref: '#/components/schemas/ClientState'
         purposes:
           type: string
         relationships:
@@ -640,16 +640,16 @@ components:
         - eServiceId
         - consumerId
         - name
-        - status
+        - state
         - purposes
         - relationships
     Clients:
       type: array
       items:
         $ref: '#/components/schemas/Client'
-    ClientStatus:
+    ClientState:
       type: string
-      description: Represents the Client status
+      description: Represents the Client state
       enum:
         - ACTIVE
         - SUSPENDED

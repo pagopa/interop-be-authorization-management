@@ -4,25 +4,16 @@ import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   Active,
-  PersistedClientStatus,
+  PersistedClientState,
   PersistentClient,
   Suspended
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.ClientStatusV1.{
-  ACTIVE,
-  SUSPENDED,
-  Unrecognized => UnrecognizedClientStatus
-}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
-  ClientStatusV1,
+  ClientStateV1,
   PersistentClientV1
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.KeyUseV1.{
-  Unrecognized => UnrecognizedKeyUse,
-  _
-}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
   KeyUseV1,
   PersistentKeyEntryV1,
@@ -168,7 +159,7 @@ package object v1 {
         eServiceId = client.eServiceId.toString,
         consumerId = client.consumerId.toString,
         name = client.name,
-        status = clientStatusToProtobuf(client.status),
+        state = clientStateToProtobuf(client.state),
         purposes = client.purposes,
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq
@@ -188,14 +179,14 @@ package object v1 {
       clientId      <- Try(UUID.fromString(client.id)).toEither
       eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
-      clientStatus  <- clientStatusFromProtobuf(client.status)
+      clientState   <- clientStateFromProtobuf(client.state)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
-      status = clientStatus,
+      state = clientState,
       purposes = client.purposes,
       description = client.description,
       relationships = relationships.toSet
@@ -221,24 +212,24 @@ package object v1 {
     OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
-    case Sig => SIG
-    case Enc => ENC
+    case Sig => KeyUseV1.SIG
+    case Enc => KeyUseV1.ENC
   }
 
   def persistentKeyUseFromProtobuf(use: KeyUseV1): Either[Throwable, PersistentKeyUse] = use match {
-    case SIG                   => Right(Sig)
-    case ENC                   => Right(Enc)
-    case UnrecognizedKeyUse(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
+    case KeyUseV1.SIG             => Right(Sig)
+    case KeyUseV1.ENC             => Right(Enc)
+    case KeyUseV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
   }
 
-  def clientStatusToProtobuf(status: PersistedClientStatus): ClientStatusV1 = status match {
-    case Active    => ACTIVE
-    case Suspended => SUSPENDED
+  def clientStateToProtobuf(status: PersistedClientState): ClientStateV1 = status match {
+    case Active    => ClientStateV1.ACTIVE
+    case Suspended => ClientStateV1.SUSPENDED
   }
 
-  def clientStatusFromProtobuf(status: ClientStatusV1): Either[Throwable, PersistedClientStatus] = status match {
-    case ACTIVE                      => Right(Active)
-    case SUSPENDED                   => Right(Suspended)
-    case UnrecognizedClientStatus(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))
+  def clientStateFromProtobuf(status: ClientStateV1): Either[Throwable, PersistedClientState] = status match {
+    case ClientStateV1.ACTIVE          => Right(Active)
+    case ClientStateV1.SUSPENDED       => Right(Suspended)
+    case ClientStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))
   }
 }
