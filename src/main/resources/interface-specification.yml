@@ -484,11 +484,7 @@ components:
           type: string
           description: 'Base64 UTF-8 encoding of a public key in PEM format'
         use:
-          type: string
-          description: 'The expected use for this key.'
-          enum:
-            - sig
-            - enc
+          $ref: '#/components/schemas/KeyUse'
         alg:
           type: string
           description: 'The algorithm type of the key.'
@@ -629,9 +625,8 @@ components:
           type: string
         description:
           type: string
-        status:
-          type: string
-          enum: [ 'active', 'suspended' ]
+        state:
+          $ref: '#/components/schemas/ClientState'
         purposes:
           type: string
         relationships:
@@ -645,13 +640,25 @@ components:
         - eServiceId
         - consumerId
         - name
-        - status
+        - state
         - purposes
         - relationships
     Clients:
       type: array
       items:
         $ref: '#/components/schemas/Client'
+    ClientState:
+      type: string
+      description: Represents the Client state
+      enum:
+        - ACTIVE
+        - SUSPENDED
+    KeyUse:
+      type: string
+      description: Represents the Use field of key
+      enum:
+        - SIG
+        - ENC
     PartyRelationshipSeed:
       description: Models the seed for a Party Relationship-Client correlation to be persisted
       type: object

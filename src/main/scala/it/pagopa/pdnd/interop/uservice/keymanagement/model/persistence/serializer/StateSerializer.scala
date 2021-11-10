@@ -30,6 +30,6 @@ class StateSerializer extends SerializerWithStringManifest {
         throw new NotSerializableException(
           s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "
         )
-}
+    }
 
 }

@@ -1,9 +1,9 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.keyFormat
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Key
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.keyFormat
 import spray.json.enrichAny
 
 class KeySerializationSpec extends AnyWordSpecLike with Matchers {

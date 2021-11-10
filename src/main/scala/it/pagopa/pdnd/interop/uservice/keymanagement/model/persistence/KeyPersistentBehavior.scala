@@ -158,7 +158,7 @@ object KeyPersistentBehavior {
 
         client
           .fold(commandError(replyTo, ClientNotFoundError(clientId)))(client =>
-            client.status match {
+            client.state match {
               case ClientStatusActive =>
                 commandError(replyTo, ClientAlreadyActiveError(clientId))
               case ClientStatusSuspended =>
@@ -173,7 +173,7 @@ object KeyPersistentBehavior {
 
         client
           .fold(commandError(replyTo, ClientNotFoundError(clientId)))(client =>
-            client.status match {
+            client.state match {
               case ClientStatusActive =>
                 Effect
                   .persist(ClientSuspended(clientId))

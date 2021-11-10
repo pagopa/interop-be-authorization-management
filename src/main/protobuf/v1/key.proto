@@ -15,7 +15,12 @@ message PersistentKeyV1 {
   required string relationshipId = 1;
   required string kid = 2;
   required string encodedPem = 3;
-  required string use = 4;
+  required KeyUseV1 use = 4;
   required string algorithm = 5;
   required string creationTimestamp = 6;
+}
+
+enum KeyUseV1 {
+  SIG = 1;
+  ENC = 2;
 }

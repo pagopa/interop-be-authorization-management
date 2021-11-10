@@ -2,7 +2,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl
 
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{State, client}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{PersistentKey, Sig}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -21,7 +21,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "1",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         ),
@@ -29,7 +29,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "2",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         ),
@@ -37,7 +37,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "3",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         ),
@@ -45,7 +45,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "4",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -81,7 +81,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid1",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -91,7 +91,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid2",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -101,7 +101,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid3",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -112,7 +112,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 1",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 1 desc"),
           relationships = Set.empty
@@ -123,7 +123,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 2",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 2 desc"),
           relationships = Set.empty
@@ -134,7 +134,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 3",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 3 desc"),
           relationships = Set.empty
@@ -171,7 +171,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid1",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -181,7 +181,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid2",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -192,7 +192,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 1",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 1 desc"),
           relationships = Set.empty
@@ -203,7 +203,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 2",
-          status = client.Suspended,
+          state = client.Suspended,
           purposes = "purposes",
           description = Some("client 2 desc"),
           relationships = Set.empty
@@ -219,7 +219,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       updatedState.keys shouldBe keys
       updatedState.clients.get(clientId1) should contain(client1)
-      updatedState.clients.get(clientId2) should contain(client2.copy(status = client.Active))
+      updatedState.clients.get(clientId2) should contain(client2.copy(state = client.Active))
       updatedState.clients.size shouldBe 2
     }
 
@@ -240,7 +240,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid1",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -250,7 +250,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kid = "kid2",
           relationshipId = relationshipId,
           encodedPem = "123",
-          use = "sig",
+          use = Sig,
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         )
@@ -261,7 +261,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 1",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 1 desc"),
           relationships = Set.empty
@@ -272,7 +272,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = "client 2",
-          status = client.Active,
+          state = client.Active,
           purposes = "purposes",
           description = Some("client 2 desc"),
           relationships = Set.empty
@@ -288,7 +288,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       //then
       updatedState.keys shouldBe keys
       updatedState.clients.get(clientId1) should contain(client1)
-      updatedState.clients.get(clientId2) should contain(client2.copy(status = client.Suspended))
+      updatedState.clients.get(clientId2) should contain(client2.copy(state = client.Suspended))
       updatedState.clients.size shouldBe 2
     }
   }

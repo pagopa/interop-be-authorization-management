@@ -2,14 +2,20 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializ
 
 import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{ClientStatus, PersistentClient}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  Active,
+  PersistedClientState,
+  PersistentClient,
+  Suspended
+}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
-  ClientStatusV1,
+  ClientStateV1,
   PersistentClientV1
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
+  KeyUseV1,
   PersistentKeyEntryV1,
   PersistentKeyV1
 }
@@ -141,25 +147,23 @@ package object v1 {
         relationshipId = key.relationshipId.toString,
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
-        use = key.use,
+        use = persistentKeyUseToProtobuf(key.use),
         creationTimestamp = fromTime(key.creationTimestamp)
       )
     )
 
   private def clientToProtobuf(client: PersistentClient): ErrorOr[PersistentClientV1] =
-    for {
-      clientStatus <- ClientStatusV1
-        .fromName(client.status.stringify)
-        .toRight(new RuntimeException("Protobuf serialization failed"))
-    } yield PersistentClientV1(
-      id = client.id.toString,
-      eServiceId = client.eServiceId.toString,
-      consumerId = client.consumerId.toString,
-      name = client.name,
-      status = clientStatus,
-      purposes = client.purposes,
-      description = client.description,
-      relationships = client.relationships.map(_.toString).toSeq
+    Right(
+      PersistentClientV1(
+        id = client.id.toString,
+        eServiceId = client.eServiceId.toString,
+        consumerId = client.consumerId.toString,
+        name = client.name,
+        state = clientStateToProtobuf(client.state),
+        purposes = client.purposes,
+        description = client.description,
+        relationships = client.relationships.map(_.toString).toSeq
+      )
     )
 
   private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
@@ -175,14 +179,14 @@ package object v1 {
       clientId      <- Try(UUID.fromString(client.id)).toEither
       eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
-      clientStatus  <- ClientStatus.fromText(client.status.name)
+      clientState   <- clientStateFromProtobuf(client.state)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
       eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
-      status = clientStatus,
+      state = clientState,
       purposes = client.purposes,
       description = client.description,
       relationships = relationships.toSet
@@ -191,12 +195,13 @@ package object v1 {
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
       relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
+      use            <- persistentKeyUseFromProtobuf(key.use)
     } yield PersistentKey(
       kid = key.kid,
       relationshipId = relationshipId,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
-      use = key.use,
+      use = use,
       creationTimestamp = toTime(key.creationTimestamp)
     )
 
@@ -205,4 +210,26 @@ package object v1 {
   def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
   def toTime(timestamp: String): OffsetDateTime =
     OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
+
+  def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
+    case Sig => KeyUseV1.SIG
+    case Enc => KeyUseV1.ENC
+  }
+
+  def persistentKeyUseFromProtobuf(use: KeyUseV1): Either[Throwable, PersistentKeyUse] = use match {
+    case KeyUseV1.SIG             => Right(Sig)
+    case KeyUseV1.ENC             => Right(Enc)
+    case KeyUseV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
+  }
+
+  def clientStateToProtobuf(status: PersistedClientState): ClientStateV1 = status match {
+    case Active    => ClientStateV1.ACTIVE
+    case Suspended => ClientStateV1.SUSPENDED
+  }
+
+  def clientStateFromProtobuf(status: ClientStateV1): Either[Throwable, PersistedClientState] = status match {
+    case ClientStateV1.ACTIVE          => Right(Active)
+    case ClientStateV1.SUSPENDED       => Right(Suspended)
+    case ClientStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))
+  }
 }
