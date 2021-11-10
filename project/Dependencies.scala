@@ -45,11 +45,6 @@ object Dependencies {
 
   lazy val Protobuf = "protobuf"
 
-  private[this] object enumeratum {
-    lazy val namespace = "com.beachape"
-    lazy val core      = namespace %% "enumeratum" % enumeratumVersion
-  }
-
   private[this] object scalaprotobuf {
     lazy val namespace = "com.thesamet.scalapb"
     lazy val core      = namespace %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion
@@ -142,7 +137,6 @@ object Dependencies {
       bouncycastle.kix             % Compile,
       bouncycastle.provider        % Compile,
       cats.core                    % Compile,
-      enumeratum.core              % Compile,
       kamon.bundle                 % Compile,
       kamon.prometheus             % Compile,
       logback.classic              % Compile,
@@ -158,7 +152,6 @@ object Dependencies {
       akka.stream     % Compile,
       akka.http       % Compile,
       akka.httpJson4s % Compile,
-      enumeratum.core % Compile,
       json4s.jackson  % Compile,
       json4s.ext      % Compile
     )

@@ -6,7 +6,6 @@ object Versions {
   lazy val bouncycastleVersion         = "1.69"
   lazy val cassandraPersistenceVersion = "1.0.5"
   lazy val catsVersion                 = "2.6.1"
-  lazy val enumeratumVersion           = "1.7.0"
   lazy val httpJson4sVersion           = "1.38.2"
   lazy val jacksonVersion              = "2.13.0"
   lazy val jdbcPersistenceVersion      = "5.0.2"
