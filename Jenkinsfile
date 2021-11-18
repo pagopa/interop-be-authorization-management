@@ -58,7 +58,7 @@ pipeline {
       environment {
         POSTGRES = credentials('postgres-db')
         DOCKER_REPO = 'gateway.interop.pdnd.dev'
-        //REPLICAS_NR = 1
+        REPLICAS_NR = 1
       }
       steps {
         container('sbt-container') {
