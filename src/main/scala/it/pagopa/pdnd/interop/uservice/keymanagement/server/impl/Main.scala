@@ -72,7 +72,7 @@ object Main extends App {
 
         val persistence = classicSystem.classicSystem.settings.config.getString("akka.persistence.journal.plugin")
 
-        if (persistence == "cassandra") {
+        if (persistence == "jdbc-journal") {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
