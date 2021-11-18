@@ -45,7 +45,7 @@ class KeyPersistentProjection(
     implicit val as: ActorSystem[_] = system
     SlickProjection
       .atLeastOnceFlow(
-        projectionId = ProjectionId("user-projections", tag),
+        projectionId = ProjectionId("keys-projections", tag),
         sourceProvider = sourceProvider(tag),
         handler = flow,
         databaseConfig = dbConfig
