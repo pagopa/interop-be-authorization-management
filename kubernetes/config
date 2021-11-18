@@ -10,6 +10,11 @@ popd  > /dev/null
 
 repository=$DOCKER_REPO
 
+postgresHost=$POSTGRES_HOST
+postgresPort=$POSTGRES_PORT
+postgresDb=$POSTGRES_DB
+postgresSchema=$POSTGRES_SCHEMA
+
 name=$(cat $SCRIPT_PATH/../build.sbt | grep "name :=" | awk -F:= '{ print $2 }' | sed 's/\"//' | sed 's/\",//' | sed 's/ //' | tr '[:upper:]' '[:lower:]' | grep -v client)
 
 #getting version from sbt

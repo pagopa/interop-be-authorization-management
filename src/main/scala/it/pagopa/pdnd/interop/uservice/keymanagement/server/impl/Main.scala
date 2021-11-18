@@ -33,6 +33,8 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
+import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
 
 import scala.jdk.CollectionConverters._
 
@@ -68,10 +70,13 @@ object Main extends App {
 
         val keySettings: ClusterShardingSettings = shardingSettings(keyPersistentEntity, context.system)
 
-        val persistence =
-          classicSystem.classicSystem.settings.config.getString("pdnd-interop-uservice-key-management.persistence")
+        val persistence = classicSystem.classicSystem.settings.config.getString("akka.persistence.journal.plugin")
+
         if (persistence == "cassandra") {
-          val keyPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity)
+          val dbConfig: DatabaseConfig[JdbcProfile] =
+            DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
+          val keyPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity, dbConfig)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "keys-projections",
