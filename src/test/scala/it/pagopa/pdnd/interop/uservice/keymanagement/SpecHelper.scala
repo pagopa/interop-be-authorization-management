@@ -15,13 +15,13 @@ import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDi
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.persistence.typed.PersistenceId
 import com.nimbusds.jose.util.Base64
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.pdnd.interop.uservice.keymanagement.api._
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
-import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.Authenticator
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, KeysResponse}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
-import it.pagopa.pdnd.interop.uservice.keymanagement.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 import spray.json.DefaultJsonProtocol
 
@@ -33,7 +33,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
   self: ScalaTestWithActorTestKit =>
 
   val bearerToken: String               = "token"
-  val authorization: Seq[Authorization] = Seq(headers.Authorization(OAuth2BearerToken(bearerToken)))
+  val authorization: Seq[Authorization] = Seq(Authorization(OAuth2BearerToken(bearerToken)))
 
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
@@ -43,8 +43,9 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
 
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
+
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
-    SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
+    SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
 
   val sharding: ClusterSharding = ClusterSharding(system)
 

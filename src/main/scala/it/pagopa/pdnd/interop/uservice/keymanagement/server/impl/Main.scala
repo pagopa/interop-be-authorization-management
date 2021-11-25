@@ -14,7 +14,9 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi}
+import it.pagopa.pdnd.interop.commons.utils.service.impl.UUIDSupplierImpl
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   ClientApiMarshallerImpl,
   ClientApiServiceImpl,
@@ -23,7 +25,8 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   KeyApiMarshallerImpl,
   KeyApiServiceImpl
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{Authenticator, shardingSettings}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi, KeyApiMarshaller}
+import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.shardingSettings
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
@@ -31,7 +34,6 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   KeyPersistentProjection
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
-import it.pagopa.pdnd.interop.uservice.keymanagement.service.impl.UUIDSupplierImpl
 import kamon.Kamon
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -47,8 +49,8 @@ object Main extends App {
       Behaviors.setup[Nothing] { context =>
         import akka.actor.typed.scaladsl.adapter._
         implicit val classicSystem: classic.ActorSystem = context.system.toClassic
-        val marshallerImpl                              = new KeyApiMarshallerImpl()
-        val uuidSupplierImpl                            = new UUIDSupplierImpl()
+        val keyApiMarshaller: KeyApiMarshaller          = new KeyApiMarshallerImpl()
+        val uuidSupplier: UUIDSupplier                  = new UUIDSupplierImpl()
 
         val cluster = Cluster(context.system)
 
@@ -88,12 +90,12 @@ object Main extends App {
 
         val keyApi = new KeyApi(
           new KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
-          marshallerImpl,
+          keyApiMarshaller,
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
 
         val clientApi = new ClientApi(
-          new ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplierImpl),
+          new ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
           new ClientApiMarshallerImpl(),
           SecurityDirectives.authenticateBasic("SecurityRealm", Authenticator)
         )
@@ -123,7 +125,7 @@ object Main extends App {
               println(item.severity())
             }
             val message = e.results().items().asScala.map(_.message()).mkString("\n")
-            complete(400, Problem(Some(message), 400, "bad request"))(marshallerImpl.toEntityMarshallerProblem)
+            complete(400, Problem(Some(message), 400, "bad request"))(keyApiMarshaller.toEntityMarshallerProblem)
           })
         )
 

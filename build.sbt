@@ -13,6 +13,9 @@ ThisBuild / libraryDependencies := Dependencies.Jars.`server`.map(m =>
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
 ThisBuild / version := ComputeVersion.version
 
+ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-snapshots/"
+ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-releases/"
+
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
 
 val packagePrefix = settingKey[String]("The package prefix derived from the uservice name")
@@ -69,6 +72,7 @@ lazy val client = project
   .settings(
     name := "pdnd-interop-uservice-key-management-client",
     scalacOptions := Seq(),
+    scalafmtOnCompile:= true,
     libraryDependencies := Dependencies.Jars.client.map(m =>
       if (scalaVersion.value.startsWith("3.0"))
         m.withDottyCompat(scalaVersion.value)
@@ -92,6 +96,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "pdnd-interop-uservice-key-management",
     Test / parallelExecution := false,
+    scalafmtOnCompile:= true,
     dockerBuildOptions ++= Seq("--network=host"),
     dockerRepository := Some(System.getenv("DOCKER_REPO")),
     dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
