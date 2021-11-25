@@ -5,7 +5,6 @@ object Versions {
   lazy val awsSdkVersion          = "2.17.56"
   lazy val bouncycastleVersion    = "1.69"
   lazy val catsVersion            = "2.6.1"
-  lazy val commonsVersion         = "0.1.1-SNAPSHOT"
   lazy val httpJson4sVersion      = "1.38.2"
   lazy val jacksonVersion         = "2.13.0"
   lazy val jdbcPersistenceVersion = "5.0.2"
@@ -24,4 +23,8 @@ object Versions {
   lazy val scalatestVersion       = "3.2.9"
   lazy val slickProjectionVersion = "1.2.2"
   lazy val slickVersion           = "3.3.3"
+}
+
+object PDNDVersions {
+  lazy val commonsVersion = "0.1.1-SNAPSHOT"
 }
