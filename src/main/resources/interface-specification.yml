@@ -20,6 +20,8 @@ tags:
     description: Operations on clients persistence
   - name: health
     description: Operations about service status
+security:
+    - bearerAuth: [ ]
 paths:
   /status:
     get:
@@ -37,8 +39,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients':
     post:
-      security:
-        - bearerAuth: [ ]
       tags:
         - client
       summary: Create Client
@@ -65,8 +65,6 @@ paths:
               $ref: '#/components/schemas/ClientSeed'
       description: Creates a Client
     get:
-      security:
-        - bearerAuth: [ ]
       tags:
         - client
       summary: List Clients
@@ -123,8 +121,6 @@ paths:
             format: uuid
   /clients/{clientId}:
     get:
-      security:
-        - bearerAuth: [ ]
       description: Retrieves a Client
       tags:
         - client
@@ -151,8 +147,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
     delete:
-      security:
-        - bearerAuth: [ ]
       description: Deletes a Client
       tags:
         - client
@@ -176,8 +170,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/suspend':
     post:
-      security:
-        - bearerAuth: [ ]
       tags:
         - client
       summary: Suspend a client by id.
@@ -208,8 +200,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/activate':
     post:
-      security:
-        - bearerAuth: [ ]
       tags:
         - client
       summary: Activates a client by id.
@@ -240,8 +230,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/relationships':
     post:
-      security:
-        - bearerAuth: [ ]
       tags:
         - client
       summary: Add a Party Relationship to a Client
@@ -277,8 +265,6 @@ paths:
       description: Adds a Party Relationship to a Client
   '/clients/{clientId}/relationships/{relationshipId}':
     delete:
-      security:
-        - bearerAuth: [ ]
       description: Removes a Party Relationship from a Client
       tags:
         - client
@@ -310,8 +296,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys':
     post:
-      security:
-        - bearerAuth: [ ]
       tags:
         - key
       summary: Create Keys for the specific clientId.
@@ -352,8 +336,6 @@ paths:
             type: string
             format: uuid
     get:
-      security:
-        - bearerAuth: [ ]
       tags:
         - key
       summary: Returns a set of keys by client ID.
@@ -382,8 +364,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys/{keyId}':
     get:
-      security:
-        - bearerAuth: [ ]
       tags:
         - key
       summary: Returns a key by client and key identifier (kid).
@@ -417,8 +397,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
     delete:
-      security:
-        - bearerAuth: [ ]
       tags:
         - key
       summary: Deletes a key by client and key identifier (kid).
@@ -449,8 +427,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/encoded/keys/{keyId}':
     get:
-      security:
-        - bearerAuth: [ ]
       tags:
         - key
       summary: Returns a base64 encoded key by client and key identifier (kid).
