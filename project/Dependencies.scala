@@ -1,4 +1,5 @@
 import Versions._
+import PDNDVersions._
 import sbt._
 
 object Dependencies {
@@ -77,6 +78,13 @@ object Dependencies {
     lazy val mustache = "com.github.spullara.mustache.java" % "compiler" % mustacheVersion
   }
 
+  private[this] object pagopa {
+    lazy val namespace = "it.pagopa"
+
+    lazy val commons = namespace %% "pdnd-interop-commons-utils" % commonsVersion
+
+  }
+
   private[this] object postgres {
     lazy val namespace = "org.postgresql"
     lazy val jdbc      = namespace % "postgresql" % postgresVersion
@@ -146,6 +154,7 @@ object Dependencies {
       mustache.mustache            % Compile,
       nimbus.joseJwt               % Compile,
       openapi4j.operationValidator % Compile,
+      pagopa.commons               % Compile,
       postgres.jdbc                % Compile,
       scalaprotobuf.core           % Protobuf,
       akka.testkit                 % Test,

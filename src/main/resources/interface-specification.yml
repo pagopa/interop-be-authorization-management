@@ -20,6 +20,8 @@ tags:
     description: Operations on clients persistence
   - name: health
     description: Operations about service status
+security:
+    - bearerAuth: [ ]
 paths:
   /status:
     get:
@@ -694,4 +696,9 @@ components:
       required:
         - status
         - title
-  securitySchemes: {}
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: 'A bearer token in the format of a JWS and comformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).'
+      scheme: bearer
+      bearerFormat: JWT
