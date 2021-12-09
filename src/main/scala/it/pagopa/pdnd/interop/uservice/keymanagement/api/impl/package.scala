@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.api
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.StatusCode
 import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import it.pagopa.pdnd.interop.commons.utils.SprayCommonFormats.uuidFormat
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
@@ -9,7 +10,8 @@ import scala.reflect.classTag
 
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val problemFormat: RootJsonFormat[Problem] = jsonFormat3(Problem)
+  implicit val problemErrorFormat: RootJsonFormat[ProblemError] = jsonFormat2(ProblemError)
+  implicit val problemFormat: RootJsonFormat[Problem]           = jsonFormat5(Problem)
 
   implicit val otherPrimeInfoFormat: RootJsonFormat[OtherPrimeInfo]     = jsonFormat3(OtherPrimeInfo)
   implicit val keySeedFormat: RootJsonFormat[KeySeed]                   = jsonFormat4(KeySeed)
@@ -21,6 +23,20 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat5(ClientSeed)
   implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat8(Client)
   implicit val relationshipSeedFormat: RootJsonFormat[PartyRelationshipSeed] = jsonFormat1(PartyRelationshipSeed)
+
+  def problemOf(
+    httpError: StatusCode,
+    errorCode: String,
+    exception: Throwable = new RuntimeException(),
+    defaultMessage: String = "Unknown error"
+  ): Problem =
+    Problem(
+      `type` = "about:blank",
+      status = httpError.intValue,
+      title = httpError.defaultMessage,
+      errors =
+        Seq(ProblemError(code = s"006-$errorCode", detail = Option(exception.getMessage).getOrElse(defaultMessage)))
+    )
 
   private def customKeyFormat: RootJsonFormat[Key] = {
     val arrayFields = extractFieldNames(classTag[Key])

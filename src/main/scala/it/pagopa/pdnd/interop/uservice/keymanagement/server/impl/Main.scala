@@ -7,6 +7,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, ShardedDae
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.cluster.typed.{Cluster, Subscribe}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import akka.management.cluster.bootstrap.ClusterBootstrap
@@ -23,11 +24,11 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   HealthApiMarshallerImpl,
   HealthServiceApiImpl,
   KeyApiMarshallerImpl,
-  KeyApiServiceImpl
+  KeyApiServiceImpl,
+  problemOf
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi, KeyApiMarshaller}
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.shardingSettings
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
   KeyPersistentBehavior,
@@ -125,7 +126,8 @@ object Main extends App {
               println(item.severity())
             }
             val message = e.results().items().asScala.map(_.message()).mkString("\n")
-            complete(400, Problem(Some(message), 400, "bad request"))(keyApiMarshaller.toEntityMarshallerProblem)
+            val error   = problemOf(StatusCodes.BadRequest, "0000", defaultMessage = message)
+            complete(error.status, error)(keyApiMarshaller.toEntityMarshallerProblem)
           })
         )
 

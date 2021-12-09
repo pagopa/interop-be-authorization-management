@@ -5,6 +5,7 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
@@ -68,9 +69,10 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
       case statusReply if statusReply.isError =>
         createClient400(
-          Problem(
-            Option(statusReply.getError.getMessage),
-            status = 400,
+          problemOf(
+            StatusCodes.BadRequest,
+            "0001",
+            statusReply.getError,
             s"Error creating client for E-Service ${clientSeed.eServiceId}"
           )
         )
@@ -98,13 +100,21 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            getClient404(Problem(Option(ex.getMessage), status = 404, s"Error on client retrieve"))
+            getClient404(problemOf(StatusCodes.NotFound, "0002", ex, "Error on client retrieve"))
           case ex =>
-            internalServerError(Problem(Option(ex.getMessage), 500, s"Error while retrieving client $clientId"))
+            internalServerError(
+              problemOf(StatusCodes.InternalServerError, "0003", ex, s"Error while retrieving client $clientId")
+            )
         }
       // This should never occur, but with this check the pattern matching is exhaustive
       case unknownReply =>
-        internalServerError(Problem(Option(unknownReply.toString()), 500, s"Error while retrieving client $clientId"))
+        internalServerError(
+          problemOf(
+            StatusCodes.InternalServerError,
+            "0004",
+            defaultMessage = s"Error while retrieving client $clientId : ${unknownReply.toString}"
+          )
+        )
     }
   }
 
@@ -129,10 +139,10 @@ class ClientApiServiceImpl(
     (eServiceId, relationshipId, consumerId) match {
       case (None, None, None) =>
         listClients400(
-          Problem(
-            Some("At least one parameter is required [ eServiceId, relationshipId, consumerId ]"),
-            status = 400,
-            s"Error retrieving clients list for parameters"
+          problemOf(
+            StatusCodes.BadRequest,
+            "0005",
+            defaultMessage = "At least one parameter is required [ eServiceId, relationshipId, consumerId ]"
           )
         )
       case (agrId, opId, conId) =>
@@ -197,12 +207,13 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            addRelationship404(Problem(Option(ex.getMessage), status = 404, s"Error adding relationship to client"))
+            addRelationship404(problemOf(StatusCodes.NotFound, "0006", ex, "Error adding relationship to client"))
           case ex =>
             internalServerError(
-              Problem(
-                Option(ex.getMessage),
-                status = 500,
+              problemOf(
+                StatusCodes.InternalServerError,
+                "0007",
+                ex,
                 s"Error adding relationship ${relationshipSeed.relationshipId.toString} to client $clientId"
               )
             )
@@ -230,9 +241,11 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            deleteClient404(Problem(Option(ex.getMessage), status = 404, s"Error deleting client"))
+            deleteClient404(problemOf(StatusCodes.NotFound, "0008", ex, "Error deleting client"))
           case ex =>
-            internalServerError(Problem(Option(ex.getMessage), status = 500, s"Error deleting client $clientId"))
+            internalServerError(
+              problemOf(StatusCodes.InternalServerError, "0009", ex, s"Error deleting client $clientId")
+            )
         }
     }
   }
@@ -259,17 +272,18 @@ class ClientApiServiceImpl(
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             removeClientRelationship404(
-              Problem(Option(ex.getMessage), status = 404, s"Error removing relationship from client")
+              problemOf(StatusCodes.NotFound, "0010", ex, "Error removing relationship from client")
             )
           case ex: PartyRelationshipNotFoundError =>
             removeClientRelationship404(
-              Problem(Option(ex.getMessage), status = 404, s"Error removing relationship from client")
+              problemOf(StatusCodes.NotFound, "0011", ex, "Error removing relationship from client")
             )
           case ex =>
             internalServerError(
-              Problem(
-                Option(ex.getMessage),
-                status = 500,
+              problemOf(
+                StatusCodes.InternalServerError,
+                "0012",
+                ex,
                 s"Error removing relationship $relationshipId from client $clientId"
               )
             )
@@ -292,11 +306,11 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            activateClientById404(Problem(Some(err.getMessage), status = 404, "Not found"))
+            activateClientById404(problemOf(StatusCodes.NotFound, "0013", err))
           case err: ClientAlreadyActiveError =>
-            activateClientById400(Problem(Some(err.getMessage), status = 400, "Bad Request"))
+            activateClientById400(problemOf(StatusCodes.BadRequest, "0014", err))
           case err =>
-            complete((500, Problem(Option(err.getMessage), status = 500, "Unexpected error")))
+            internalServerError(problemOf(StatusCodes.InternalServerError, "0015", err))
         }
 
     }
@@ -317,11 +331,11 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            suspendClientById404(Problem(Some(err.getMessage), status = 404, "Not found"))
+            suspendClientById404(problemOf(StatusCodes.NotFound, "0016", err))
           case err: ClientAlreadySuspendedError =>
-            suspendClientById400(Problem(Some(err.getMessage), status = 400, "Bad Request"))
+            suspendClientById400(problemOf(StatusCodes.BadRequest, "0017", err))
           case err =>
-            complete((500, Problem(Option(err.getMessage), status = 500, "Unexpected error")))
+            internalServerError(problemOf(StatusCodes.InternalServerError, "0018", err))
         }
 
     }
