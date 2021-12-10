@@ -5,6 +5,7 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.onSuccess
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
@@ -56,10 +57,11 @@ class KeyApiServiceImpl(
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
-            createKeys400(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+            createKeys400(problemOf(StatusCodes.BadRequest, "0018", statusReply.getError))
         }
 
-      case Invalid(errors) => createKeys400(Problem(Option(errors.toList.mkString(", ")), status = 400, "some error"))
+      case Invalid(errors) =>
+        createKeys400(problemOf(StatusCodes.BadRequest, "0019", defaultMessage = errors.toList.mkString(", ")))
     }
   }
 
@@ -105,7 +107,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        getClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        getClientKeyById404(problemOf(StatusCodes.NotFound, "0020", statusReply.getError))
     }
   }
 
@@ -126,7 +128,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        getClientKeys404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        getClientKeys404(problemOf(StatusCodes.NotFound, "0021", statusReply.getError))
     }
   }
 
@@ -144,7 +146,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
       case statusReply if statusReply.isError =>
-        deleteClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 400, "some error"))
+        deleteClientKeyById404(problemOf(StatusCodes.BadRequest, "0022", statusReply.getError))
     }
   }
 
@@ -167,7 +169,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        getEncodedClientKeyById404(Problem(Option(statusReply.getError.getMessage), status = 404, "some error"))
+        getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, "0023", statusReply.getError))
     }
   }
 }
