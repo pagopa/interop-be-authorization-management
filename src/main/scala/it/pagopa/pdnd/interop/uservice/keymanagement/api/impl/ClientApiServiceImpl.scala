@@ -9,6 +9,9 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
+import com.typesafe.scalalogging.Logger
+import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
@@ -22,7 +25,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
   ClientNotFoundError
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -36,7 +39,7 @@ class ClientApiServiceImpl(
 ) extends ClientApiService
     with Validation {
 
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
@@ -53,8 +56,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
   ): Route = {
-
-    logger.info(s"Creating client for E-Service ${clientSeed.eServiceId}...")
+    logger.info("Creating client for E-Service {}", clientSeed.eServiceId)
 
     val clientId = uuidSupplier.get
 
@@ -68,6 +70,7 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
       case statusReply if statusReply.isError =>
+        logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, statusReply.getError)
         createClient400(
           problemOf(
             StatusCodes.BadRequest,
@@ -88,7 +91,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Retrieving Client $clientId...")
+    logger.info("Retrieving Client {}", clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
@@ -100,14 +103,17 @@ class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.error("Error while retrieving Client {}", clientId, ex)
             getClient404(problemOf(StatusCodes.NotFound, "0002", ex, "Error on client retrieve"))
           case ex =>
+            logger.error("Error while retrieving Client {}", clientId, ex)
             internalServerError(
               problemOf(StatusCodes.InternalServerError, "0003", ex, s"Error while retrieving client $clientId")
             )
         }
       // This should never occur, but with this check the pattern matching is exhaustive
       case unknownReply =>
+        logger.error("Error while retrieving Client {} - Internal server error", clientId)
         internalServerError(
           problemOf(
             StatusCodes.InternalServerError,
@@ -132,12 +138,20 @@ class ClientApiServiceImpl(
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
   ): Route = {
+    logger.info(
+      "Listing clients for e-service {} on relationship {} for consumer {}",
+      eServiceId,
+      relationshipId,
+      consumerId
+    )
+
     val sliceSize = 1000
 
     // This could be implemented using 'anyOf' function of OpenApi, but the generator does not support it yet
     // see https://github.com/OpenAPITools/openapi-generator/issues/634
     (eServiceId, relationshipId, consumerId) match {
       case (None, None, None) =>
+        logger.error("Error listing clients: no required parameters have been provided")
         listClients400(
           problemOf(
             StatusCodes.BadRequest,
@@ -194,7 +208,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Adding relationship ${relationshipSeed.relationshipId} to client $clientId...")
+    logger.info("Adding relationship {} to client {}", relationshipSeed.relationshipId, clientId)
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
@@ -205,6 +219,12 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => addRelationship201(statusReply.getValue.toApi)
       case statusReply if statusReply.isError =>
+        logger.error(
+          "Error while adding relationship {} to client {}",
+          relationshipSeed.relationshipId,
+          clientId,
+          statusReply.getError
+        )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             addRelationship404(problemOf(StatusCodes.NotFound, "0006", ex, "Error adding relationship to client"))
@@ -228,7 +248,7 @@ class ClientApiServiceImpl(
   override def deleteClient(
     clientId: String
   )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
-    logger.info(s"Deleting client $clientId...")
+    logger.info("Deleting client {}", clientId)
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
@@ -239,6 +259,7 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClient204
       case statusReply if statusReply.isError =>
+        logger.error("Error while deleting client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             deleteClient404(problemOf(StatusCodes.NotFound, "0008", ex, "Error deleting client"))
@@ -258,7 +279,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Removing relationship $relationshipId from client $clientId...")
+    logger.info("Removing relationship {} from client {}", relationshipId, clientId)
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
@@ -269,6 +290,12 @@ class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => removeClientRelationship204
       case statusReply if statusReply.isError =>
+        logger.error(
+          "Error while removing relationship {} from client {}",
+          relationshipId,
+          clientId,
+          statusReply.getError
+        )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             removeClientRelationship404(
@@ -297,13 +324,14 @@ class ClientApiServiceImpl(
   override def activateClientById(
     clientId: String
   )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
-    logger.info(s"Activating client $clientId...")
+    logger.info("Activating client {}", clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => ActivateClient(clientId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => activateClientById204
       case statusReply if statusReply.isError =>
+        logger.error("Error while activating client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case err: ClientNotFoundError =>
             activateClientById404(problemOf(StatusCodes.NotFound, "0013", err))
@@ -322,13 +350,14 @@ class ClientApiServiceImpl(
   override def suspendClientById(
     clientId: String
   )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
-    logger.info(s"Suspending client $clientId...")
+    logger.info("Suspending client {}", clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => SuspendClient(clientId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => suspendClientById204
       case statusReply if statusReply.isError =>
+        logger.error("Error while suspending client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case err: ClientNotFoundError =>
             suspendClientById404(problemOf(StatusCodes.NotFound, "0016", err))

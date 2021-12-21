@@ -149,7 +149,7 @@ object Main extends App {
 
         val listener = context.spawn(
           Behaviors.receive[ClusterEvent.MemberEvent]((ctx, event) => {
-            ctx.log.error("MemberEvent: {}", event)
+            ctx.log.info("MemberEvent: {}", event)
             Behaviors.same
           }),
           "listener"
