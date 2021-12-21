@@ -224,7 +224,7 @@ object KeyPersistentBehavior {
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
-        context.log.error(s"Passivate shard: ${shard.path.name}")
+        context.log.info(s"Passivate shard: ${shard.path.name}")
         Effect.none[Event, State]
     }
   }
@@ -296,7 +296,7 @@ object KeyPersistentBehavior {
 
   def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[Command] = {
     Behaviors.setup { context =>
-      context.log.error(s"Starting Key Shard ${persistenceId.id}")
+      context.log.info(s"Starting Key Shard ${persistenceId.id}")
       val numberOfEvents =
         context.system.settings.config.getInt("pdnd-interop-uservice-key-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](

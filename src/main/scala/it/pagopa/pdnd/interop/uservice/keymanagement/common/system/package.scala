@@ -19,7 +19,4 @@ package object system {
       case None    => ClusterShardingSettings(actorSystem)
       case Some(s) => s
     }
-
-  @inline def getShard(id: String, numberOfShards: Int): String = Math.abs(id.hashCode % numberOfShards).toString
-
 }

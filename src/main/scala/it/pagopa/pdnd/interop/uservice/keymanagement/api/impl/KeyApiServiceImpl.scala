@@ -11,12 +11,15 @@ import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
+import com.typesafe.scalalogging.Logger
+import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeySeed, KeysResponse, Problem}
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -29,7 +32,7 @@ class KeyApiServiceImpl(
 ) extends KeyApiService
     with Validation {
 
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
@@ -43,9 +46,7 @@ class KeyApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     //TODO consider a preauthorize for user rights validations...
-
-    logger.info(s"Creating keys for client $clientId...")
-
+    logger.info("Creating keys for client {}", clientId)
     val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
     validatedPayload.andThen(k => validateWithCurrentKeys(k, keysIdentifiers)) match {
@@ -57,11 +58,14 @@ class KeyApiServiceImpl(
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
+            logger.error("Error while creating keys for client {}", clientId, statusReply.getError)
             createKeys400(problemOf(StatusCodes.BadRequest, "0018", statusReply.getError))
         }
 
       case Invalid(errors) =>
-        createKeys400(problemOf(StatusCodes.BadRequest, "0019", defaultMessage = errors.toList.mkString(", ")))
+        val errorsStr = errors.toList.mkString(", ")
+        logger.error("Error while creating keys for client {} - {}", clientId, errorsStr)
+        createKeys400(problemOf(StatusCodes.BadRequest, "0019", defaultMessage = errorsStr))
     }
   }
 
@@ -98,7 +102,7 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Getting key $keyId for client $clientId...")
+    logger.info("Getting key {} for client {}", keyId, clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
@@ -107,6 +111,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.error("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
         getClientKeyById404(problemOf(StatusCodes.NotFound, "0020", statusReply.getError))
     }
   }
@@ -119,7 +124,7 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Getting keys for client $clientId...")
+    logger.info("Getting keys for client {}", clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
@@ -128,6 +133,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.error("Error while getting keys for client {}", clientId, statusReply.getError)
         getClientKeys404(problemOf(StatusCodes.NotFound, "0021", statusReply.getError))
     }
   }
@@ -139,13 +145,14 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Delete key $keyId belonging to $clientId...")
+    logger.info("Deleting key {} belonging to {}", keyId, clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
       case statusReply if statusReply.isError =>
+        logger.error("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
         deleteClientKeyById404(problemOf(StatusCodes.BadRequest, "0022", statusReply.getError))
     }
   }
@@ -160,7 +167,7 @@ class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(s"Getting encoded key $keyId for client $clientId...")
+    logger.info("Getting encoded key {} for client {}", keyId, clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
@@ -169,6 +176,7 @@ class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
+        logger.error("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
         getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, "0023", statusReply.getError))
     }
   }

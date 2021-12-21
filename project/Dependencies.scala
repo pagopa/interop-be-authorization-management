@@ -31,6 +31,9 @@ object Dependencies {
     lazy val clusterHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
     lazy val slf4j       = namespace                       %% "akka-slf4j"                   % akkaVersion
     lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
+    lazy val management  = "com.lightbend.akka.management" %% "akka-management"              % akkaManagementVersion
+    lazy val managementLogLevels =
+      "com.lightbend.akka.management" %% "akka-management-loglevels-logback" % akkaManagementVersion
   }
 
   private[this] object awssdk {
@@ -134,6 +137,8 @@ object Dependencies {
       akka.discoveryKubernetesApi  % Compile,
       akka.http                    % Compile,
       akka.httpJson                % Compile,
+      akka.management              % Compile,
+      akka.managementLogLevels     % Compile,
       akka.persistence             % Compile,
       akka.persistenceJdbc         % Compile,
       akka.persistenceQuery        % Compile,
