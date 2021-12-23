@@ -259,7 +259,7 @@ object KeyPersistentBehavior {
     toAPIResponse(mapKeys).fold[Effect[Event, State]](
       t => {
         replyTo ! StatusReply.Error[KeysResponse](s"Error while building response object ${t.getLocalizedMessage}")
-        Effect.none[KeyDeleted, State]
+        Effect.none[KeyDeleted, State] // Verify in PR
       },
       response =>
         Effect

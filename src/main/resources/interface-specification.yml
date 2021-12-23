@@ -56,6 +56,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '409':
+          description: Client already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
         description: A Client seed
