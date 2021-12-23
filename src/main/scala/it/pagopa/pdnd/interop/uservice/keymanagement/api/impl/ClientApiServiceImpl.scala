@@ -6,7 +6,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, onSuccess}
+import akka.http.scaladsl.server.Directives.{complete, onComplete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import com.typesafe.scalalogging.Logger
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success}
 
 class ClientApiServiceImpl(
   system: ActorSystem[_],
@@ -67,17 +68,22 @@ class ClientApiServiceImpl(
     val result: Future[StatusReply[PersistentClient]] =
       commander.ask(ref => AddClient(persistentClient, ref))
 
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
-      case statusReply if statusReply.isError =>
+    onComplete(result) {
+      case Success(statusReply) if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
+      case Success(statusReply) =>
         logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, statusReply.getError)
-        createClient400(
+        createClient409(
           problemOf(
-            StatusCodes.BadRequest,
-            "0001",
+            StatusCodes.Conflict,
+            "0024",
             statusReply.getError,
             s"Error creating client for E-Service ${clientSeed.eServiceId}"
           )
+        )
+      case Failure(ex) =>
+        logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, ex)
+        createClient400(
+          problemOf(StatusCodes.BadRequest, "0001", ex, s"Error creating client for E-Service ${clientSeed.eServiceId}")
         )
     }
 
