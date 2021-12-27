@@ -36,7 +36,7 @@ val w = new BufferedWriter(new FileWriter(tmpFile))
 w.write(writer.toString)
 w.close()
 
-val validator: OpenApiInteractionValidator =
+private val validator: OpenApiInteractionValidator =
    OpenApiInteractionValidator
    .createForSpecificationUrl(tmpFile.getPath)
    .withBasePathOverride(s"{{projectName}}/${interfaceVersion}")
