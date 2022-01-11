@@ -16,9 +16,10 @@ import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextField
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeySeed, KeysResponse, Problem}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
@@ -59,13 +60,13 @@ class KeyApiServiceImpl(
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
             logger.error("Error while creating keys for client {}", clientId, statusReply.getError)
-            createKeys400(problemOf(StatusCodes.BadRequest, "0018", statusReply.getError))
+            createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysBadRequest(clientId: String)))
         }
 
       case Invalid(errors) =>
         val errorsStr = errors.toList.mkString(", ")
         logger.error("Error while creating keys for client {} - {}", clientId, errorsStr)
-        createKeys400(problemOf(StatusCodes.BadRequest, "0019", defaultMessage = errorsStr))
+        createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysInvalid(clientId)))
     }
   }
 
@@ -112,7 +113,7 @@ class KeyApiServiceImpl(
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         logger.error("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
-        getClientKeyById404(problemOf(StatusCodes.NotFound, "0020", statusReply.getError))
+        getClientKeyById404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
     }
   }
 
@@ -134,7 +135,7 @@ class KeyApiServiceImpl(
       case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         logger.error("Error while getting keys for client {}", clientId, statusReply.getError)
-        getClientKeys404(problemOf(StatusCodes.NotFound, "0021", statusReply.getError))
+        getClientKeys404(problemOf(StatusCodes.NotFound, ClientKeysNotFound(clientId)))
     }
   }
 
@@ -153,7 +154,7 @@ class KeyApiServiceImpl(
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
       case statusReply if statusReply.isError =>
         logger.error("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
-        deleteClientKeyById404(problemOf(StatusCodes.BadRequest, "0022", statusReply.getError))
+        deleteClientKeyById404(problemOf(StatusCodes.BadRequest, DeleteClientKeyNotFound(clientId, keyId)))
     }
   }
 
@@ -177,7 +178,7 @@ class KeyApiServiceImpl(
       case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
         logger.error("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
-        getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, "0023", statusReply.getError))
+        getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, EncodedClientKeyNotFound(clientId, keyId)))
     }
   }
 }

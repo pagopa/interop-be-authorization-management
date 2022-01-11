@@ -2,7 +2,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.service.impl
 
 import com.nimbusds.jose.jwk._
 import com.nimbusds.jose.util.X509CertUtils
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.ThumbprintCalculationError
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors.ThumbprintCalculationError
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKeyUse
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Key, OtherPrimeInfo}
 import it.pagopa.pdnd.interop.uservice.keymanagement.service.utils.decodeBase64
