@@ -1,0 +1,738 @@
+openapi: 3.0.3
+info:
+  title: Key management microservice
+  version: '0.0'
+  contact:
+    name: API Support
+    url: 'http://www.example.com/support'
+    email: support@example.com
+  description: Manages the persistence and retrieval of client keys.
+  termsOfService: 'http://swagger.io/terms/'
+  x-api-id: an x-api-id
+  x-summary: an x-summary
+servers:
+  - url: '/pdnd-interop-uservice-key-management/0.0'
+    description: This contains key management routes
+tags:
+  - name: key
+    description: Operations on keys persistence
+  - name: client
+    description: Operations on clients persistence
+  - name: health
+    description: Operations about service status
+security:
+    - bearerAuth: [ ]
+paths:
+  /status:
+    get:
+      tags:
+        - health
+      summary: Health status endpoint
+      description: Return ok
+      operationId: getStatus
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients':
+    post:
+      tags:
+        - client
+      summary: Create Client
+      operationId: createClient
+      responses:
+        '201':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Client already exists
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: A Client seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientSeed'
+      description: Creates a Client
+    get:
+      tags:
+        - client
+      summary: List Clients
+      operationId: listClients
+      responses:
+        '200':
+          description: Client list retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Clients'
+        '400':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      description: Lists Clients
+      parameters:
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Pagination limit
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: eServiceId
+          in: query
+          description: ID of E-Service that MUST be related to the Client
+          schema:
+            type: string
+            format: uuid
+        - name: relationshipId
+          in: query
+          description: ID of Party Relationship that MUST be related to the Client
+          schema:
+            type: string
+            format: uuid
+        - name: consumerId
+          in: query
+          description: Consumer ID that MUST be related to the Client
+          schema:
+            type: string
+            format: uuid
+  /clients/{clientId}:
+    get:
+      description: Retrieves a Client
+      tags:
+        - client
+      summary: Get a Client
+      operationId: getClient
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      description: Deletes a Client
+      tags:
+        - client
+      summary: Delete a Client
+      operationId: deleteClient
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Client deleted
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/suspend':
+    post:
+      tags:
+        - client
+      summary: Suspend a client by id.
+      description: 'Suspend the given client'
+      operationId: suspendClientById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: the corresponding client has been suspended.
+        '400':
+          description: Client already suspended
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/activate':
+    post:
+      tags:
+        - client
+      summary: Activates a client by id.
+      description: 'Activate the given client'
+      operationId: activateClientById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client holding the key
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: the client has been activated.
+        '400':
+          description: Client already active
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/relationships':
+    post:
+      tags:
+        - client
+      summary: Add a Party Relationship to a Client
+      operationId: addRelationship
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Relationship added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '404':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: An Party Relationship seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartyRelationshipSeed'
+      description: Adds a Party Relationship to a Client
+  '/clients/{clientId}/relationships/{relationshipId}':
+    delete:
+      description: Removes a Party Relationship from a Client
+      tags:
+        - client
+      summary: Remove a Party Relationship from a Client
+      operationId: removeClientRelationship
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: relationshipId
+          in: path
+          description: The Party Relationship Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Party Relationship removed
+        '404':
+          description: Client or Relationship not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/keys':
+    post:
+      tags:
+        - key
+      summary: Create Keys for the specific clientId.
+      operationId: createKeys
+      responses:
+        '201':
+          description: Keys created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeysResponse'
+        '400':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Clien id not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: an array of base64 encoded PEM keys.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Keys'
+      description: Creates one or more keys for the corresponding client.
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          description: ID of client that the added keys MUST belong to
+          schema:
+            type: string
+            format: uuid
+    get:
+      tags:
+        - key
+      summary: Returns a set of keys by client ID.
+      description: 'Given a client identifier it returns its corresponding set of keys, if any'
+      operationId: getClientKeys
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: returns the corresponding array of keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeysResponse'
+        '404':
+          description: Client id not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/keys/{keyId}':
+    get:
+      tags:
+        - key
+      summary: Returns a key by client and key identifier (kid).
+      description: 'Given a client and key identifiers it returns the corresponding key, if any'
+      operationId: getClientKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to lookup
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: returns the corresponding key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientKey'
+        '404':
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags:
+        - key
+      summary: Deletes a key by client and key identifier (kid).
+      description: 'Given a client and key identifiers it deletes the corresponding key, if any'
+      operationId: deleteClientKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client holding the key
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: the corresponding key has been deleted.
+        '404':
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/encoded/keys/{keyId}':
+    get:
+      tags:
+        - key
+      summary: Returns a base64 encoded key by client and key identifier (kid).
+      description: 'Given a client and key identifiers it returns the corresponding encoded key, if any'
+      operationId: getEncodedClientKeyById
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to lookup
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: returns the corresponding base 64 encoded key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncodedClientKey'
+        "404":
+          description: Key not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  schemas:
+    KeysResponse:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientKey'
+      required:
+        - keys
+    Keys:
+      type: array
+      items:
+        $ref: '#/components/schemas/KeySeed'
+    KeySeed:
+      description: 'Models the seed for a public key to be persisted'
+      type: object
+      properties:
+        relationshipId:
+          type: string
+          format: uuid
+          description: 'Represents the identifier of the party relationship whose platform security operator is uploading the key'
+        key:
+          type: string
+          description: 'Base64 UTF-8 encoding of a public key in PEM format'
+        use:
+          $ref: '#/components/schemas/KeyUse'
+        alg:
+          type: string
+          description: 'The algorithm type of the key.'
+      required:
+        - relationshipId
+        - key
+        - use
+        - alg
+    ClientKey:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/Key'
+        relationshipId:
+          type: string
+          format: uuid
+      required:
+        - key
+        - status
+        - relationshipId
+    EncodedClientKey:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 'base64 encoded key'
+      required:
+        - key
+    Key:
+      description: 'Models a JWK'
+      type: object
+      properties:
+        kty:
+          type: string
+        key_ops:
+          type: array
+          items:
+            type: string
+        use:
+          type: string
+        alg:
+          type: string
+        kid:
+          type: string
+        x5u:
+          type: string
+          minLength: 1
+        x5t:
+          type: string
+        'x5t#S256':
+          type: string
+        x5c:
+          type: array
+          items:
+            type: string
+        crv:
+          type: string
+        x:
+          type: string
+        'y':
+          type: string
+        d:
+          type: string
+        k:
+          type: string
+        'n':
+          type: string
+        e:
+          type: string
+        p:
+          type: string
+        q:
+          type: string
+        dp:
+          type: string
+        dq:
+          type: string
+        qi:
+          type: string
+        oth:
+          uniqueItems: false
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/OtherPrimeInfo'
+      required:
+        - kty
+        - kid
+    OtherPrimeInfo:
+      title: OtherPrimeInfo
+      type: object
+      properties:
+        r:
+          type: string
+        d:
+          type: string
+        t:
+          type: string
+      required:
+        - r
+        - d
+        - t
+    ClientSeed:
+      description: Models the seed for a client to be persisted
+      type: object
+      properties:
+        eServiceId:
+          type: string
+          format: uuid
+        consumerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        purposes:
+          type: string
+      required:
+        - eServiceId
+        - consumerId
+        - name
+        - purposes
+    Client:
+      description: Models a Client
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eServiceId:
+          type: string
+          format: uuid
+        consumerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        state:
+          $ref: '#/components/schemas/ClientState'
+        purposes:
+          type: string
+        relationships:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+      required:
+        - id
+        - eServiceId
+        - consumerId
+        - name
+        - state
+        - purposes
+        - relationships
+    Clients:
+      type: array
+      items:
+        $ref: '#/components/schemas/Client'
+    ClientState:
+      type: string
+      description: Represents the Client state
+      enum:
+        - ACTIVE
+        - SUSPENDED
+    KeyUse:
+      type: string
+      description: Represents the Use field of key
+      enum:
+        - SIG
+        - ENC
+    PartyRelationshipSeed:
+      description: Models the seed for a Party Relationship-Client correlation to be persisted
+      type: object
+      properties:
+        relationshipId:
+          type: string
+          format: uuid
+      required:
+        - relationshipId
+    Problem:
+      properties:
+        type:
+          description: URI reference of type definition
+          type: string
+        status:
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+          example: 503
+          exclusiveMaximum: true
+          format: int32
+          maximum: 600
+          minimum: 100
+          type: integer
+        title:
+          description: A short, summary of the problem type. Written in english and readable
+          example: Service Unavailable
+          maxLength: 64
+          pattern: '^[ -~]{0,64}$'
+          type: string
+        detail:
+          description: A human readable explanation of the problem.
+          example: Request took too long to complete.
+          maxLength: 4096
+          pattern: '^.{0,1024}$'
+          type: string
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProblemError'
+      additionalProperties: false
+      required:
+        - type
+        - status
+        - title
+        - errors
+    ProblemError:
+      properties:
+        code:
+          description: Internal code of the error
+          example: 123-4567
+          minLength: 8
+          maxLength: 8
+          pattern: '^[0-9]{3}-[0-9]{4}$'
+          type: string
+        detail:
+          description: A human readable explanation specific to this occurrence of the problem.
+          example: Parameter not valid
+          maxLength: 4096
+          pattern: '^.{0,1024}$'
+          type: string
+      required:
+        - code
+        - detail
+  securitySchemes:
+    bearerAuth:
+      type: http
+      description: 'A bearer token in the format of a JWS and comformed to the specifications included in [RFC8725](https://tools.ietf.org/html/RFC8725).'
+      scheme: bearer
+      bearerFormat: JWT

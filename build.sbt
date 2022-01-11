@@ -17,6 +17,7 @@ ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://gateway.interop.p
 ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-releases/"
 
 lazy val generateCode = taskKey[Unit]("A task for generating the code starting from the swagger definition")
+lazy val compileSpecs = taskKey[Unit]("A task for compiling interface specs")
 
 val packagePrefix = settingKey[String]("The package prefix derived from the uservice name")
 
@@ -52,6 +53,31 @@ generateCode := {
 
 }
 
+compileSpecs := {
+  import java.io._
+  import scala.io._
+
+  val specsTemplateFileName = "src/main/resources/interface-specification.yml"
+  val specsOutputFileName   = "src/main/resources/specification.yml"
+
+  val specsOutputFile = new File(specsOutputFileName)
+  val bufferedWriter  = new BufferedWriter(new FileWriter(specsOutputFile))
+
+  def transform(line: String): String =
+    line.replace("{{version}}", ProjectSettings.interfaceVersion) + System.lineSeparator
+
+  val templateBufferedSource = Source.fromFile(specsTemplateFileName)
+  templateBufferedSource
+    .getLines()
+    .map(transform)
+    .foreach(bufferedWriter.write)
+
+  templateBufferedSource.close
+  bufferedWriter.close()
+}
+
+(Compile / compile) := ((Compile / compile) dependsOn compileSpecs).value
+
 Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value / "protobuf")
 
 cleanFiles += baseDirectory.value / "generated" / "src"
@@ -72,7 +98,7 @@ lazy val client = project
   .settings(
     name := "pdnd-interop-uservice-key-management-client",
     scalacOptions := Seq(),
-    scalafmtOnCompile:= true,
+    scalafmtOnCompile := true,
     libraryDependencies := Dependencies.Jars.client.map(m =>
       if (scalaVersion.value.startsWith("3.0"))
         m.withDottyCompat(scalaVersion.value)
@@ -96,7 +122,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "pdnd-interop-uservice-key-management",
     Test / parallelExecution := false,
-    scalafmtOnCompile:= true,
+    scalafmtOnCompile := true,
     dockerBuildOptions ++= Seq("--network=host"),
     dockerRepository := Some(System.getenv("DOCKER_REPO")),
     dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
@@ -119,4 +145,3 @@ lazy val root = (project in file("."))
   .setupBuildInfo
 
 javaAgents += "io.kamon" % "kanela-agent" % "1.0.13"
-
