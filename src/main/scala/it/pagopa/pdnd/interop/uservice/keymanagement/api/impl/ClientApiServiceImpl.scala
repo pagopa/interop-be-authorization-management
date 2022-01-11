@@ -15,15 +15,10 @@ import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
-import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotFoundError
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
-  ClientAlreadyActiveError,
-  ClientAlreadySuspendedError,
-  ClientNotFoundError
-}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
 import org.slf4j.LoggerFactory
 
@@ -72,19 +67,10 @@ class ClientApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
       case Success(statusReply) =>
         logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, statusReply.getError)
-        createClient409(
-          problemOf(
-            StatusCodes.Conflict,
-            "0024",
-            statusReply.getError,
-            s"Error creating client for E-Service ${clientSeed.eServiceId}"
-          )
-        )
+        createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
       case Failure(ex) =>
         logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, ex)
-        createClient400(
-          problemOf(StatusCodes.BadRequest, "0001", ex, s"Error creating client for E-Service ${clientSeed.eServiceId}")
-        )
+        createClient400(problemOf(StatusCodes.BadRequest, CreateClientError(clientSeed.eServiceId.toString)))
     }
 
   }
@@ -110,22 +96,16 @@ class ClientApiServiceImpl(
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             logger.error("Error while retrieving Client {}", clientId, ex)
-            getClient404(problemOf(StatusCodes.NotFound, "0002", ex, "Error on client retrieve"))
+            getClient404(problemOf(StatusCodes.NotFound, ex))
           case ex =>
             logger.error("Error while retrieving Client {}", clientId, ex)
-            internalServerError(
-              problemOf(StatusCodes.InternalServerError, "0003", ex, s"Error while retrieving client $clientId")
-            )
+            internalServerError(problemOf(StatusCodes.InternalServerError, GetClientError(clientId)))
         }
       // This should never occur, but with this check the pattern matching is exhaustive
       case unknownReply =>
         logger.error("Error while retrieving Client {} - Internal server error", clientId)
         internalServerError(
-          problemOf(
-            StatusCodes.InternalServerError,
-            "0004",
-            defaultMessage = s"Error while retrieving client $clientId : ${unknownReply.toString}"
-          )
+          problemOf(StatusCodes.InternalServerError, GetClientServerError(clientId, unknownReply.toString))
         )
     }
   }
@@ -158,13 +138,7 @@ class ClientApiServiceImpl(
     (eServiceId, relationshipId, consumerId) match {
       case (None, None, None) =>
         logger.error("Error listing clients: no required parameters have been provided")
-        listClients400(
-          problemOf(
-            StatusCodes.BadRequest,
-            "0005",
-            defaultMessage = "At least one parameter is required [ eServiceId, relationshipId, consumerId ]"
-          )
-        )
+        listClients400(problemOf(StatusCodes.BadRequest, ListClientErrors))
       case (agrId, opId, conId) =>
         val commanders: Seq[EntityRef[Command]] =
           (0 until settings.numberOfShards).map(shard =>
@@ -233,14 +207,12 @@ class ClientApiServiceImpl(
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            addRelationship404(problemOf(StatusCodes.NotFound, "0006", ex, "Error adding relationship to client"))
-          case ex =>
+            addRelationship404(problemOf(StatusCodes.NotFound, ex))
+          case _ =>
             internalServerError(
               problemOf(
                 StatusCodes.InternalServerError,
-                "0007",
-                ex,
-                s"Error adding relationship ${relationshipSeed.relationshipId.toString} to client $clientId"
+                AddRelationshipError(relationshipSeed.relationshipId.toString, clientId)
               )
             )
         }
@@ -268,11 +240,9 @@ class ClientApiServiceImpl(
         logger.error("Error while deleting client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            deleteClient404(problemOf(StatusCodes.NotFound, "0008", ex, "Error deleting client"))
-          case ex =>
-            internalServerError(
-              problemOf(StatusCodes.InternalServerError, "0009", ex, s"Error deleting client $clientId")
-            )
+            deleteClient404(problemOf(StatusCodes.NotFound, ex))
+          case _ =>
+            internalServerError(problemOf(StatusCodes.InternalServerError, DeleteClientError(clientId)))
         }
     }
   }
@@ -304,21 +274,12 @@ class ClientApiServiceImpl(
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            removeClientRelationship404(
-              problemOf(StatusCodes.NotFound, "0010", ex, "Error removing relationship from client")
-            )
+            removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
           case ex: PartyRelationshipNotFoundError =>
-            removeClientRelationship404(
-              problemOf(StatusCodes.NotFound, "0011", ex, "Error removing relationship from client")
-            )
-          case ex =>
+            removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
+          case _ =>
             internalServerError(
-              problemOf(
-                StatusCodes.InternalServerError,
-                "0012",
-                ex,
-                s"Error removing relationship $relationshipId from client $clientId"
-              )
+              problemOf(StatusCodes.InternalServerError, RemoveRelationshipError(relationshipId, clientId))
             )
         }
     }
@@ -340,11 +301,11 @@ class ClientApiServiceImpl(
         logger.error("Error while activating client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            activateClientById404(problemOf(StatusCodes.NotFound, "0013", err))
+            activateClientById404(problemOf(StatusCodes.NotFound, err))
           case err: ClientAlreadyActiveError =>
-            activateClientById400(problemOf(StatusCodes.BadRequest, "0014", err))
-          case err =>
-            internalServerError(problemOf(StatusCodes.InternalServerError, "0015", err))
+            activateClientById400(problemOf(StatusCodes.BadRequest, err))
+          case _ =>
+            internalServerError(problemOf(StatusCodes.InternalServerError, ActivateClientError(clientId)))
         }
 
     }
@@ -366,11 +327,11 @@ class ClientApiServiceImpl(
         logger.error("Error while suspending client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            suspendClientById404(problemOf(StatusCodes.NotFound, "0016", err))
+            suspendClientById404(problemOf(StatusCodes.NotFound, err))
           case err: ClientAlreadySuspendedError =>
-            suspendClientById400(problemOf(StatusCodes.BadRequest, "0017", err))
-          case err =>
-            internalServerError(problemOf(StatusCodes.InternalServerError, "0018", err))
+            suspendClientById400(problemOf(StatusCodes.BadRequest, err))
+          case _ =>
+            internalServerError(problemOf(StatusCodes.InternalServerError, SuspendClientError(clientId)))
         }
 
     }

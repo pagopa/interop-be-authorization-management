@@ -8,13 +8,7 @@ import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
-import it.pagopa.pdnd.interop.uservice.keymanagement.error.PartyRelationshipNotFoundError
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.{
-  ClientAlreadyActiveError,
-  ClientAlreadySuspendedError,
-  ClientNotFoundError,
-  PartyRelationshipNotAllowedError
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   PersistentClient,
   Active => ClientStatusActive,
