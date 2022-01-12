@@ -58,7 +58,7 @@ compileSpecs := {
   import scala.io._
 
   val specsTemplateFileName = "src/main/resources/interface-specification.yml"
-  val specsOutputFileName   = "src/main/resources/specification.yml"
+  val specsOutputFileName   = "openapi-specification.yml"
 
   val specsOutputFile = new File(specsOutputFileName)
   val bufferedWriter  = new BufferedWriter(new FileWriter(specsOutputFile))
