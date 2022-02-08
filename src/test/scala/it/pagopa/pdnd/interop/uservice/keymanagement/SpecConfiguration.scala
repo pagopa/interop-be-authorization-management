@@ -28,7 +28,7 @@ trait SpecConfiguration {
     .withFallback(testData)
 
   def serviceURL: String =
-    s"${config.getString("pdnd-interop-uservice-key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
+    s"${config.getString("key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
 
 }
 

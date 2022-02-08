@@ -15,8 +15,10 @@ import akka.management.scaladsl.AkkaManagement
 import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
 import akka.{actor => classic}
+import com.nimbusds.jose.proc.SecurityContext
+import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.pdnd.interop.commons.jwt.service.JWTReader
-import it.pagopa.pdnd.interop.commons.jwt.service.impl.DefaultJWTReader
+import it.pagopa.pdnd.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
 import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, PublicKeysHolder}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.pdnd.interop.commons.utils.OpenapiUtils
@@ -33,7 +35,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   problemOf
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi, KeyApiMarshaller}
-import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.shardingSettings
+import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{ApplicationConfiguration, shardingSettings}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
   KeyPersistentBehavior,
@@ -52,6 +54,8 @@ object Main extends App {
     keyset <- JWTConfiguration.jwtReader.loadKeyset()
     jwtValidator = new DefaultJWTReader with PublicKeysHolder {
       var publicKeyset = keyset
+      override protected val claimsVerifier: DefaultJWTClaimsVerifier[SecurityContext] =
+        getClaimsVerifier(audience = ApplicationConfiguration.jwtAudience)
     }
   } yield jwtValidator
 
@@ -138,7 +142,7 @@ object Main extends App {
           })
         )
 
-        val _ = Http().newServerAt("0.0.0.0", 8088).bind(controller.routes)
+        val _ = Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
 
         val listener = context.spawn(
           Behaviors.receive[ClusterEvent.MemberEvent]((ctx, event) => {
