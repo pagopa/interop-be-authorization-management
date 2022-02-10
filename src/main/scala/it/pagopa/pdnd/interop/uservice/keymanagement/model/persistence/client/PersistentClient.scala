@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client
 
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.Persistent
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurpose.PersistentClientPurposes
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed}
 
 import java.util.UUID
@@ -11,7 +12,7 @@ final case class PersistentClient(
   consumerId: UUID,
   name: String,
   state: PersistedClientState,
-  purposes: String,
+  purposes: PersistentClientPurposes,
   description: Option[String],
   relationships: Set[UUID]
 ) extends Persistent {
@@ -23,7 +24,7 @@ final case class PersistentClient(
       consumerId = consumerId,
       name = name,
       state = state.toApi,
-      purposes = purposes,
+      purposes = PersistentClientPurpose.toApi(purposes),
       description = description,
       relationships = relationships
     )
@@ -39,7 +40,7 @@ object PersistentClient {
       consumerId = seed.consumerId,
       name = seed.name,
       state = Active,
-      purposes = seed.purposes,
+      purposes = Map.empty,
       description = seed.description,
       relationships = Set.empty[UUID]
     )

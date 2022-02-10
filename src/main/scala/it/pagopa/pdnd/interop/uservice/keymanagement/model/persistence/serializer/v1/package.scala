@@ -2,17 +2,10 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializ
 
 import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
-  Active,
-  PersistedClientState,
-  PersistentClient,
-  Suspended
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurpose.PersistentClientPurposes
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
-  ClientStateV1,
-  PersistentClientV1
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
   KeyUseV1,
@@ -24,7 +17,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serialize
   StateKeysEntryV1,
   StateV1
 }
-
+import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
@@ -52,10 +45,13 @@ package object v1 {
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
       for {
-        clients <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
+        keys <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
           keyToEntry(keys).map(entries => StateKeysEntryV1(client, entries))
         }
-      } yield StateV1(clients)
+        clients <- state.clients.toSeq.traverse[ErrorOr, StateClientsEntryV1] { case (_, client) =>
+          clientToStateEntry(client)
+        }
+      } yield StateV1(keys = keys, clients = clients)
 
     }
 
@@ -140,6 +136,9 @@ package object v1 {
     entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)
   }
 
+  private def clientToStateEntry(client: PersistentClient): ErrorOr[StateClientsEntryV1] =
+    clientToProtobuf(client).map(StateClientsEntryV1.of(client.id.toString, _))
+
   private def keyToProtobuf(key: PersistentKey): ErrorOr[PersistentKeyV1] =
     Right(
       PersistentKeyV1(
@@ -160,11 +159,33 @@ package object v1 {
         consumerId = client.consumerId.toString,
         name = client.name,
         state = clientStateToProtobuf(client.state),
-        purposes = client.purposes,
+        purposes = purposeToProtobuf(client.purposes),
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq
       )
     )
+
+  private def purposeToProtobuf(purposes: PersistentClientPurposes): Seq[ClientPurposesEntryV1] =
+    purposes.map { case (purposeId, statesChain) =>
+      ClientPurposesEntryV1.of(purposeId.toString, clientStatesChainToProtobuf(statesChain))
+    }.toSeq
+
+  private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
+    ClientStatesChainV1.of(
+      id = statesChain.id.toString,
+      eService = clientStateRingToProtobuf(statesChain.eService),
+      agreement = clientStateRingToProtobuf(statesChain.agreement),
+      purpose = clientStateRingToProtobuf(statesChain.purpose)
+    )
+
+  private def clientStateRingToProtobuf(stateRing: PersistentClientStateRing): ClientStateRingV1 =
+    ClientStateRingV1.of(id = stateRing.id.toString, state = ringStateToProtobuf(stateRing.state))
+
+  private def ringStateToProtobuf(state: PersistentRingState): RingStateV1 =
+    state match {
+      case PersistentRingState.Active   => RingStateV1.RING_ACTIVE
+      case PersistentRingState.Inactive => RingStateV1.RING_INACTIVE
+    }
 
   private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
     val entries = keys.map(entry => protobufToKey(entry.value).map(key => (entry.keyId, key)))
@@ -180,6 +201,7 @@ package object v1 {
       eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
       clientState   <- clientStateFromProtobuf(client.state)
+      statesChain   <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
@@ -187,10 +209,42 @@ package object v1 {
       consumerId = consumerId,
       name = client.name,
       state = clientState,
-      purposes = client.purposes,
+      purposes = statesChain,
       description = client.description,
       relationships = relationships.toSet
     )
+
+  private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[PersistentClientPurposes] =
+    purposes
+      .traverse(p =>
+        for {
+          uuid  <- p.purposeId.toUUID.toEither
+          state <- protobufToClientStatesChain(p.states)
+        } yield uuid -> state
+      )
+      .map(_.toMap)
+
+  private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
+    for {
+      uuid      <- statesChain.id.toUUID.toEither
+      eService  <- protobufToClientStateRing(statesChain.eService)
+      agreement <- protobufToClientStateRing(statesChain.agreement)
+      purpose   <- protobufToClientStateRing(statesChain.purpose)
+    } yield PersistentClientStatesChain(id = uuid, eService = eService, agreement = agreement, purpose = purpose)
+  }
+
+  private def protobufToClientStateRing(stateRing: ClientStateRingV1): ErrorOr[PersistentClientStateRing] =
+    for {
+      uuid  <- stateRing.id.toUUID.toEither
+      state <- protobufToRingState(stateRing.state)
+    } yield PersistentClientStateRing(id = uuid, state = state)
+
+  private def protobufToRingState(state: RingStateV1): ErrorOr[PersistentRingState] =
+    state match {
+      case RingStateV1.RING_ACTIVE     => Right(PersistentRingState.Active)
+      case RingStateV1.RING_INACTIVE   => Right(PersistentRingState.Inactive)
+      case RingStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Ring State value $v"))
+    }
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
@@ -216,7 +270,7 @@ package object v1 {
     case Enc => KeyUseV1.ENC
   }
 
-  def persistentKeyUseFromProtobuf(use: KeyUseV1): Either[Throwable, PersistentKeyUse] = use match {
+  def persistentKeyUseFromProtobuf(use: KeyUseV1): ErrorOr[PersistentKeyUse] = use match {
     case KeyUseV1.SIG             => Right(Sig)
     case KeyUseV1.ENC             => Right(Enc)
     case KeyUseV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
@@ -227,7 +281,7 @@ package object v1 {
     case Suspended => ClientStateV1.SUSPENDED
   }
 
-  def clientStateFromProtobuf(status: ClientStateV1): Either[Throwable, PersistedClientState] = status match {
+  def clientStateFromProtobuf(status: ClientStateV1): ErrorOr[PersistedClientState] = status match {
     case ClientStateV1.ACTIVE          => Right(Active)
     case ClientStateV1.SUSPENDED       => Right(Suspended)
     case ClientStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))

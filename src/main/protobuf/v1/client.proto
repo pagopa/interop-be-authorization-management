@@ -4,6 +4,7 @@ import "scalapb/scalapb.proto";
 
 option (scalapb.options) = {
   package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
+  no_default_values_in_constructor : true
 };
 
 message PersistentClientV1 {
@@ -13,8 +14,30 @@ message PersistentClientV1 {
   required string name = 4;
   optional string description = 5;
   repeated string relationships = 6;
-  required string purposes = 7;
+  repeated ClientPurposesEntryV1 purposes = 7;
   required ClientStateV1 state = 8;
+}
+
+message ClientPurposesEntryV1 {
+  required string purposeId = 1;
+  required ClientStatesChainV1 states = 2;
+}
+
+message ClientStatesChainV1 {
+  required string id = 1;
+  required ClientStateRingV1 eService = 2;
+  required ClientStateRingV1 agreement = 3;
+  required ClientStateRingV1 purpose = 4;
+}
+
+message ClientStateRingV1 {
+  required string id = 1;
+  required RingStateV1 state = 2;
+}
+
+enum RingStateV1 {
+  RING_ACTIVE = 1;
+  RING_INACTIVE = 2;
 }
 
 enum ClientStateV1 {

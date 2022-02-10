@@ -6,6 +6,7 @@ import "v1/client.proto";
 
 option (scalapb.options) = {
   package_name: "it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1"
+  no_default_values_in_constructor : true
 };
 
 

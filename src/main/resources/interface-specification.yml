@@ -636,7 +636,9 @@ components:
         state:
           $ref: '#/components/schemas/ClientState'
         purposes:
-          type: string
+          type: array
+          items:
+            $ref: '#/components/schemas/Purpose'
         relationships:
           type: array
           items:
@@ -676,6 +678,51 @@ components:
           format: uuid
       required:
         - relationshipId
+    Purpose:
+      type: object
+      properties:
+        purposeId:
+          type: string
+          format: uuid
+        states:
+          $ref: '#/components/schemas/ClientStatesChain'
+      required:
+        - purposeId
+        - states
+    ClientStatesChain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eservice:
+          $ref: '#/components/schemas/ClientStateRing'
+        agreement:
+          $ref: '#/components/schemas/ClientStateRing'
+        purpose:
+          $ref: '#/components/schemas/ClientStateRing'
+      required:
+        - id
+        - eservice
+        - agreement
+        - purpose
+    ClientStateRing:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/RingState'
+      required:
+        - id
+        - state
+    RingState:
+      type: string
+      description: Represents the State of an object related to the purpose
+      enum:
+        - ACTIVE
+        - INACTIVE
     Problem:
       properties:
         type:
