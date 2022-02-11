@@ -9,13 +9,11 @@ option (scalapb.options) = {
 
 message PersistentClientV1 {
   required string id = 1;
-  required string eServiceId = 2;
   required string consumerId = 3;
   required string name = 4;
   optional string description = 5;
   repeated string relationships = 6;
   repeated ClientPurposesEntryV1 purposes = 7;
-  required ClientStateV1 state = 8;
 }
 
 message ClientPurposesEntryV1 {
@@ -25,22 +23,29 @@ message ClientPurposesEntryV1 {
 
 message ClientStatesChainV1 {
   required string id = 1;
-  required ClientStateRingV1 eService = 2;
-  required ClientStateRingV1 agreement = 3;
-  required ClientStateRingV1 purpose = 4;
+  required ClientEServiceDetailsV1 eService = 2;
+  required ClientAgreementDetailsV1 agreement = 3;
+  required ClientPurposeDetailsV1 purpose = 4;
 }
 
-message ClientStateRingV1 {
+message ClientEServiceDetailsV1 {
   required string id = 1;
-  required RingStateV1 state = 2;
+  required ClientComponentStateV1 state = 2;
+  required string audience = 3;
+  required int32 voucherLifespan = 4;
 }
 
-enum RingStateV1 {
-  RING_ACTIVE = 1;
-  RING_INACTIVE = 2;
+message ClientAgreementDetailsV1 {
+  required string id = 1;
+  required ClientComponentStateV1 state = 2;
 }
 
-enum ClientStateV1 {
+message ClientPurposeDetailsV1 {
+  required string id = 1;
+  required ClientComponentStateV1 state = 2;
+}
+
+enum ClientComponentStateV1 {
   ACTIVE = 1;
-  SUSPENDED = 2;
+  INACTIVE = 2;
 }

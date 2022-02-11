@@ -7,9 +7,9 @@ import java.util.UUID
 
 final case class PersistentClientStatesChain(
   id: UUID,
-  eService: PersistentClientStateRing,
-  agreement: PersistentClientStateRing,
-  purpose: PersistentClientStateRing
+  eService: PersistentClientEServiceDetails,
+  agreement: PersistentClientAgreementDetails,
+  purpose: PersistentClientPurposeDetails
 ) extends Persistent {
 
   def toApi: ClientStatesChain =

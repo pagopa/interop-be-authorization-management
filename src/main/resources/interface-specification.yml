@@ -107,12 +107,6 @@ paths:
             minimum: 1
             maximum: 100
             default: 10
-        - name: eServiceId
-          in: query
-          description: ID of E-Service that MUST be related to the Client
-          schema:
-            type: string
-            format: uuid
         - name: relationshipId
           in: query
           description: ID of Party Relationship that MUST be related to the Client
@@ -168,66 +162,6 @@ paths:
       responses:
         '204':
           description: Client deleted
-        '404':
-          description: Client not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/suspend':
-    post:
-      tags:
-        - client
-      summary: Suspend a client by id.
-      description: 'Suspend the given client'
-      operationId: suspendClientById
-      parameters:
-        - name: clientId
-          in: path
-          description: ID of the client
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: the corresponding client has been suspended.
-        '400':
-          description: Client already suspended
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '404':
-          description: Client not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/activate':
-    post:
-      tags:
-        - client
-      summary: Activates a client by id.
-      description: 'Activate the given client'
-      operationId: activateClientById
-      parameters:
-        - name: clientId
-          in: path
-          description: ID of the client holding the key
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: the client has been activated.
-        '400':
-          description: Client already active
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         '404':
           description: Client not found
           content:
@@ -599,9 +533,6 @@ components:
       description: Models the seed for a client to be persisted
       type: object
       properties:
-        eServiceId:
-          type: string
-          format: uuid
         consumerId:
           type: string
           format: uuid
@@ -609,13 +540,9 @@ components:
           type: string
         description:
           type: string
-        purposes:
-          type: string
       required:
-        - eServiceId
         - consumerId
         - name
-        - purposes
     Client:
       description: Models a Client
       type: object
@@ -623,9 +550,6 @@ components:
         id:
           type: string
           format: uuid
-        eServiceId:
-          type: string
-          format: uuid
         consumerId:
           type: string
           format: uuid
@@ -633,8 +557,6 @@ components:
           type: string
         description:
           type: string
-        state:
-          $ref: '#/components/schemas/ClientState'
         purposes:
           type: array
           items:
@@ -647,22 +569,14 @@ components:
           uniqueItems: true
       required:
         - id
-        - eServiceId
         - consumerId
         - name
-        - state
         - purposes
         - relationships
     Clients:
       type: array
       items:
         $ref: '#/components/schemas/Client'
-    ClientState:
-      type: string
-      description: Represents the Client state
-      enum:
-        - ACTIVE
-        - SUSPENDED
     KeyUse:
       type: string
       description: Represents the Use field of key
@@ -696,28 +610,57 @@ components:
           type: string
           format: uuid
         eservice:
-          $ref: '#/components/schemas/ClientStateRing'
+          $ref: '#/components/schemas/ClientEServiceDetails'
         agreement:
-          $ref: '#/components/schemas/ClientStateRing'
+          $ref: '#/components/schemas/ClientAgreementDetails'
         purpose:
-          $ref: '#/components/schemas/ClientStateRing'
+          $ref: '#/components/schemas/ClientPurposeDetails'
       required:
         - id
         - eservice
         - agreement
         - purpose
-    ClientStateRing:
+    ClientEServiceDetails:
       type: object
       properties:
         id:
           type: string
           format: uuid
         state:
-          $ref: '#/components/schemas/RingState'
+          $ref: '#/components/schemas/ClientComponentState'
+        audience:
+          type: string
+        voucherLifespan:
+          type: integer
+          format: int32
       required:
         - id
         - state
-    RingState:
+        - audience
+        - voucherLifespan
+    ClientAgreementDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
+        - id
+        - state
+    ClientPurposeDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
+        - id
+        - state
+    ClientComponentState:
       type: string
       description: Represents the State of an object related to the purpose
       enum:

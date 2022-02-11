@@ -34,11 +34,10 @@ class RelationshipManagementSpec
   "Relationship creation" should {
     "be successful on existing client" in {
       val clientId       = UUID.randomUUID()
-      val eServiceId     = UUID.randomUUID()
       val consumerId     = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
 
-      createClient(clientId, eServiceId, consumerId)
+      createClient(clientId, consumerId)
 
       val data = s"""{
                     |  "relationshipId": "${relationshipId.toString}"
@@ -71,12 +70,11 @@ class RelationshipManagementSpec
   "Relationship deletion" should {
     "be successful and remove keys" in {
       val clientId        = UUID.randomUUID()
-      val eServiceId      = UUID.randomUUID()
       val consumerId      = UUID.randomUUID()
       val relationshipId1 = UUID.randomUUID()
       val relationshipId2 = UUID.randomUUID()
 
-      createClient(clientId, eServiceId, consumerId)
+      createClient(clientId, consumerId)
       addRelationship(clientId, relationshipId1)
       addRelationship(clientId, relationshipId2)
       createKey(clientId, relationshipId1)
@@ -99,12 +97,11 @@ class RelationshipManagementSpec
     "be successful and don't remove same relationship keys of different client" in {
       val clientId1      = UUID.randomUUID()
       val clientId2      = UUID.randomUUID()
-      val eServiceId     = UUID.randomUUID()
       val consumerId     = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
 
-      createClient(clientId1, eServiceId, consumerId)
-      createClient(clientId2, eServiceId, consumerId)
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
       addRelationship(clientId1, relationshipId)
       addRelationship(clientId2, relationshipId)
       createKey(clientId1, relationshipId)

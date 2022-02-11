@@ -93,18 +93,6 @@ package object v1 {
   implicit def clientDeletedV1PersistEventSerializer: PersistEventSerializer[ClientDeleted, ClientDeletedV1] = event =>
     Right[Throwable, ClientDeletedV1](ClientDeletedV1(clientId = event.clientId))
 
-  implicit def clientActivatedV1PersistEventDeserializer: PersistEventDeserializer[ClientActivatedV1, ClientActivated] =
-    event => Right[Throwable, ClientActivated](ClientActivated(clientId = event.clientId))
-
-  implicit def clientActivatedV1PersistEventSerializer: PersistEventSerializer[ClientActivated, ClientActivatedV1] =
-    event => Right[Throwable, ClientActivatedV1](ClientActivatedV1(clientId = event.clientId))
-
-  implicit def clientSuspendedV1PersistEventDeserializer: PersistEventDeserializer[ClientSuspendedV1, ClientSuspended] =
-    event => Right[Throwable, ClientSuspended](ClientSuspended(clientId = event.clientId))
-
-  implicit def clientSuspendedV1PersistEventSerializer: PersistEventSerializer[ClientSuspended, ClientSuspendedV1] =
-    event => Right[Throwable, ClientSuspendedV1](ClientSuspendedV1(clientId = event.clientId))
-
   implicit def relationshipAddedV1PersistEventDeserializer
     : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
     for {
@@ -155,10 +143,8 @@ package object v1 {
     Right(
       PersistentClientV1(
         id = client.id.toString,
-        eServiceId = client.eServiceId.toString,
         consumerId = client.consumerId.toString,
         name = client.name,
-        state = clientStateToProtobuf(client.state),
         purposes = purposeToProtobuf(client.purposes),
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq
@@ -173,18 +159,29 @@ package object v1 {
   private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
     ClientStatesChainV1.of(
       id = statesChain.id.toString,
-      eService = clientStateRingToProtobuf(statesChain.eService),
-      agreement = clientStateRingToProtobuf(statesChain.agreement),
-      purpose = clientStateRingToProtobuf(statesChain.purpose)
+      eService = clientEServiceDetailsToProtobuf(statesChain.eService),
+      agreement = clientAgreementDetailsToProtobuf(statesChain.agreement),
+      purpose = clientPurposeDetailsToProtobuf(statesChain.purpose)
     )
 
-  private def clientStateRingToProtobuf(stateRing: PersistentClientStateRing): ClientStateRingV1 =
-    ClientStateRingV1.of(id = stateRing.id.toString, state = ringStateToProtobuf(stateRing.state))
+  private def clientEServiceDetailsToProtobuf(details: PersistentClientEServiceDetails): ClientEServiceDetailsV1 =
+    ClientEServiceDetailsV1.of(
+      id = details.id.toString,
+      state = componentStateToProtobuf(details.state),
+      audience = details.audience,
+      voucherLifespan = details.voucherLifespan
+    )
 
-  private def ringStateToProtobuf(state: PersistentRingState): RingStateV1 =
+  private def clientAgreementDetailsToProtobuf(details: PersistentClientAgreementDetails): ClientAgreementDetailsV1 =
+    ClientAgreementDetailsV1.of(id = details.id.toString, state = componentStateToProtobuf(details.state))
+
+  private def clientPurposeDetailsToProtobuf(details: PersistentClientPurposeDetails): ClientPurposeDetailsV1 =
+    ClientPurposeDetailsV1.of(id = details.id.toString, state = componentStateToProtobuf(details.state))
+
+  private def componentStateToProtobuf(state: PersistentClientComponentState): ClientComponentStateV1 =
     state match {
-      case PersistentRingState.Active   => RingStateV1.RING_ACTIVE
-      case PersistentRingState.Inactive => RingStateV1.RING_INACTIVE
+      case PersistentClientComponentState.Active   => ClientComponentStateV1.ACTIVE
+      case PersistentClientComponentState.Inactive => ClientComponentStateV1.INACTIVE
     }
 
   private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
@@ -198,17 +195,13 @@ package object v1 {
   private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] =
     for {
       clientId      <- Try(UUID.fromString(client.id)).toEither
-      eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
-      clientState   <- clientStateFromProtobuf(client.state)
       statesChain   <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
-      eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
-      state = clientState,
       purposes = statesChain,
       description = client.description,
       relationships = relationships.toSet
@@ -227,23 +220,45 @@ package object v1 {
   private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
     for {
       uuid      <- statesChain.id.toUUID.toEither
-      eService  <- protobufToClientStateRing(statesChain.eService)
-      agreement <- protobufToClientStateRing(statesChain.agreement)
-      purpose   <- protobufToClientStateRing(statesChain.purpose)
+      eService  <- protobufToClientEServiceDetails(statesChain.eService)
+      agreement <- protobufToClientAgreementDetails(statesChain.agreement)
+      purpose   <- protobufToClientPurposeDetails(statesChain.purpose)
     } yield PersistentClientStatesChain(id = uuid, eService = eService, agreement = agreement, purpose = purpose)
   }
 
-  private def protobufToClientStateRing(stateRing: ClientStateRingV1): ErrorOr[PersistentClientStateRing] =
+  private def protobufToClientEServiceDetails(
+    details: ClientEServiceDetailsV1
+  ): ErrorOr[PersistentClientEServiceDetails] =
     for {
-      uuid  <- stateRing.id.toUUID.toEither
-      state <- protobufToRingState(stateRing.state)
-    } yield PersistentClientStateRing(id = uuid, state = state)
+      uuid  <- details.id.toUUID.toEither
+      state <- protobufToComponentState(details.state)
+    } yield PersistentClientEServiceDetails(
+      id = uuid,
+      state = state,
+      audience = details.audience,
+      voucherLifespan = details.voucherLifespan
+    )
 
-  private def protobufToRingState(state: RingStateV1): ErrorOr[PersistentRingState] =
+  private def protobufToClientAgreementDetails(
+    details: ClientAgreementDetailsV1
+  ): ErrorOr[PersistentClientAgreementDetails] =
+    for {
+      uuid  <- details.id.toUUID.toEither
+      state <- protobufToComponentState(details.state)
+    } yield PersistentClientAgreementDetails(id = uuid, state = state)
+
+  private def protobufToClientPurposeDetails(details: ClientPurposeDetailsV1): ErrorOr[PersistentClientPurposeDetails] =
+    for {
+      uuid  <- details.id.toUUID.toEither
+      state <- protobufToComponentState(details.state)
+    } yield PersistentClientPurposeDetails(id = uuid, state = state)
+
+  private def protobufToComponentState(state: ClientComponentStateV1): ErrorOr[PersistentClientComponentState] =
     state match {
-      case RingStateV1.RING_ACTIVE     => Right(PersistentRingState.Active)
-      case RingStateV1.RING_INACTIVE   => Right(PersistentRingState.Inactive)
-      case RingStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Ring State value $v"))
+      case ClientComponentStateV1.ACTIVE   => Right(PersistentClientComponentState.Active)
+      case ClientComponentStateV1.INACTIVE => Right(PersistentClientComponentState.Inactive)
+      case ClientComponentStateV1.Unrecognized(v) =>
+        Left(new RuntimeException(s"Unable to deserialize Component State value $v"))
     }
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
@@ -276,14 +291,4 @@ package object v1 {
     case KeyUseV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
   }
 
-  def clientStateToProtobuf(status: PersistedClientState): ClientStateV1 = status match {
-    case Active    => ClientStateV1.ACTIVE
-    case Suspended => ClientStateV1.SUSPENDED
-  }
-
-  def clientStateFromProtobuf(status: ClientStateV1): ErrorOr[PersistedClientState] = status match {
-    case ClientStateV1.ACTIVE          => Right(Active)
-    case ClientStateV1.SUSPENDED       => Right(Suspended)
-    case ClientStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))
-  }
 }

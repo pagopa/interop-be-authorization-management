@@ -21,12 +21,15 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val encodedClientKeyFormat: RootJsonFormat[EncodedClientKey] = jsonFormat1(EncodedClientKey)
   implicit val keyResponseFormat: RootJsonFormat[KeysResponse]          = jsonFormat1(KeysResponse)
 
-  implicit val clientStateRingFormat: RootJsonFormat[ClientStateRing]     = jsonFormat2(ClientStateRing)
-  implicit val clientStatesChainFormat: RootJsonFormat[ClientStatesChain] = jsonFormat4(ClientStatesChain)
-  implicit val purposeFormat: RootJsonFormat[Purpose]                     = jsonFormat2(Purpose)
+  implicit val clientAgreementDetailsFormat: RootJsonFormat[ClientAgreementDetails] =
+    jsonFormat2(ClientAgreementDetails)
+  implicit val clientEServiceDetailsFormat: RootJsonFormat[ClientEServiceDetails] = jsonFormat4(ClientEServiceDetails)
+  implicit val clientPurposeDetailsFormat: RootJsonFormat[ClientPurposeDetails]   = jsonFormat2(ClientPurposeDetails)
+  implicit val clientStatesChainFormat: RootJsonFormat[ClientStatesChain]         = jsonFormat4(ClientStatesChain)
+  implicit val purposeFormat: RootJsonFormat[Purpose]                             = jsonFormat2(Purpose)
 
-  implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat5(ClientSeed)
-  implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat8(Client)
+  implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat3(ClientSeed)
+  implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat6(Client)
   implicit val relationshipSeedFormat: RootJsonFormat[PartyRelationshipSeed] = jsonFormat1(PartyRelationshipSeed)
 
   final val serviceErrorCodePrefix: String = "006"

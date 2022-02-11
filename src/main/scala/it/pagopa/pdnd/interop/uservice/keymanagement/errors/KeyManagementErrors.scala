@@ -46,24 +46,24 @@ object KeyManagementErrors {
       extends ComponentError("0012", s"Error while getting encoded key $keyId for client $clientId - not found")
 
   final case object ClientAlreadyExisting extends ComponentError("0013", "Client already existing")
-  final case class CreateClientError(eServiceId: String)
-      extends ComponentError("0014", s"Error creating client for E-Service ${eServiceId}")
+  final case class CreateClientError(consumerId: String)
+      extends ComponentError("0014", s"Error creating client for Consumer $consumerId")
   final case class GetClientError(clientId: String)
       extends ComponentError("0015", s"Error while retrieving client $clientId")
   final case class GetClientServerError(clientId: String, reply: String)
       extends ComponentError("0016", s"Error while retrieving client $clientId : $reply")
 
   final case object ListClientErrors
-      extends ComponentError("0018", "At least one parameter is required [ eServiceId, relationshipId, consumerId ]")
+      extends ComponentError("0018", "At least one parameter is required [ relationshipId, consumerId ]")
 
   final case class AddRelationshipError(relationshipId: String, clientId: String)
-      extends ComponentError("0019", s"Error adding relationship ${relationshipId} to client $clientId")
+      extends ComponentError("0019", s"Error adding relationship $relationshipId to client $clientId")
 
   final case class DeleteClientError(clientId: String)
       extends ComponentError("0020", s"Error deleting client $clientId")
 
   final case class RemoveRelationshipError(relationshipId: String, clientId: String)
-      extends ComponentError("0021", s"Error removing relationship ${relationshipId} to client $clientId")
+      extends ComponentError("0021", s"Error removing relationship $relationshipId to client $clientId")
 
   final case class ActivateClientError(clientId: String)
       extends ComponentError("0022", s"Error activating client $clientId")
