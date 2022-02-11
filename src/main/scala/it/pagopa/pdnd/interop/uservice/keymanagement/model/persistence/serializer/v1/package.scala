@@ -196,13 +196,13 @@ package object v1 {
     for {
       clientId      <- Try(UUID.fromString(client.id)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
-      statesChain   <- protobufToPurposesEntry(client.purposes)
+      purposes      <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
       consumerId = consumerId,
       name = client.name,
-      purposes = statesChain,
+      purposes = purposes,
       description = client.description,
       relationships = relationships.toSet
     )
