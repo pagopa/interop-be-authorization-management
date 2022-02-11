@@ -2,17 +2,10 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializ
 
 import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
-  Active,
-  PersistedClientState,
-  PersistentClient,
-  Suspended
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurposes.PersistentClientPurposes
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client.{
-  ClientStateV1,
-  PersistentClientV1
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
   KeyUseV1,
@@ -24,7 +17,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serialize
   StateKeysEntryV1,
   StateV1
 }
-
+import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
@@ -52,10 +45,13 @@ package object v1 {
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
       for {
-        clients <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
+        keys <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
           keyToEntry(keys).map(entries => StateKeysEntryV1(client, entries))
         }
-      } yield StateV1(clients)
+        clients <- state.clients.toSeq.traverse[ErrorOr, StateClientsEntryV1] { case (_, client) =>
+          clientToStateEntry(client)
+        }
+      } yield StateV1(keys = keys, clients = clients)
 
     }
 
@@ -97,18 +93,6 @@ package object v1 {
   implicit def clientDeletedV1PersistEventSerializer: PersistEventSerializer[ClientDeleted, ClientDeletedV1] = event =>
     Right[Throwable, ClientDeletedV1](ClientDeletedV1(clientId = event.clientId))
 
-  implicit def clientActivatedV1PersistEventDeserializer: PersistEventDeserializer[ClientActivatedV1, ClientActivated] =
-    event => Right[Throwable, ClientActivated](ClientActivated(clientId = event.clientId))
-
-  implicit def clientActivatedV1PersistEventSerializer: PersistEventSerializer[ClientActivated, ClientActivatedV1] =
-    event => Right[Throwable, ClientActivatedV1](ClientActivatedV1(clientId = event.clientId))
-
-  implicit def clientSuspendedV1PersistEventDeserializer: PersistEventDeserializer[ClientSuspendedV1, ClientSuspended] =
-    event => Right[Throwable, ClientSuspended](ClientSuspended(clientId = event.clientId))
-
-  implicit def clientSuspendedV1PersistEventSerializer: PersistEventSerializer[ClientSuspended, ClientSuspendedV1] =
-    event => Right[Throwable, ClientSuspendedV1](ClientSuspendedV1(clientId = event.clientId))
-
   implicit def relationshipAddedV1PersistEventDeserializer
     : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
     for {
@@ -140,6 +124,9 @@ package object v1 {
     entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)
   }
 
+  private def clientToStateEntry(client: PersistentClient): ErrorOr[StateClientsEntryV1] =
+    clientToProtobuf(client).map(StateClientsEntryV1.of(client.id.toString, _))
+
   private def keyToProtobuf(key: PersistentKey): ErrorOr[PersistentKeyV1] =
     Right(
       PersistentKeyV1(
@@ -156,15 +143,46 @@ package object v1 {
     Right(
       PersistentClientV1(
         id = client.id.toString,
-        eServiceId = client.eServiceId.toString,
         consumerId = client.consumerId.toString,
         name = client.name,
-        state = clientStateToProtobuf(client.state),
-        purposes = client.purposes,
+        purposes = purposeToProtobuf(client.purposes),
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq
       )
     )
+
+  private def purposeToProtobuf(purposes: PersistentClientPurposes): Seq[ClientPurposesEntryV1] =
+    purposes.map { case (purposeId, statesChain) =>
+      ClientPurposesEntryV1.of(purposeId.toString, clientStatesChainToProtobuf(statesChain))
+    }.toSeq
+
+  private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
+    ClientStatesChainV1.of(
+      id = statesChain.id.toString,
+      eService = clientEServiceDetailsToProtobuf(statesChain.eService),
+      agreement = clientAgreementDetailsToProtobuf(statesChain.agreement),
+      purpose = clientPurposeDetailsToProtobuf(statesChain.purpose)
+    )
+
+  private def clientEServiceDetailsToProtobuf(details: PersistentClientEServiceDetails): ClientEServiceDetailsV1 =
+    ClientEServiceDetailsV1.of(
+      id = details.id.toString,
+      state = componentStateToProtobuf(details.state),
+      audience = details.audience,
+      voucherLifespan = details.voucherLifespan
+    )
+
+  private def clientAgreementDetailsToProtobuf(details: PersistentClientAgreementDetails): ClientAgreementDetailsV1 =
+    ClientAgreementDetailsV1.of(id = details.id.toString, state = componentStateToProtobuf(details.state))
+
+  private def clientPurposeDetailsToProtobuf(details: PersistentClientPurposeDetails): ClientPurposeDetailsV1 =
+    ClientPurposeDetailsV1.of(id = details.id.toString, state = componentStateToProtobuf(details.state))
+
+  private def componentStateToProtobuf(state: PersistentClientComponentState): ClientComponentStateV1 =
+    state match {
+      case PersistentClientComponentState.Active   => ClientComponentStateV1.ACTIVE
+      case PersistentClientComponentState.Inactive => ClientComponentStateV1.INACTIVE
+    }
 
   private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
     val entries = keys.map(entry => protobufToKey(entry.value).map(key => (entry.keyId, key)))
@@ -177,20 +195,71 @@ package object v1 {
   private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] =
     for {
       clientId      <- Try(UUID.fromString(client.id)).toEither
-      eServiceId    <- Try(UUID.fromString(client.eServiceId)).toEither
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
-      clientState   <- clientStateFromProtobuf(client.state)
+      purposes      <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
     } yield PersistentClient(
       id = clientId,
-      eServiceId = eServiceId,
       consumerId = consumerId,
       name = client.name,
-      state = clientState,
-      purposes = client.purposes,
+      purposes = purposes,
       description = client.description,
       relationships = relationships.toSet
     )
+
+  private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[PersistentClientPurposes] =
+    purposes
+      .traverse(p =>
+        for {
+          uuid  <- p.purposeId.toUUID.toEither
+          state <- protobufToClientStatesChain(p.states)
+        } yield uuid -> state
+      )
+      .map(_.toMap)
+
+  private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
+    for {
+      uuid      <- statesChain.id.toUUID.toEither
+      eService  <- protobufToClientEServiceDetails(statesChain.eService)
+      agreement <- protobufToClientAgreementDetails(statesChain.agreement)
+      purpose   <- protobufToClientPurposeDetails(statesChain.purpose)
+    } yield PersistentClientStatesChain(id = uuid, eService = eService, agreement = agreement, purpose = purpose)
+  }
+
+  private def protobufToClientEServiceDetails(
+    details: ClientEServiceDetailsV1
+  ): ErrorOr[PersistentClientEServiceDetails] =
+    for {
+      uuid  <- details.id.toUUID.toEither
+      state <- protobufToComponentState(details.state)
+    } yield PersistentClientEServiceDetails(
+      id = uuid,
+      state = state,
+      audience = details.audience,
+      voucherLifespan = details.voucherLifespan
+    )
+
+  private def protobufToClientAgreementDetails(
+    details: ClientAgreementDetailsV1
+  ): ErrorOr[PersistentClientAgreementDetails] =
+    for {
+      uuid  <- details.id.toUUID.toEither
+      state <- protobufToComponentState(details.state)
+    } yield PersistentClientAgreementDetails(id = uuid, state = state)
+
+  private def protobufToClientPurposeDetails(details: ClientPurposeDetailsV1): ErrorOr[PersistentClientPurposeDetails] =
+    for {
+      uuid  <- details.id.toUUID.toEither
+      state <- protobufToComponentState(details.state)
+    } yield PersistentClientPurposeDetails(id = uuid, state = state)
+
+  private def protobufToComponentState(state: ClientComponentStateV1): ErrorOr[PersistentClientComponentState] =
+    state match {
+      case ClientComponentStateV1.ACTIVE   => Right(PersistentClientComponentState.Active)
+      case ClientComponentStateV1.INACTIVE => Right(PersistentClientComponentState.Inactive)
+      case ClientComponentStateV1.Unrecognized(v) =>
+        Left(new RuntimeException(s"Unable to deserialize Component State value $v"))
+    }
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
@@ -216,20 +285,10 @@ package object v1 {
     case Enc => KeyUseV1.ENC
   }
 
-  def persistentKeyUseFromProtobuf(use: KeyUseV1): Either[Throwable, PersistentKeyUse] = use match {
+  def persistentKeyUseFromProtobuf(use: KeyUseV1): ErrorOr[PersistentKeyUse] = use match {
     case KeyUseV1.SIG             => Right(Sig)
     case KeyUseV1.ENC             => Right(Enc)
     case KeyUseV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
   }
 
-  def clientStateToProtobuf(status: PersistedClientState): ClientStateV1 = status match {
-    case Active    => ClientStateV1.ACTIVE
-    case Suspended => ClientStateV1.SUSPENDED
-  }
-
-  def clientStateFromProtobuf(status: ClientStateV1): Either[Throwable, PersistedClientState] = status match {
-    case ClientStateV1.ACTIVE          => Right(Active)
-    case ClientStateV1.SUSPENDED       => Right(Suspended)
-    case ClientStateV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Client Status value $v"))
-  }
 }

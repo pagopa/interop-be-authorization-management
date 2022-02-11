@@ -9,11 +9,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
-  PersistentClient,
-  Active => ClientStatusActive,
-  Suspended => ClientStatusSuspended
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey.{
   toAPI,
@@ -126,9 +122,8 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
-      case ListClients(from, to, eServiceId, relationshipId, consumerId, replyTo) =>
+      case ListClients(from, to, relationshipId, consumerId, replyTo) =>
         val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
-          eServiceId.forall(_ == client.eServiceId.toString) &&
           relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
           consumerId.forall(_ == client.consumerId.toString)
         }
@@ -145,36 +140,6 @@ object KeyPersistentBehavior {
             Effect
               .persist(ClientDeleted(clientId))
               .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
-          )
-
-      case ActivateClient(clientId, replyTo) =>
-        val client: Option[PersistentClient] = state.clients.get(clientId)
-
-        client
-          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(client =>
-            client.state match {
-              case ClientStatusActive =>
-                commandError(replyTo, ClientAlreadyActiveError(clientId))
-              case ClientStatusSuspended =>
-                Effect
-                  .persist(ClientActivated(clientId))
-                  .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
-            }
-          )
-
-      case SuspendClient(clientId, replyTo) =>
-        val client: Option[PersistentClient] = state.clients.get(clientId)
-
-        client
-          .fold(commandError(replyTo, ClientNotFoundError(clientId)))(client =>
-            client.state match {
-              case ClientStatusActive =>
-                Effect
-                  .persist(ClientSuspended(clientId))
-                  .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
-              case ClientStatusSuspended =>
-                commandError(replyTo, ClientAlreadySuspendedError(clientId))
-            }
           )
 
       case AddRelationship(clientId, relationshipId, replyTo) =>
@@ -279,8 +244,6 @@ object KeyPersistentBehavior {
       case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
       case ClientAdded(client)                           => state.addClient(client)
       case ClientDeleted(clientId)                       => state.deleteClient(clientId)
-      case ClientActivated(clientId)                     => state.activateClient(clientId)
-      case ClientSuspended(clientId)                     => state.suspendClient(clientId)
       case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
       case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
     }

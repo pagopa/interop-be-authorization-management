@@ -48,10 +48,9 @@ class KeyManagementSpec
 
     "fail if key relationship has not been added to client" in {
       val clientId   = UUID.randomUUID()
-      val eServiceId = UUID.randomUUID()
       val consumerId = UUID.randomUUID()
 
-      createClient(clientId, eServiceId, consumerId)
+      createClient(clientId, consumerId)
 
       val data =
         s"""
@@ -73,11 +72,10 @@ class KeyManagementSpec
 
     "succeed" in {
       val clientId       = UUID.randomUUID()
-      val eServiceId     = UUID.randomUUID()
       val consumerId     = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
 
-      createClient(clientId, eServiceId, consumerId)
+      createClient(clientId, consumerId)
       addRelationship(clientId, relationshipId)
 
       val data =

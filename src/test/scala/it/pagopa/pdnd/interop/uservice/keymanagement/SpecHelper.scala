@@ -89,27 +89,21 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
   }
 
   def shutdownServer(): Unit = {
-    println("****** Shutting down server ********")
     bindServer.foreach(_.foreach(_.unbind()))
     ActorTestKit.shutdown(httpSystem, 5.seconds)
-    println("Server shut down - Resources cleaned")
   }
 
-  def createClient(id: UUID, eServiceId: UUID, consumerId: UUID): Client = {
+  def createClient(id: UUID, consumerId: UUID): Client = {
     (() => mockUUIDSupplier.get).expects().returning(id).once()
 
-    val eServiceUuid = eServiceId
     val consumerUuid = consumerId
     val name         = s"New Client ${id.toString}"
-    val purposes     = s"Purposes ${id.toString}"
     val description  = s"New Client ${id.toString} description"
 
     val data =
       s"""{
-         |  "eServiceId": "${eServiceUuid.toString}",
          |  "consumerId": "${consumerUuid.toString}",
          |  "name": "$name",
-         |  "purposes": "$purposes",
          |  "description": "$description"
          |}""".stripMargin
 

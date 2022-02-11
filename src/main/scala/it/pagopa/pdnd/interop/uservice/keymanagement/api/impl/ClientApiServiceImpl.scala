@@ -52,7 +52,7 @@ class ClientApiServiceImpl(
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info("Creating client for E-Service {}", clientSeed.eServiceId)
+    logger.info("Creating client for Consumer {}", clientSeed.consumerId)
 
     val clientId = uuidSupplier.get
 
@@ -66,11 +66,11 @@ class ClientApiServiceImpl(
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
       case Success(statusReply) =>
-        logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, statusReply.getError)
+        logger.error("Error while creating client for Consumer {}", clientSeed.consumerId, statusReply.getError)
         createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
       case Failure(ex) =>
-        logger.error("Error while creating client for E-Service {}", clientSeed.eServiceId, ex)
-        createClient400(problemOf(StatusCodes.BadRequest, CreateClientError(clientSeed.eServiceId.toString)))
+        logger.error("Error while creating client for Consumer {}", clientSeed.consumerId, ex)
+        createClient400(problemOf(StatusCodes.BadRequest, CreateClientError(clientSeed.consumerId.toString)))
     }
 
   }
@@ -113,38 +113,27 @@ class ClientApiServiceImpl(
   /** Code: 200, Message: Client list retrieved, DataType: Seq[Client]
     * Code: 400, Message: Missing Required Information, DataType: Problem
     */
-  override def listClients(
-    offset: Int,
-    limit: Int,
-    eServiceId: Option[String],
-    relationshipId: Option[String],
-    consumerId: Option[String]
-  )(implicit
+  override def listClients(offset: Int, limit: Int, relationshipId: Option[String], consumerId: Option[String])(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info(
-      "Listing clients for e-service {} on relationship {} for consumer {}",
-      eServiceId,
-      relationshipId,
-      consumerId
-    )
+    logger.info("Listing clients for relationship {} and consumer {}", relationshipId, consumerId)
 
     val sliceSize = 1000
 
     // This could be implemented using 'anyOf' function of OpenApi, but the generator does not support it yet
     // see https://github.com/OpenAPITools/openapi-generator/issues/634
-    (eServiceId, relationshipId, consumerId) match {
-      case (None, None, None) =>
+    (relationshipId, consumerId) match {
+      case (None, None) =>
         logger.error("Error listing clients: no required parameters have been provided")
         listClients400(problemOf(StatusCodes.BadRequest, ListClientErrors))
-      case (agrId, opId, conId) =>
+      case (relId, conId) =>
         val commanders: Seq[EntityRef[Command]] =
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
-        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, agrId, opId, conId).map(_.toApi))
+        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, relId, conId).map(_.toApi))
         val paginatedClients     = clients.sortBy(_.id).slice(offset, offset + limit)
         listClients200(paginatedClients)
     }
@@ -153,7 +142,6 @@ class ClientApiServiceImpl(
   private def slices(
     commander: EntityRef[Command],
     sliceSize: Int,
-    eServiceId: Option[String],
     relationshipId: Option[String],
     consumerId: Option[String]
   ): LazyList[PersistentClient] = {
@@ -166,10 +154,7 @@ class ClientApiServiceImpl(
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
         Await
-          .result(
-            commander.ask(ref => ListClients(from, to, eServiceId, relationshipId, consumerId, ref)),
-            Duration.Inf
-          )
+          .result(commander.ask(ref => ListClients(from, to, relationshipId, consumerId, ref)), Duration.Inf)
           .getValue
       if (slice.isEmpty)
         lazyList
@@ -285,55 +270,4 @@ class ClientApiServiceImpl(
     }
   }
 
-  /** Code: 204, Message: the client has been activated.
-    * Code: 404, Message: Client not found, DataType: Problem
-    */
-  override def activateClientById(
-    clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
-    logger.info("Activating client {}", clientId)
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => ActivateClient(clientId, ref))
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => activateClientById204
-      case statusReply if statusReply.isError =>
-        logger.error("Error while activating client {}", clientId, statusReply.getError)
-        statusReply.getError match {
-          case err: ClientNotFoundError =>
-            activateClientById404(problemOf(StatusCodes.NotFound, err))
-          case err: ClientAlreadyActiveError =>
-            activateClientById400(problemOf(StatusCodes.BadRequest, err))
-          case _ =>
-            internalServerError(problemOf(StatusCodes.InternalServerError, ActivateClientError(clientId)))
-        }
-
-    }
-  }
-
-  /** Code: 204, Message: the corresponding client has been suspended.
-    * Code: 404, Message: Client not found, DataType: Problem
-    */
-  override def suspendClientById(
-    clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
-    logger.info("Suspending client {}", clientId)
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => SuspendClient(clientId, ref))
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => suspendClientById204
-      case statusReply if statusReply.isError =>
-        logger.error("Error while suspending client {}", clientId, statusReply.getError)
-        statusReply.getError match {
-          case err: ClientNotFoundError =>
-            suspendClientById404(problemOf(StatusCodes.NotFound, err))
-          case err: ClientAlreadySuspendedError =>
-            suspendClientById400(problemOf(StatusCodes.BadRequest, err))
-          case _ =>
-            internalServerError(problemOf(StatusCodes.InternalServerError, SuspendClientError(clientId)))
-        }
-
-    }
-  }
 }

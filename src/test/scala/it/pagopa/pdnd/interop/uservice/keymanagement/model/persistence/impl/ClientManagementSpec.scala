@@ -5,7 +5,6 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Client
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{Active, Suspended}
 import it.pagopa.pdnd.interop.uservice.keymanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -38,30 +37,24 @@ class ClientManagementSpec
       val newClientUuid = UUID.randomUUID()
       (() => mockUUIDSupplier.get).expects().returning(newClientUuid).once()
 
-      val eServiceUuid = UUID.randomUUID()
       val consumerUuid = UUID.randomUUID()
       val name         = "New Client 1"
-      val purposes     = "Purposes 1"
       val description  = Some("New Client 1 description")
 
       val expected =
         Client(
           id = newClientUuid,
-          eServiceId = eServiceUuid,
           consumerId = consumerUuid,
           name = name,
-          state = Active.toApi,
-          purposes = purposes,
+          purposes = Seq.empty,
           description = description,
           relationships = Set.empty
         )
 
       val data =
         s"""{
-           |  "eServiceId": "${eServiceUuid.toString}",
            |  "consumerId": "${consumerUuid.toString}",
            |  "name": "$name",
-           |  "purposes": "$purposes",
            |  "description": "${description.get}"
            |}""".stripMargin
 
@@ -76,9 +69,8 @@ class ClientManagementSpec
 
     "be retrieved successfully" in {
       val clientUuid    = UUID.randomUUID()
-      val eServiceUuid  = UUID.randomUUID()
       val consumerUuid  = UUID.randomUUID()
-      val createdClient = createClient(clientUuid, eServiceUuid, consumerUuid)
+      val createdClient = createClient(clientUuid, consumerUuid)
 
       val response = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
 
@@ -94,11 +86,10 @@ class ClientManagementSpec
 
     "succeed" in {
       val clientUuid       = UUID.randomUUID()
-      val eServiceUuid     = UUID.randomUUID()
       val consumerUuid     = UUID.randomUUID()
       val relationshipUuid = UUID.randomUUID()
 
-      createClient(clientUuid, eServiceUuid, consumerUuid)
+      createClient(clientUuid, consumerUuid)
       addRelationship(clientUuid, relationshipUuid)
       createKey(clientUuid, relationshipUuid)
 
@@ -119,130 +110,17 @@ class ClientManagementSpec
 
   }
 
-  "Client activation" should {
-
-    "succeed" in {
-      val clientUuid       = UUID.randomUUID()
-      val eServiceUuid     = UUID.randomUUID()
-      val consumerUuid     = UUID.randomUUID()
-      val relationshipUuid = UUID.randomUUID()
-
-      createClient(clientUuid, eServiceUuid, consumerUuid)
-      val client = addRelationship(clientUuid, relationshipUuid)
-      createKey(clientUuid, relationshipUuid)
-
-      val suspendResponse = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
-      suspendResponse.status shouldBe StatusCodes.NoContent
-
-      val activateResponse = request(uri = s"$serviceURL/clients/$clientUuid/activate", method = HttpMethods.POST)
-      activateResponse.status shouldBe StatusCodes.NoContent
-
-      val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
-      val retrievedClient        = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
-      retrievedClient shouldBe client
-    }
-
-    "fail on non-existing client id" in {
-      val response = request(uri = s"$serviceURL/clients/non-existing-id/activate", method = HttpMethods.POST)
-      response.status shouldBe StatusCodes.NotFound
-    }
-
-    "fail if client is already active" in {
-      val clientUuid       = UUID.randomUUID()
-      val eServiceUuid     = UUID.randomUUID()
-      val consumerUuid     = UUID.randomUUID()
-      val relationshipUuid = UUID.randomUUID()
-
-      createClient(clientUuid, eServiceUuid, consumerUuid)
-      addRelationship(clientUuid, relationshipUuid)
-      createKey(clientUuid, relationshipUuid)
-
-      val response = request(uri = s"$serviceURL/clients/$clientUuid/activate", method = HttpMethods.POST)
-      response.status shouldBe StatusCodes.BadRequest
-    }
-
-  }
-
-  "Client suspension" should {
-
-    "succeed" in {
-      val clientUuid       = UUID.randomUUID()
-      val eServiceUuid     = UUID.randomUUID()
-      val consumerUuid     = UUID.randomUUID()
-      val relationshipUuid = UUID.randomUUID()
-
-      createClient(clientUuid, eServiceUuid, consumerUuid)
-      val client = addRelationship(clientUuid, relationshipUuid)
-      createKey(clientUuid, relationshipUuid)
-
-      val suspendResponse = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
-      suspendResponse.status shouldBe StatusCodes.NoContent
-
-      val retrieveClientResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.GET)
-      val retrievedClient        = Await.result(Unmarshal(retrieveClientResponse).to[Client], Duration.Inf)
-      retrievedClient shouldBe client.copy(state = Suspended.toApi)
-    }
-
-    "fail on non-existing client id" in {
-      val response = request(uri = s"$serviceURL/clients/non-existing-id/suspend", method = HttpMethods.POST)
-      response.status shouldBe StatusCodes.NotFound
-    }
-
-    "fail if client is already suspended" in {
-      val clientUuid       = UUID.randomUUID()
-      val eServiceUuid     = UUID.randomUUID()
-      val consumerUuid     = UUID.randomUUID()
-      val relationshipUuid = UUID.randomUUID()
-
-      createClient(clientUuid, eServiceUuid, consumerUuid)
-      addRelationship(clientUuid, relationshipUuid)
-      createKey(clientUuid, relationshipUuid)
-
-      val prepareDataResponse = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
-      prepareDataResponse.status shouldBe StatusCodes.NoContent
-
-      val response = request(uri = s"$serviceURL/clients/$clientUuid/suspend", method = HttpMethods.POST)
-      response.status shouldBe StatusCodes.BadRequest
-    }
-
-  }
-
   "Client list" should {
-    "correctly filter by E-Service id" in {
-      val clientId1   = UUID.randomUUID()
-      val clientId2   = UUID.randomUUID()
-      val clientId3   = UUID.randomUUID()
-      val eServiceId1 = UUID.randomUUID()
-      val consumerId1 = UUID.randomUUID()
-      val eServiceId3 = UUID.randomUUID()
-      val consumerId3 = UUID.randomUUID()
-
-      val client1 = createClient(clientId1, eServiceId1, consumerId1)
-      val client2 = createClient(clientId2, eServiceId1, consumerId1)
-      createClient(clientId3, eServiceId3, consumerId3)
-
-      val response = request(uri = s"$serviceURL/clients?eServiceId=$eServiceId1", method = HttpMethods.GET)
-
-      response.status shouldBe StatusCodes.OK
-      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
-
-      retrievedClients.size shouldBe 2
-      retrievedClients should contain only (client1, client2)
-
-    }
-
     "correctly filter by relationship id" in {
       val clientId1       = UUID.randomUUID()
       val clientId2       = UUID.randomUUID()
-      val eServiceId1     = UUID.randomUUID()
-      val eServiceId2     = UUID.randomUUID()
       val consumerId1     = UUID.randomUUID()
       val consumerId2     = UUID.randomUUID()
       val relationshipId1 = UUID.randomUUID()
       val relationshipId2 = UUID.randomUUID()
 
-      createClient(clientId1, eServiceId1, consumerId1)
-      createClient(clientId2, eServiceId2, consumerId2)
+      createClient(clientId1, consumerId1)
+      createClient(clientId2, consumerId2)
 
       addRelationship(clientId1, relationshipId1)
       addRelationship(clientId2, relationshipId2)
@@ -262,14 +140,12 @@ class ClientManagementSpec
       val clientId1   = UUID.randomUUID()
       val clientId2   = UUID.randomUUID()
       val clientId3   = UUID.randomUUID()
-      val eServiceId1 = UUID.randomUUID()
       val consumerId1 = UUID.randomUUID()
-      val eServiceId3 = UUID.randomUUID()
       val consumerId3 = UUID.randomUUID()
 
-      val client1 = createClient(clientId1, eServiceId1, consumerId1)
-      val client2 = createClient(clientId2, eServiceId1, consumerId1)
-      createClient(clientId3, eServiceId3, consumerId3)
+      val client1 = createClient(clientId1, consumerId1)
+      val client2 = createClient(clientId2, consumerId1)
+      createClient(clientId3, consumerId3)
 
       val response = request(uri = s"$serviceURL/clients?consumerId=$consumerId1", method = HttpMethods.GET)
 
@@ -285,19 +161,18 @@ class ClientManagementSpec
       val clientId1  = UUID.randomUUID()
       val clientId2  = UUID.randomUUID()
       val clientId3  = UUID.randomUUID()
-      val eServiceId = UUID.randomUUID()
       val consumerId = UUID.randomUUID()
 
-      createClient(clientId1, eServiceId, consumerId)
-      createClient(clientId2, eServiceId, consumerId)
-      createClient(clientId3, eServiceId, consumerId)
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
+      createClient(clientId3, consumerId)
 
       // First page
       val offset1 = 0
       val limit1  = 2
 
       val response1 = request(
-        uri = s"$serviceURL/clients?eServiceId=$eServiceId&offset=$offset1&limit=$limit1",
+        uri = s"$serviceURL/clients?consumerId=$consumerId&offset=$offset1&limit=$limit1",
         method = HttpMethods.GET
       )
 
@@ -311,7 +186,7 @@ class ClientManagementSpec
       val limit2  = 3
 
       val response2 = request(
-        uri = s"$serviceURL/clients?eServiceId=$eServiceId&offset=$offset2&limit=$limit2",
+        uri = s"$serviceURL/clients?consumerId=$consumerId&offset=$offset2&limit=$limit2",
         method = HttpMethods.GET
       )
 
