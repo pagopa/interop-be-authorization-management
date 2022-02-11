@@ -2,7 +2,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializ
 
 import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurpose.PersistentClientPurposes
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurposes.PersistentClientPurposes
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client._

@@ -4,7 +4,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.Purpose
 
 import java.util.UUID
 
-object PersistentClientPurpose {
+object PersistentClientPurposes {
   type PurposeId                = UUID
   type PersistentClientPurposes = Map[PurposeId, PersistentClientStatesChain]
 
