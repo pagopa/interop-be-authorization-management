@@ -3,7 +3,10 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 import akka.Done
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  PersistentClient,
+  PersistentClientPurpose
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
 
 import java.util.UUID
@@ -37,5 +40,11 @@ final case class DeleteClient(clientId: String, replyTo: ActorRef[StatusReply[Do
 
 final case class RemoveRelationship(clientId: String, relationshipId: String, replyTo: ActorRef[StatusReply[Done]])
     extends Command
+
+final case class AddClientPurpose(
+  clientId: String,
+  persistentClientPurpose: PersistentClientPurpose,
+  replyTo: ActorRef[StatusReply[PersistentClientPurpose]]
+) extends Command
 
 case object Idle extends Command

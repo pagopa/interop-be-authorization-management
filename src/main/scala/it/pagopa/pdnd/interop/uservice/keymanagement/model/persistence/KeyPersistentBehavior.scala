@@ -8,6 +8,7 @@ import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits.toTraverseOps
+import it.pagopa.pdnd.interop.commons.utils.errors.ComponentError
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
@@ -181,6 +182,24 @@ object KeyPersistentBehavior {
             }
           )
 
+      case AddClientPurpose(clientId, purpose, replyTo) =>
+        val v: Either[ComponentError, Unit] = for {
+          client <- state.clients.get(clientId).toRight(ClientNotFoundError(clientId))
+          _ <- client.purposes
+            .get(purpose.id)
+            .toLeft(())
+            .left
+            .map(_ => PurposeAlreadyExists(clientId, purpose.id.toString))
+        } yield ()
+
+        v.fold(
+          commandError(replyTo, _),
+          _ =>
+            Effect
+              .persist(ClientPurposeAdded(clientId, purpose.id, purpose.statesChain))
+              .thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
+        )
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.info(s"Passivate shard: ${shard.path.name}")
@@ -246,6 +265,8 @@ object KeyPersistentBehavior {
       case ClientDeleted(clientId)                       => state.deleteClient(clientId)
       case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
       case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
+      case ClientPurposeAdded(clientId, purposeId, statesChain) =>
+        state.addClientPurpose(clientId, purposeId, statesChain)
     }
 
   val TypeKey: EntityTypeKey[Command] =

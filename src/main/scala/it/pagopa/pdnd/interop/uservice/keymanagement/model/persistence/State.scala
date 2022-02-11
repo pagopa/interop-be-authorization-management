@@ -1,16 +1,13 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
 import cats.implicits._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  PersistentClient,
+  PersistentClientStatesChain
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
 
 import java.util.UUID
-
-/*
-    possible models
-     indexes: Map[AgreementId, clientId] //TODO evaluate about it
-     agreements: Map[AgreementId, List[(Kid, clientId)]]
- */
 
 final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, PersistentClient]) extends Persistable {
   def deleteKey(clientId: String, keyId: String): State = keys.get(clientId) match {
@@ -61,6 +58,16 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
+
+  def addClientPurpose(clientId: String, purposeId: UUID, statesChain: PersistentClientStatesChain): State = {
+    clients.get(clientId) match {
+      case Some(client) =>
+        val purposes      = client.purposes + (purposeId -> statesChain)
+        val updatedClient = client.copy(purposes = purposes)
+        copy(clients = clients + (clientId -> updatedClient))
+      case None => this
+    }
+  }
 
 }
 

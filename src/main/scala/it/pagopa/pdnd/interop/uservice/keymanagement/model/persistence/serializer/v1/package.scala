@@ -119,6 +119,24 @@ package object v1 {
       RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
     )
 
+  implicit def clientPurposeAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[ClientPurposeAddedV1, ClientPurposeAdded] =
+    event =>
+      for {
+        states      <- protobufToClientStatesChain(event.statesChain)
+        purposeUuid <- event.purposeId.toUUID.toEither
+      } yield ClientPurposeAdded(clientId = event.clientId, purposeId = purposeUuid, statesChain = states)
+
+  implicit def clientPurposeAddedV1PersistEventSerializer
+    : PersistEventSerializer[ClientPurposeAdded, ClientPurposeAddedV1] = event =>
+    Right[Throwable, ClientPurposeAddedV1](
+      ClientPurposeAddedV1(
+        clientId = event.clientId,
+        purposeId = event.purposeId.toString,
+        statesChain = clientStatesChainToProtobuf(event.statesChain)
+      )
+    )
+
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
     val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq
     entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)

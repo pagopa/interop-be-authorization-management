@@ -399,6 +399,40 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/purposes':
+    post:
+      tags:
+        - purpose
+      summary: Adds a purpose for the given client
+      description: 'Creates a purpose for the given client'
+      operationId: addClientPurpose
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurposeSeed'
+      responses:
+        '201':
+          description: Purpose added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purpose'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   schemas:
     KeysResponse:
@@ -603,6 +637,17 @@ components:
       required:
         - purposeId
         - states
+    PurposeSeed:
+      type: object
+      properties:
+        purposeId:
+          type: string
+          format: uuid
+        states:
+          $ref: '#/components/schemas/ClientStatesChainSeed'
+      required:
+        - purposeId
+        - states
     ClientStatesChain:
       type: object
       properties:
@@ -617,6 +662,19 @@ components:
           $ref: '#/components/schemas/ClientPurposeDetails'
       required:
         - id
+        - eservice
+        - agreement
+        - purpose
+    ClientStatesChainSeed:
+      type: object
+      properties:
+        eservice:
+          $ref: '#/components/schemas/ClientEServiceDetailsSeed'
+        agreement:
+          $ref: '#/components/schemas/ClientAgreementDetailsSeed'
+        purpose:
+          $ref: '#/components/schemas/ClientPurposeDetailsSeed'
+      required:
         - eservice
         - agreement
         - purpose
@@ -638,6 +696,20 @@ components:
         - state
         - audience
         - voucherLifespan
+    ClientEServiceDetailsSeed:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+        audience:
+          type: string
+        voucherLifespan:
+          type: integer
+          format: int32
+      required:
+        - state
+        - audience
+        - voucherLifespan
     ClientAgreementDetails:
       type: object
       properties:
@@ -649,6 +721,13 @@ components:
       required:
         - id
         - state
+    ClientAgreementDetailsSeed:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
+        - state
     ClientPurposeDetails:
       type: object
       properties:
@@ -659,6 +738,13 @@ components:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - id
+        - state
+    ClientPurposeDetailsSeed:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
         - state
     ClientComponentState:
       type: string

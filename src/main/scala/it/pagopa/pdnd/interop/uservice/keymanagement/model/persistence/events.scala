@@ -1,6 +1,9 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  PersistentClient,
+  PersistentClientStatesChain
+}
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -15,3 +18,6 @@ final case class ClientDeleted(clientId: String)       extends Event
 
 final case class RelationshipAdded(client: PersistentClient, relationshipId: UUID) extends Event
 final case class RelationshipRemoved(clientId: String, relationshipId: String)     extends Event
+
+final case class ClientPurposeAdded(clientId: String, purposeId: UUID, statesChain: PersistentClientStatesChain)
+    extends Event

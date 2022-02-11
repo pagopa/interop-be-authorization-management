@@ -19,7 +19,7 @@ import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.pdnd.interop.commons.jwt.service.JWTReader
 import it.pagopa.pdnd.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
-import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, PublicKeysHolder}
+import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.pdnd.interop.commons.utils.OpenapiUtils
 import it.pagopa.pdnd.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
@@ -32,9 +32,11 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   HealthServiceApiImpl,
   KeyApiMarshallerImpl,
   KeyApiServiceImpl,
+  PurposeApiMarshallerImpl,
+  PurposeApiServiceImpl,
   problemOf
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi, KeyApiMarshaller}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi, KeyApiMarshaller, PurposeApi}
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{ApplicationConfiguration, shardingSettings}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
@@ -53,7 +55,7 @@ object Main extends App {
   val dependenciesLoaded: Try[JWTReader] = for {
     keyset <- JWTConfiguration.jwtReader.loadKeyset()
     jwtValidator = new DefaultJWTReader with PublicKeysHolder {
-      var publicKeyset = keyset
+      var publicKeyset: Map[KID, SerializedKey] = keyset
       override protected val claimsVerifier: DefaultJWTClaimsVerifier[SecurityContext] =
         getClaimsVerifier(audience = ApplicationConfiguration.jwtAudience)
     }
@@ -109,20 +111,26 @@ object Main extends App {
         }
 
         val keyApi = new KeyApi(
-          new KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
+          KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
           keyApiMarshaller,
           jwtValidator.OAuth2JWTValidatorAsContexts
         )
 
         val clientApi = new ClientApi(
-          new ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
-          new ClientApiMarshallerImpl(),
+          ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
+          ClientApiMarshallerImpl,
+          jwtValidator.OAuth2JWTValidatorAsContexts
+        )
+
+        val purposeApi = new PurposeApi(
+          PurposeApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
+          PurposeApiMarshallerImpl,
           jwtValidator.OAuth2JWTValidatorAsContexts
         )
 
         val healthApi: HealthApi = new HealthApi(
-          new HealthServiceApiImpl(),
-          new HealthApiMarshallerImpl(),
+          HealthServiceApiImpl,
+          HealthApiMarshallerImpl,
           SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
         )
 
@@ -132,6 +140,7 @@ object Main extends App {
           clientApi,
           healthApi,
           keyApi,
+          purposeApi,
           validationExceptionToRoute = Some(report => {
             val error =
               problemOf(

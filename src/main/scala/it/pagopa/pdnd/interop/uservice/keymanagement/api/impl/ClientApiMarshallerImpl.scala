@@ -7,7 +7,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiMarshaller
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
 import spray.json._
 
-class ClientApiMarshallerImpl extends ClientApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
+object ClientApiMarshallerImpl extends ClientApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
 
   override implicit def fromEntityUnmarshallerClientSeed: FromEntityUnmarshaller[ClientSeed] =
     sprayJsonUnmarshaller[ClientSeed]
