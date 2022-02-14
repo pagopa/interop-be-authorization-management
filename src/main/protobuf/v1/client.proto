@@ -29,19 +29,19 @@ message ClientStatesChainV1 {
 }
 
 message ClientEServiceDetailsV1 {
-  required string id = 1;
+  required string eServiceId = 1;
   required ClientComponentStateV1 state = 2;
   required string audience = 3;
   required int32 voucherLifespan = 4;
 }
 
 message ClientAgreementDetailsV1 {
-  required string id = 1;
+  required string agreementId = 1;
   required ClientComponentStateV1 state = 2;
 }
 
 message ClientPurposeDetailsV1 {
-  required string id = 1;
+  required string purposeId = 1;
   required ClientComponentStateV1 state = 2;
 }
 

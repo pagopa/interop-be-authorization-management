@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.HealthApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.Problem
 
-class HealthServiceApiImpl extends HealthApiService {
+object HealthServiceApiImpl extends HealthApiService {
 
   override def getStatus()(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],

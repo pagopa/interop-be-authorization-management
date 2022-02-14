@@ -38,8 +38,9 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
 
-  val keyApiMarshaller: KeyApiMarshaller       = new KeyApiMarshallerImpl
-  val clientApiMarshaller: ClientApiMarshaller = new ClientApiMarshallerImpl
+  val keyApiMarshaller: KeyApiMarshaller         = KeyApiMarshallerImpl
+  val clientApiMarshaller: ClientApiMarshaller   = ClientApiMarshallerImpl
+  val purposeApiMarshaller: PurposeApiMarshaller = PurposeApiMarshallerImpl
 
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
@@ -67,15 +68,21 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     sharding.init(persistentEntity)
 
     val keyApi =
-      new KeyApi(new KeyApiServiceImpl(system, sharding, persistentEntity), keyApiMarshaller, wrappingDirective)
+      new KeyApi(KeyApiServiceImpl(system, sharding, persistentEntity), keyApiMarshaller, wrappingDirective)
 
     val clientApi = new ClientApi(
-      new ClientApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
+      ClientApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
       clientApiMarshaller,
       wrappingDirective
     )
 
-    controller = Some(new Controller(clientApi, healthApiMock, keyApi)(classicSystem))
+    val purposeApi = new PurposeApi(
+      PurposeApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
+      purposeApiMarshaller,
+      wrappingDirective
+    )
+
+    controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi)(classicSystem))
 
     controller foreach { controller =>
       bindServer = Some(
