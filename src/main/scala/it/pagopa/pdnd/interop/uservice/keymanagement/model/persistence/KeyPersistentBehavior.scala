@@ -7,7 +7,7 @@ import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityTypeKey}
 import akka.pattern.StatusReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
-import cats.implicits.toTraverseOps
+import cats.implicits._
 import it.pagopa.pdnd.interop.commons.utils.errors.ComponentError
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClient
@@ -188,8 +188,7 @@ object KeyPersistentBehavior {
           _ <- client.purposes
             .get(purpose.id)
             .toLeft(())
-            .left
-            .map(_ => PurposeAlreadyExists(clientId, purpose.id.toString))
+            .leftMap(_ => PurposeAlreadyExists(clientId, purpose.id.toString))
         } yield ()
 
         v.fold(
