@@ -113,10 +113,6 @@ final case class PurposeApiServiceImpl(
         }
         .sequence
         .toFuture
-//      clientsUpdated = summaryResult.collect { case Right(n) => n }.sum
-//      failures       = summaryResult.collect { case Left(_) => 1 }.sum
-//      _              = logger.info("Clients updated for EService {}: {}. Failures: {}", eServiceId, clientsUpdated, failures)
-//      r <- summaryResult.sequence.toFuture
     } yield summaryResult
 
     onComplete(result) {
