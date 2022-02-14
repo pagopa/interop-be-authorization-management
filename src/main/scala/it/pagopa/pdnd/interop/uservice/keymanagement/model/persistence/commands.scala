@@ -7,7 +7,12 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   PersistentClient,
   PersistentClientPurpose
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{
+  ClientEServiceDetailsSeed,
+  ClientKey,
+  EncodedClientKey,
+  KeysResponse
+}
 
 import java.util.UUID
 
@@ -45,6 +50,13 @@ final case class AddClientPurpose(
   clientId: String,
   persistentClientPurpose: PersistentClientPurpose,
   replyTo: ActorRef[StatusReply[PersistentClientPurpose]]
+) extends Command
+
+final case class UpdateEServiceState(
+  eServiceId: String,
+  clientEServiceDetailsSeed: ClientEServiceDetailsSeed,
+//  replyTo: ActorRef[StatusReply[Seq[Unit]]]
+  replyTo: ActorRef[StatusReply[Int]]
 ) extends Command
 
 case object Idle extends Command

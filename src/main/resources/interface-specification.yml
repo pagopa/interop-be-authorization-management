@@ -433,6 +433,36 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /bulk/eservices/{eserviceId}/state:
+    post:
+      tags:
+        - purpose
+      summary: Updates the EService state for all clients that contain it
+      description: 'Updates the EService state for all clients that contain it'
+      operationId: updateEServiceState
+      parameters:
+        - name: eserviceId
+          in: path
+          description: ID of the EService
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientEServiceDetailsSeed'
+      responses:
+        '204':
+          description: Clients updated
+        '400':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   schemas:
     KeysResponse:
