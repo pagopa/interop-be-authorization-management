@@ -57,14 +57,17 @@ final case class PurposeApiServiceImpl(
       case Success(statusReply) if statusReply.isSuccess =>
         addClientPurpose200(statusReply.getValue.toApi)
       case Success(statusReply) =>
-        logger.error("Error adding Purpose for Client {} with seed {}", clientId, statusReply.getError, seed)
-        val problem =
-          problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
-        complete(problem.status, problem)
-      case Failure(ex: ClientNotFoundError) =>
-        logger.info("Client {} not found on Purpose add", clientId, ex)
-        val problem = problemOf(StatusCodes.NotFound, ex)
-        addClientPurpose404(problem)
+        statusReply.getError match {
+          case err: ClientNotFoundError =>
+            logger.info("Client {} not found on Purpose add", clientId, err)
+            val problem = problemOf(StatusCodes.NotFound, err)
+            addClientPurpose404(problem)
+          case err =>
+            logger.error("Error adding Purpose for Client {}", clientId, err)
+            val problem =
+              problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
+            complete(problem.status, problem)
+        }
       case Failure(ex) =>
         logger.error("Error adding Purpose for Client {}", clientId, ex)
         val problem =

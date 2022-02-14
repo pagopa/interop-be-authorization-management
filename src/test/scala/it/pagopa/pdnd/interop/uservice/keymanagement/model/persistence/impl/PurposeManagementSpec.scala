@@ -11,10 +11,6 @@ import spray.json.enrichAny
 
 import java.util.UUID
 
-/** Local integration test.
-  *
-  * Starts a local cluster sharding and invokes REST operations on the event sourcing entity
-  */
 class PurposeManagementSpec
     extends ScalaTestWithActorTestKit(SpecConfiguration.config)
     with AnyWordSpecLike
@@ -88,6 +84,46 @@ class PurposeManagementSpec
       val addedPurpose = Unmarshal(response).to[Purpose].futureValue
 
       addedPurpose shouldBe expected
+    }
+
+    "fail if client does not exist" in {
+      val clientId  = UUID.randomUUID()
+      val purposeId = UUID.randomUUID()
+
+      val statesChainId      = UUID.randomUUID()
+      val eServiceDetailsId  = UUID.randomUUID()
+      val agreementDetailsId = UUID.randomUUID()
+      val purposeDetailsId   = UUID.randomUUID()
+
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
+      (() => mockUUIDSupplier.get).expects().returning(eServiceDetailsId).once()
+      (() => mockUUIDSupplier.get).expects().returning(agreementDetailsId).once()
+      (() => mockUUIDSupplier.get).expects().returning(purposeDetailsId).once()
+
+      val payload = PurposeSeed(
+        purposeId = purposeId,
+        states = ClientStatesChainSeed(
+          eservice = ClientEServiceDetailsSeed(
+            state = ClientComponentState.ACTIVE,
+            audience = "some.audience",
+            voucherLifespan = 10
+          ),
+          agreement = ClientAgreementDetailsSeed(state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(state = ClientComponentState.ACTIVE)
+        )
+      )
+
+      val response =
+        request(
+          uri = s"$serviceURL/clients/$clientId/purposes",
+          method = HttpMethods.POST,
+          data = Some(payload.toJson.prettyPrint)
+        )
+
+      response.status shouldBe StatusCodes.NotFound
+      val problem = Unmarshal(response).to[Problem].futureValue
+
+      problem.errors.head.code shouldBe "006-0002"
     }
 
   }
