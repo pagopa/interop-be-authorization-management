@@ -12,7 +12,7 @@ class ClientAddedSerializer extends SerializerWithStringManifest {
 
   final val currentVersion: String = version1
 
-  override def identifier: Int = 10002
+  override def identifier: Int = 10006
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 

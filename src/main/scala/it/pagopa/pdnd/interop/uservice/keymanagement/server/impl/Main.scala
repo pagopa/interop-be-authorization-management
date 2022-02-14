@@ -71,7 +71,7 @@ object Main extends App {
       Behaviors.setup[Nothing] { context =>
         import akka.actor.typed.scaladsl.adapter._
         implicit val classicSystem: classic.ActorSystem = context.system.toClassic
-        val keyApiMarshaller: KeyApiMarshaller          = new KeyApiMarshallerImpl()
+        val keyApiMarshaller: KeyApiMarshaller          = KeyApiMarshallerImpl
         val uuidSupplier: UUIDSupplier                  = new UUIDSupplierImpl()
 
         val cluster = Cluster(context.system)
