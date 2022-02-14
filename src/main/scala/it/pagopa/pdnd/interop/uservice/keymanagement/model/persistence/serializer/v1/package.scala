@@ -184,17 +184,20 @@ package object v1 {
 
   private def clientEServiceDetailsToProtobuf(details: PersistentClientEServiceDetails): ClientEServiceDetailsV1 =
     ClientEServiceDetailsV1.of(
-      id = details.id.toString,
+      eServiceId = details.eServiceId.toString,
       state = componentStateToProtobuf(details.state),
       audience = details.audience,
       voucherLifespan = details.voucherLifespan
     )
 
   private def clientAgreementDetailsToProtobuf(details: PersistentClientAgreementDetails): ClientAgreementDetailsV1 =
-    ClientAgreementDetailsV1.of(id = details.id.toString, state = componentStateToProtobuf(details.state))
+    ClientAgreementDetailsV1.of(
+      agreementId = details.agreementId.toString,
+      state = componentStateToProtobuf(details.state)
+    )
 
   private def clientPurposeDetailsToProtobuf(details: PersistentClientPurposeDetails): ClientPurposeDetailsV1 =
-    ClientPurposeDetailsV1.of(id = details.id.toString, state = componentStateToProtobuf(details.state))
+    ClientPurposeDetailsV1.of(purposeId = details.purposeId.toString, state = componentStateToProtobuf(details.state))
 
   private def componentStateToProtobuf(state: PersistentClientComponentState): ClientComponentStateV1 =
     state match {
@@ -248,10 +251,10 @@ package object v1 {
     details: ClientEServiceDetailsV1
   ): ErrorOr[PersistentClientEServiceDetails] =
     for {
-      uuid  <- details.id.toUUID.toEither
+      uuid  <- details.eServiceId.toUUID.toEither
       state <- protobufToComponentState(details.state)
     } yield PersistentClientEServiceDetails(
-      id = uuid,
+      eServiceId = uuid,
       state = state,
       audience = details.audience,
       voucherLifespan = details.voucherLifespan
@@ -261,15 +264,15 @@ package object v1 {
     details: ClientAgreementDetailsV1
   ): ErrorOr[PersistentClientAgreementDetails] =
     for {
-      uuid  <- details.id.toUUID.toEither
+      uuid  <- details.agreementId.toUUID.toEither
       state <- protobufToComponentState(details.state)
-    } yield PersistentClientAgreementDetails(id = uuid, state = state)
+    } yield PersistentClientAgreementDetails(agreementId = uuid, state = state)
 
   private def protobufToClientPurposeDetails(details: ClientPurposeDetailsV1): ErrorOr[PersistentClientPurposeDetails] =
     for {
-      uuid  <- details.id.toUUID.toEither
+      uuid  <- details.purposeId.toUUID.toEither
       state <- protobufToComponentState(details.state)
-    } yield PersistentClientPurposeDetails(id = uuid, state = state)
+    } yield PersistentClientPurposeDetails(purposeId = uuid, state = state)
 
   private def protobufToComponentState(state: ClientComponentStateV1): ErrorOr[PersistentClientComponentState] =
     state match {

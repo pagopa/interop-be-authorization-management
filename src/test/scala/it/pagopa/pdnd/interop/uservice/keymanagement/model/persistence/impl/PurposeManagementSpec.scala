@@ -29,34 +29,30 @@ class PurposeManagementSpec
   "Purpose" should {
 
     "be added successfully" in {
-      val clientId   = UUID.randomUUID()
-      val consumerId = UUID.randomUUID()
-      val purposeId  = UUID.randomUUID()
+      val clientId    = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val purposeId   = UUID.randomUUID()
+      val eServiceId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
 
-      val statesChainId      = UUID.randomUUID()
-      val eServiceDetailsId  = UUID.randomUUID()
-      val agreementDetailsId = UUID.randomUUID()
-      val purposeDetailsId   = UUID.randomUUID()
+      val statesChainId = UUID.randomUUID()
 
       createClient(clientId, consumerId)
 
       (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
-      (() => mockUUIDSupplier.get).expects().returning(eServiceDetailsId).once()
-      (() => mockUUIDSupplier.get).expects().returning(agreementDetailsId).once()
-      (() => mockUUIDSupplier.get).expects().returning(purposeDetailsId).once()
 
       val expected = Purpose(
         purposeId = purposeId,
         states = ClientStatesChain(
           id = statesChainId,
           eservice = ClientEServiceDetails(
-            id = eServiceDetailsId,
+            eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
             audience = "some.audience",
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetails(id = agreementDetailsId, state = ClientComponentState.INACTIVE),
-          purpose = ClientPurposeDetails(id = purposeDetailsId, state = ClientComponentState.ACTIVE)
+          agreement = ClientAgreementDetails(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetails(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
 
@@ -64,12 +60,13 @@ class PurposeManagementSpec
         purposeId = purposeId,
         states = ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
+            eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
             audience = "some.audience",
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(state = ClientComponentState.INACTIVE),
-          purpose = ClientPurposeDetailsSeed(state = ClientComponentState.ACTIVE)
+          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
 
@@ -87,29 +84,26 @@ class PurposeManagementSpec
     }
 
     "fail if client does not exist" in {
-      val clientId  = UUID.randomUUID()
-      val purposeId = UUID.randomUUID()
+      val clientId    = UUID.randomUUID()
+      val purposeId   = UUID.randomUUID()
+      val eServiceId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
 
-      val statesChainId      = UUID.randomUUID()
-      val eServiceDetailsId  = UUID.randomUUID()
-      val agreementDetailsId = UUID.randomUUID()
-      val purposeDetailsId   = UUID.randomUUID()
+      val statesChainId = UUID.randomUUID()
 
       (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
-      (() => mockUUIDSupplier.get).expects().returning(eServiceDetailsId).once()
-      (() => mockUUIDSupplier.get).expects().returning(agreementDetailsId).once()
-      (() => mockUUIDSupplier.get).expects().returning(purposeDetailsId).once()
 
       val payload = PurposeSeed(
         purposeId = purposeId,
         states = ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
+            eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
             audience = "some.audience",
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(state = ClientComponentState.INACTIVE),
-          purpose = ClientPurposeDetailsSeed(state = ClientComponentState.ACTIVE)
+          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
 

@@ -1,8 +1,8 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client
 
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientStatesChain, ClientStatesChainSeed}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.Persistent
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientStatesChain, ClientStatesChainSeed}
 
 import java.util.UUID
 
@@ -22,8 +22,8 @@ object PersistentClientStatesChain {
   def fromSeed(uuidSupplier: UUIDSupplier)(seed: ClientStatesChainSeed): PersistentClientStatesChain =
     PersistentClientStatesChain(
       id = uuidSupplier.get,
-      eService = PersistentClientEServiceDetails.fromSeed(uuidSupplier)(seed.eservice),
-      agreement = PersistentClientAgreementDetails.fromSeed(uuidSupplier)(seed.agreement),
-      purpose = PersistentClientPurposeDetails.fromSeed(uuidSupplier)(seed.purpose)
+      eService = PersistentClientEServiceDetails.fromSeed(seed.eservice),
+      agreement = PersistentClientAgreementDetails.fromSeed(seed.agreement),
+      purpose = PersistentClientPurposeDetails.fromSeed(seed.purpose)
     )
 }

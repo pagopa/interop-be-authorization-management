@@ -1,27 +1,31 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client
 
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientEServiceDetails, ClientEServiceDetailsSeed}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.Persistent
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientEServiceDetails, ClientEServiceDetailsSeed}
 
 import java.util.UUID
 
 final case class PersistentClientEServiceDetails(
-  id: UUID,
+  eServiceId: UUID,
   state: PersistentClientComponentState,
   audience: String,
   voucherLifespan: Int
 ) extends Persistent {
 
   def toApi: ClientEServiceDetails =
-    ClientEServiceDetails(id = id, state = state.toApi, audience = audience, voucherLifespan = voucherLifespan)
+    ClientEServiceDetails(
+      eserviceId = eServiceId,
+      state = state.toApi,
+      audience = audience,
+      voucherLifespan = voucherLifespan
+    )
 
 }
 
 object PersistentClientEServiceDetails {
-  def fromSeed(uuidSupplier: UUIDSupplier)(seed: ClientEServiceDetailsSeed): PersistentClientEServiceDetails =
+  def fromSeed(seed: ClientEServiceDetailsSeed): PersistentClientEServiceDetails =
     PersistentClientEServiceDetails(
-      id = uuidSupplier.get,
+      eServiceId = seed.eserviceId,
       state = PersistentClientComponentState.fromApi(seed.state),
       audience = seed.audience,
       voucherLifespan = seed.voucherLifespan

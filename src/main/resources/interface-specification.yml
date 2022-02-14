@@ -681,7 +681,7 @@ components:
     ClientEServiceDetails:
       type: object
       properties:
-        id:
+        eserviceId:
           type: string
           format: uuid
         state:
@@ -692,13 +692,16 @@ components:
           type: integer
           format: int32
       required:
-        - id
+        - eserviceId
         - state
         - audience
         - voucherLifespan
     ClientEServiceDetailsSeed:
       type: object
       properties:
+        eserviceId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
         audience:
@@ -707,44 +710,53 @@ components:
           type: integer
           format: int32
       required:
+        - eserviceId
         - state
         - audience
         - voucherLifespan
     ClientAgreementDetails:
       type: object
       properties:
-        id:
+        agreementId:
           type: string
           format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
-        - id
+        - agreementId
         - state
     ClientAgreementDetailsSeed:
       type: object
       properties:
-        state:
-          $ref: '#/components/schemas/ClientComponentState'
-      required:
-        - state
-    ClientPurposeDetails:
-      type: object
-      properties:
-        id:
+        agreementId:
           type: string
           format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
-        - id
+        - agreementId
+        - state
+    ClientPurposeDetails:
+      type: object
+      properties:
+        purposeId:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
+        - purposeId
         - state
     ClientPurposeDetailsSeed:
       type: object
       properties:
+        purposeId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
+        - purposeId
         - state
     ClientComponentState:
       type: string
