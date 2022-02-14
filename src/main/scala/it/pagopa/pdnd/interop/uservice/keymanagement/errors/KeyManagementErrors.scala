@@ -74,7 +74,7 @@ object KeyManagementErrors {
   final case class PurposeAlreadyExists(clientId: String, purposeId: String)
       extends ComponentError("0024", s"Client $clientId already contains Purpose $purposeId")
 
-  final case class ClientPurposeCreationError(clientId: String, purposeId: String)
+  final case class ClientPurposeAdditionError(clientId: String, purposeId: String)
       extends ComponentError("0025", s"Error adding Purpose $purposeId to Client $clientId")
 
 }

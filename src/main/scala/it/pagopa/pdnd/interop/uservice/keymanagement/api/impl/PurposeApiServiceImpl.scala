@@ -16,7 +16,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.PurposeApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors.{
   ClientNotFoundError,
-  ClientPurposeCreationError
+  ClientPurposeAdditionError
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
@@ -59,7 +59,7 @@ final case class PurposeApiServiceImpl(
       case Success(statusReply) =>
         logger.error("Error adding Purpose for Client {} with seed {}", clientId, statusReply.getError, seed)
         val problem =
-          problemOf(StatusCodes.InternalServerError, ClientPurposeCreationError(clientId, seed.purposeId.toString))
+          problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
         complete(problem.status, problem)
       case Failure(ex: ClientNotFoundError) =>
         logger.info("Client {} not found on Purpose add", clientId, ex)
@@ -68,7 +68,7 @@ final case class PurposeApiServiceImpl(
       case Failure(ex) =>
         logger.error("Error adding Purpose for Client {}", clientId, ex)
         val problem =
-          problemOf(StatusCodes.InternalServerError, ClientPurposeCreationError(clientId, seed.purposeId.toString))
+          problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
         complete(problem.status, problem)
     }
   }
