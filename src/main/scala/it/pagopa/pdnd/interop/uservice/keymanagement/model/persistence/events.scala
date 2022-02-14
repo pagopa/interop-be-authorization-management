@@ -2,6 +2,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   PersistentClient,
+  PersistentClientComponentState,
   PersistentClientStatesChain
 }
 
@@ -21,3 +22,10 @@ final case class RelationshipRemoved(clientId: String, relationshipId: String)  
 
 final case class ClientPurposeAdded(clientId: String, purposeId: UUID, statesChain: PersistentClientStatesChain)
     extends Event
+
+final case class EServiceStateUpdated(
+  eServiceId: String,
+  state: PersistentClientComponentState,
+  audience: String,
+  voucherLifespan: Int
+) extends Event

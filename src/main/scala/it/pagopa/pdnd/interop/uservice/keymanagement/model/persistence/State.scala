@@ -3,6 +3,7 @@ package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence
 import cats.implicits._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   PersistentClient,
+  PersistentClientComponentState,
   PersistentClientStatesChain
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.PersistentKey
@@ -67,6 +68,34 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
         copy(clients = clients + (clientId -> updatedClient))
       case None => this
     }
+  }
+
+  def updateClientsByEService(
+    eServiceId: String,
+    state: PersistentClientComponentState,
+    audience: String,
+    voucherLifespan: Int
+  ): State = {
+    val toUpdateClients = clients.filter { case (_, client) =>
+      client.purposes.exists { case (_, statesChain) => statesChain.eService.eServiceId.toString == eServiceId }
+    }
+
+    def updatePurpose(statesChain: PersistentClientStatesChain): PersistentClientStatesChain =
+      statesChain.copy(eService =
+        statesChain.eService.copy(state = state, audience = audience, voucherLifespan = voucherLifespan)
+      )
+
+    def updateClient(client: PersistentClient): PersistentClient =
+      client.copy(purposes = client.purposes.map {
+        case (purposeId, statesChain) if statesChain.eService.eServiceId.toString == eServiceId =>
+          purposeId -> updatePurpose(statesChain)
+        case (purposeId, statesChain) =>
+          purposeId -> statesChain
+      })
+
+    val updatedClients = toUpdateClients.map { case (clientId, client) => clientId -> updateClient(client) }
+
+    copy(clients = clients ++ updatedClients)
   }
 
 }

@@ -453,7 +453,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientEServiceDetailsSeed'
+              $ref: '#/components/schemas/ClientEServiceDetailsUpdate'
       responses:
         '204':
           description: Clients updated
@@ -741,6 +741,20 @@ components:
           format: int32
       required:
         - eserviceId
+        - state
+        - audience
+        - voucherLifespan
+    ClientEServiceDetailsUpdate:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+        audience:
+          type: string
+        voucherLifespan:
+          type: integer
+          format: int32
+      required:
         - state
         - audience
         - voucherLifespan

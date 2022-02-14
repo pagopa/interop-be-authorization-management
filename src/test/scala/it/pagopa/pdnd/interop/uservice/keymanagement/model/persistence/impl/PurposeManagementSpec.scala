@@ -5,6 +5,11 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  PersistentClientAgreementDetails,
+  PersistentClientEServiceDetails,
+  PersistentClientPurposeDetails
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 import spray.json.enrichAny
@@ -125,64 +130,125 @@ class PurposeManagementSpec
   "EService state update" should {
 
     "succeed" in {
-      val clientId   = UUID.randomUUID()
-      val consumerId = UUID.randomUUID()
-      val purposeId  = UUID.randomUUID()
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
 
-      val statesChainId      = UUID.randomUUID()
-      val eServiceDetailsId  = UUID.randomUUID()
-      val agreementDetailsId = UUID.randomUUID()
-      val purposeDetailsId   = UUID.randomUUID()
+      val purposeId1  = UUID.randomUUID()
+      val purposeId2  = UUID.randomUUID()
+      val purposeId3  = UUID.randomUUID()
+      val eServiceId1 = UUID.randomUUID()
+      val eServiceId2 = UUID.randomUUID()
 
-      val eService1State =ClientEServiceDetailsSeed(
+      val statesChainId1 = UUID.randomUUID()
+      val statesChainId2 = UUID.randomUUID()
+      val statesChainId3 = UUID.randomUUID()
+      val statesChainId4 = UUID.randomUUID()
+
+      // Seed
+      val eService1Seed = ClientEServiceDetailsSeed(
+        eserviceId = eServiceId1,
         state = ClientComponentState.ACTIVE,
         audience = "some.audience",
         voucherLifespan = 10
       )
+      val eService2Seed = eService1Seed.copy(eserviceId = eServiceId2)
+      val agreementSeed = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.ACTIVE)
+      val purposeSeed   = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
 
-      val payload = PurposeSeed(
-        purposeId = purposeId,
-        states = ClientStatesChainSeed(
-          eservice = ,
-          agreement = ClientAgreementDetailsSeed(state = ClientComponentState.ACTIVE),
-          purpose = ClientPurposeDetailsSeed(state = ClientComponentState.ACTIVE)
+      val purpose1EService1Seed = PurposeSeed(
+        purposeId = purposeId1,
+        states = ClientStatesChainSeed(eservice = eService1Seed, agreement = agreementSeed, purpose = purposeSeed)
+      )
+      val purpose2EService1Seed = PurposeSeed(
+        purposeId = purposeId2,
+        states = ClientStatesChainSeed(eservice = eService1Seed, agreement = agreementSeed, purpose = purposeSeed)
+      )
+
+      val purpose3EService2Seed = PurposeSeed(
+        purposeId = purposeId3,
+        states = ClientStatesChainSeed(eservice = eService2Seed, agreement = agreementSeed, purpose = purposeSeed)
+      )
+      // Seed
+
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
+
+      addPurposeState(clientId1, purpose1EService1Seed, statesChainId1)
+      addPurposeState(clientId1, purpose3EService2Seed, statesChainId2)
+      addPurposeState(clientId2, purpose1EService1Seed, statesChainId3)
+      addPurposeState(clientId2, purpose2EService1Seed, statesChainId4)
+
+      val updatePayload = ClientEServiceDetailsUpdate(
+        state = ClientComponentState.INACTIVE,
+        audience = "some.other.audience",
+        voucherLifespan = 50
+      )
+
+      val agreementDetails = PersistentClientAgreementDetails.fromSeed(agreementSeed).toApi
+      val purposeDetails   = PersistentClientPurposeDetails.fromSeed(purposeSeed).toApi
+
+      val expectedEService1State = ClientEServiceDetails(
+        eserviceId = eServiceId1,
+        state = updatePayload.state,
+        audience = updatePayload.audience,
+        voucherLifespan = updatePayload.voucherLifespan
+      )
+
+      val expectedClient1Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId1,
+            eservice = expectedEService1State,
+            agreement = agreementDetails,
+            purpose = purposeDetails
+          )
+        ),
+        Purpose(
+          purposeId = purpose3EService2Seed.purposeId,
+          states = ClientStatesChain(
+            id = statesChainId2,
+            eservice = PersistentClientEServiceDetails.fromSeed(purpose3EService2Seed.states.eservice).toApi,
+            agreement = agreementDetails,
+            purpose = purposeDetails
+          )
         )
       )
 
-      createClient(clientId, consumerId)
-
-      addPurposeState(clientId,payload,statesChainId,
-        eServiceDetailsId,
-        agreementDetailsId,
-        purposeDetailsId
-      )
-
-      val expected = Purpose(
-        purposeId = purposeId,
-        states = ClientStatesChain(
-          id = statesChainId,
-          eservice = ClientEServiceDetails(
-            id = eServiceDetailsId,
-            state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
-            voucherLifespan = 10
-          ),
-          agreement = ClientAgreementDetails(id = agreementDetailsId, state = ClientComponentState.INACTIVE),
-          purpose = ClientPurposeDetails(id = purposeDetailsId, state = ClientComponentState.ACTIVE)
+      val expectedClient2Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId3,
+            eservice = expectedEService1State,
+            agreement = agreementDetails,
+            purpose = purposeDetails
+          )
+        ),
+        Purpose(
+          purposeId = purpose2EService1Seed.purposeId,
+          states = ClientStatesChain(
+            id = statesChainId4,
+            eservice = expectedEService1State,
+            agreement = agreementDetails,
+            purpose = purposeDetails
+          )
         )
       )
 
       val response =
         request(
-          uri = s"$serviceURL/bulk/eservices/$eServiceId/state",
+          uri = s"$serviceURL/bulk/eservices/$eServiceId1/state",
           method = HttpMethods.POST,
-          data = Some(payload.toJson.prettyPrint)
+          data = Some(updatePayload.toJson.prettyPrint)
         )
 
-      response.status shouldBe StatusCodes.OK
-      val addedPurpose = Unmarshal(response).to[Purpose].futureValue
+      response.status shouldBe StatusCodes.NoContent
 
-      addedPurpose shouldBe expected
+      retrieveClient(clientId1).purposes should contain theSameElementsAs expectedClient1Purposes
+      retrieveClient(clientId2).purposes should contain theSameElementsAs expectedClient2Purposes
     }
 
   }

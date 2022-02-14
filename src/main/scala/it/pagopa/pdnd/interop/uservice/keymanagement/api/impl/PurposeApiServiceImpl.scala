@@ -23,7 +23,10 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors.
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurpose
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
+  PersistentClientComponentState,
+  PersistentClientPurpose
+}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
 import org.slf4j.LoggerFactory
 
@@ -80,7 +83,7 @@ final case class PurposeApiServiceImpl(
     }
   }
 
-  override def updateEServiceState(eServiceId: String, seed: ClientEServiceDetailsSeed)(implicit
+  override def updateEServiceState(eServiceId: String, payload: ClientEServiceDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
@@ -92,16 +95,29 @@ final case class PurposeApiServiceImpl(
       )
 
     val result = for {
-      shardResults <- commanders.traverse(_.ask(ref => UpdateEServiceState(eServiceId, seed, ref)))
-      summaryResult = shardResults.collect {
-        case shardResult if shardResult.isSuccess => Right(shardResult.getValue)
-        case shardResult if shardResult.isError   => Left(shardResult.getError)
-      }
-      clientsUpdated = summaryResult.collect { case Right(n) => n }.sum
-      failures       = summaryResult.collect { case Left(_) => 1 }.sum
-      _              = logger.info("Clients updated for EService {}: {}. Failures: {}", eServiceId, clientsUpdated, failures)
-      r <- summaryResult.sequence.toFuture
-    } yield r
+      shardResults <- commanders.traverse(
+        _.ask(ref =>
+          UpdateEServiceState(
+            eServiceId,
+            PersistentClientComponentState.fromApi(payload.state),
+            payload.audience,
+            payload.voucherLifespan,
+            ref
+          )
+        )
+      )
+      summaryResult = shardResults
+        .collect {
+          case shardResult if shardResult.isSuccess => Right(shardResult.getValue)
+          case shardResult if shardResult.isError   => Left(shardResult.getError)
+        }
+        .sequence
+        .toFuture
+//      clientsUpdated = summaryResult.collect { case Right(n) => n }.sum
+//      failures       = summaryResult.collect { case Left(_) => 1 }.sum
+//      _              = logger.info("Clients updated for EService {}: {}. Failures: {}", eServiceId, clientsUpdated, failures)
+//      r <- summaryResult.sequence.toFuture
+    } yield summaryResult
 
     onComplete(result) {
       case Success(_) =>

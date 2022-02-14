@@ -199,6 +199,11 @@ object KeyPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
         )
 
+      case UpdateEServiceState(eServiceId, state, audience, voucherLifespan, replyTo) =>
+        Effect
+          .persist(EServiceStateUpdated(eServiceId, state, audience, voucherLifespan))
+          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
         context.log.info(s"Passivate shard: ${shard.path.name}")
@@ -266,6 +271,8 @@ object KeyPersistentBehavior {
       case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
       case ClientPurposeAdded(clientId, purposeId, statesChain) =>
         state.addClientPurpose(clientId, purposeId, statesChain)
+      case EServiceStateUpdated(eServiceId, componentState, audience, voucherLifespan) =>
+        state.updateClientsByEService(eServiceId, componentState, audience, voucherLifespan)
     }
 
   val TypeKey: EntityTypeKey[Command] =

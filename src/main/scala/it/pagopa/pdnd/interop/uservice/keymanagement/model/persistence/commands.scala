@@ -5,14 +5,10 @@ import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   PersistentClient,
+  PersistentClientComponentState,
   PersistentClientPurpose
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{
-  ClientEServiceDetailsSeed,
-  ClientKey,
-  EncodedClientKey,
-  KeysResponse
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
 
 import java.util.UUID
 
@@ -54,9 +50,10 @@ final case class AddClientPurpose(
 
 final case class UpdateEServiceState(
   eServiceId: String,
-  clientEServiceDetailsSeed: ClientEServiceDetailsSeed,
-//  replyTo: ActorRef[StatusReply[Seq[Unit]]]
-  replyTo: ActorRef[StatusReply[Int]]
+  state: PersistentClientComponentState,
+  audience: String,
+  voucherLifespan: Int,
+  replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command
 
 case object Idle extends Command
