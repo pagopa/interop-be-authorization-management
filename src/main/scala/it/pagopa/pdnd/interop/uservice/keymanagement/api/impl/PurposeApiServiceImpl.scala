@@ -44,7 +44,7 @@ final case class PurposeApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info("Creating Purpose for Client {}", clientId)
+    logger.info("Adding Purpose for Client {}", clientId)
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
@@ -55,7 +55,7 @@ final case class PurposeApiServiceImpl(
 
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess =>
-        addClientPurpose201(statusReply.getValue.toApi)
+        addClientPurpose200(statusReply.getValue.toApi)
       case Success(statusReply) =>
         logger.error("Error adding Purpose for Client {} with seed {}", clientId, statusReply.getError, seed)
         val problem =
