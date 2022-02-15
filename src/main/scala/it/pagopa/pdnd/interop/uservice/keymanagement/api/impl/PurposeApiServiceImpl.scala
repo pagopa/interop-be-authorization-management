@@ -17,6 +17,7 @@ import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.PurposeApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors.{
+  ClientAgreementStateUpdateError,
   ClientEServiceStateUpdateError,
   ClientNotFoundError,
   ClientPurposeAdditionError
@@ -105,6 +106,27 @@ final case class PurposeApiServiceImpl(
       case Failure(ex) =>
         logger.error("Error updating EService {} state for all clients", eServiceId, ex)
         val problem = problemOf(StatusCodes.InternalServerError, ClientEServiceStateUpdateError(eServiceId))
+        complete(problem.status, problem)
+    }
+
+  }
+
+  override def updateAgreementState(agreementId: String, payload: ClientAgreementDetailsUpdate)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.info("Updating Agreement {} state for all clients", agreementId)
+
+    val result: Future[Seq[Unit]] = updateStateOnClients(
+      UpdateAgreementState(agreementId, PersistentClientComponentState.fromApi(payload.state), _)
+    )
+
+    onComplete(result) {
+      case Success(_) =>
+        updateAgreementState204
+      case Failure(ex) =>
+        logger.error("Error updating Agreement {} state for all clients", agreementId, ex)
+        val problem = problemOf(StatusCodes.InternalServerError, ClientAgreementStateUpdateError(agreementId))
         complete(problem.status, problem)
     }
 

@@ -58,3 +58,8 @@ message EServiceStateUpdatedV1 {
   repeated string audience = 3;
   required int32 voucherLifespan = 4;
 }
+
+message AgreementStateUpdatedV1 {
+  required string agreementId = 1;
+  required ClientComponentStateV1 state = 2;
+}

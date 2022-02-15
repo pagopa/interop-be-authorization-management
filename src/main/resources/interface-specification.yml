@@ -463,6 +463,36 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /bulk/agreements/{agreementId}/state:
+    post:
+      tags:
+        - purpose
+      summary: Updates the Agreement state for all clients that contain it
+      description: 'Updates the Agreement state for all clients that contain it'
+      operationId: updateAgreementState
+      parameters:
+        - name: agreementId
+          in: path
+          description: ID of the Agreement
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientAgreementDetailsUpdate'
+      responses:
+        '204':
+          description: Clients updated
+        '400':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   schemas:
     KeysResponse:
@@ -796,6 +826,13 @@ components:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - purposeId
+        - state
+    ClientAgreementDetailsUpdate:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
         - state
     ClientPurposeDetailsSeed:
       type: object

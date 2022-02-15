@@ -160,6 +160,19 @@ package object v1 {
       )
     )
 
+  implicit def agreementStateUpdatedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementStateUpdatedV1, AgreementStateUpdated] =
+    event =>
+      for {
+        state <- protobufToComponentState(event.state)
+      } yield AgreementStateUpdated(agreementId = event.agreementId, state = state)
+
+  implicit def agreementStateUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementStateUpdated, AgreementStateUpdatedV1] = event =>
+    Right[Throwable, AgreementStateUpdatedV1](
+      AgreementStateUpdatedV1.of(agreementId = event.agreementId, state = componentStateToProtobuf(event.state))
+    )
+
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
     val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq
     entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)
