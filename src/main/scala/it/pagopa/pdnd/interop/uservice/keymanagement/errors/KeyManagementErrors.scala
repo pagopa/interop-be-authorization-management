@@ -78,6 +78,6 @@ object KeyManagementErrors {
       extends ComponentError("0025", s"Error adding Purpose $purposeId to Client $clientId")
 
   final case class ClientWithPurposeNotFoundError(clientId: String, purposeId: String)
-      extends ComponentError("0026", s"Not found a client for client=$clientId/purpose=$purposeId")
+      extends ComponentError("0029", s"Not found a client for client=$clientId/purpose=$purposeId")
 
 }
