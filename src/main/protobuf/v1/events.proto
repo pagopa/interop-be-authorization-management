@@ -63,3 +63,8 @@ message AgreementStateUpdatedV1 {
   required string agreementId = 1;
   required ClientComponentStateV1 state = 2;
 }
+
+message PurposeStateUpdatedV1 {
+  required string purposeId = 1;
+  required ClientComponentStateV1 state = 2;
+}

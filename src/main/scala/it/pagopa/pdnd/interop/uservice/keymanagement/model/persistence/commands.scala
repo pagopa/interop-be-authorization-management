@@ -62,4 +62,10 @@ final case class UpdateAgreementState(
   replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command
 
+final case class UpdatePurposeState(
+  purposeId: String,
+  state: PersistentClientComponentState,
+  replyTo: ActorRef[StatusReply[Unit]]
+) extends Command
+
 case object Idle extends Command

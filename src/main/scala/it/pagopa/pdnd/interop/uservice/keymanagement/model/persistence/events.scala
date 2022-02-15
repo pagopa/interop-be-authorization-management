@@ -31,3 +31,4 @@ final case class EServiceStateUpdated(
 ) extends Event
 
 final case class AgreementStateUpdated(agreementId: String, state: PersistentClientComponentState) extends Event
+final case class PurposeStateUpdated(purposeId: String, state: PersistentClientComponentState)     extends Event
