@@ -73,7 +73,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def updateClientsByEService(
     eServiceId: String,
     state: PersistentClientComponentState,
-    audience: String,
+    audience: Seq[String],
     voucherLifespan: Int
   ): State = {
     val toUpdateClients = clients.filter { case (_, client) =>

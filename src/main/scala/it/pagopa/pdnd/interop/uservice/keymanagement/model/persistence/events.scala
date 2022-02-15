@@ -26,6 +26,6 @@ final case class ClientPurposeAdded(clientId: String, purposeId: UUID, statesCha
 final case class EServiceStateUpdated(
   eServiceId: String,
   state: PersistentClientComponentState,
-  audience: String,
+  audience: Seq[String],
   voucherLifespan: Int
 ) extends Event

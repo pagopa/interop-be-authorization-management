@@ -53,7 +53,7 @@ class PurposeManagementSpec
           eservice = ClientEServiceDetails(
             eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
+            audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetails(agreementId = agreementId, state = ClientComponentState.INACTIVE),
@@ -67,7 +67,7 @@ class PurposeManagementSpec
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
+            audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
@@ -104,7 +104,7 @@ class PurposeManagementSpec
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
+            audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
@@ -150,7 +150,7 @@ class PurposeManagementSpec
       val eService1Seed = ClientEServiceDetailsSeed(
         eserviceId = eServiceId1,
         state = ClientComponentState.ACTIVE,
-        audience = "some.audience",
+        audience = Seq("some.audience"),
         voucherLifespan = 10
       )
       val eService2Seed = eService1Seed.copy(eserviceId = eServiceId2)
@@ -182,7 +182,7 @@ class PurposeManagementSpec
 
       val updatePayload = ClientEServiceDetailsUpdate(
         state = ClientComponentState.INACTIVE,
-        audience = "some.other.audience",
+        audience = Seq("some.other.audience"),
         voucherLifespan = 50
       )
 

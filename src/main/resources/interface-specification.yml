@@ -717,7 +717,9 @@ components:
         state:
           $ref: '#/components/schemas/ClientComponentState'
         audience:
-          type: string
+          type: array
+          items:
+            type: string
         voucherLifespan:
           type: integer
           format: int32
@@ -735,7 +737,9 @@ components:
         state:
           $ref: '#/components/schemas/ClientComponentState'
         audience:
-          type: string
+          type: array
+          items:
+            type: string
         voucherLifespan:
           type: integer
           format: int32
@@ -750,7 +754,9 @@ components:
         state:
           $ref: '#/components/schemas/ClientComponentState'
         audience:
-          type: string
+          type: array
+          items:
+            type: string
         voucherLifespan:
           type: integer
           format: int32

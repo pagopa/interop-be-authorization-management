@@ -51,7 +51,7 @@ final case class AddClientPurpose(
 final case class UpdateEServiceState(
   eServiceId: String,
   state: PersistentClientComponentState,
-  audience: String,
+  audience: Seq[String],
   voucherLifespan: Int,
   replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command
