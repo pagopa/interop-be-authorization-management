@@ -12,6 +12,7 @@ import akka.pattern.StatusReply
 import com.typesafe.scalalogging.Logger
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
+import it.pagopa.pdnd.interop.commons.utils.TypeConversions.StringOps
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 final case class ClientApiServiceImpl(
@@ -32,7 +33,8 @@ final case class ClientApiServiceImpl(
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
   uuidSupplier: UUIDSupplier
-) extends ClientApiService
+)(implicit ec: ExecutionContext)
+    extends ClientApiService
     with Validation {
 
   private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
@@ -270,4 +272,54 @@ final case class ClientApiServiceImpl(
     }
   }
 
+  /** Code: 200, Message: Client retrieved, DataType: Client
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def getClientByPurposeId(clientId: String, purposeId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerClient: ToEntityMarshaller[Client],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.info("Retrieving Client {}", clientId)
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[PersistentClient]] = for {
+      purposeUUID <- purposeId.toFutureUUID
+      client      <- commander.ask(ref => GetClientByPurpose(clientId, purposeUUID, ref))
+    } yield client
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess =>
+        getClientByPurposeId200(statusReply.getValue.toApi)
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case ex: ClientWithPurposeNotFoundError =>
+            logger.error(
+              s"Error while retrieving Client for client=$clientId/purpose=$purposeId",
+              clientId,
+              purposeId,
+              ex
+            )
+            getClientByPurposeId404(problemOf(StatusCodes.NotFound, ex))
+          case ex =>
+            logger.error(
+              s"Error while retrieving Client for client=$clientId/purpose=$purposeId",
+              clientId,
+              purposeId,
+              ex
+            )
+            internalServerError(problemOf(StatusCodes.InternalServerError, GetClientError(clientId)))
+        }
+      case unknownReply =>
+        logger.error(
+          s"Error while retrieving Client for client=$clientId/purpose=$purposeId, - Internal server error",
+          clientId,
+          purposeId
+        )
+        internalServerError(
+          problemOf(StatusCodes.InternalServerError, GetClientServerError(clientId, unknownReply.toString))
+        )
+    }
+  }
 }

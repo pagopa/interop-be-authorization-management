@@ -48,6 +48,7 @@ import kamon.Kamon
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
+import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 object Main extends App {
@@ -71,6 +72,7 @@ object Main extends App {
       Behaviors.setup[Nothing] { context =>
         import akka.actor.typed.scaladsl.adapter._
         implicit val classicSystem: classic.ActorSystem = context.system.toClassic
+        implicit val ec: ExecutionContext               = context.system.executionContext
         val keyApiMarshaller: KeyApiMarshaller          = KeyApiMarshallerImpl
         val uuidSupplier: UUIDSupplier                  = new UUIDSupplierImpl()
 

@@ -123,6 +123,14 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
+      case GetClientByPurpose(clientId, purposeId, replyTo) =>
+        state.clients.get(clientId).find(client => client.purposes.contains(purposeId)) match {
+          case Some(client) =>
+            replyTo ! StatusReply.Success(client)
+            Effect.none[Event, State]
+          case None => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId.toString))
+        }
+
       case ListClients(from, to, relationshipId, consumerId, replyTo) =>
         val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
           relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
