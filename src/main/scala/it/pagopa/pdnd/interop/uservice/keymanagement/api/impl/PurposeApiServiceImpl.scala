@@ -1,6 +1,6 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.api.impl
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
@@ -89,31 +89,15 @@ final case class PurposeApiServiceImpl(
   ): Route = {
     logger.info("Updating EService {} state for all clients", eServiceId)
 
-    val commanders: Seq[EntityRef[Command]] =
-      (0 until settings.numberOfShards).map(shard =>
-        sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
+    val result: Future[Seq[Unit]] = updateStateOnClients(
+      UpdateEServiceState(
+        eServiceId,
+        PersistentClientComponentState.fromApi(payload.state),
+        payload.audience,
+        payload.voucherLifespan,
+        _
       )
-
-    val result = for {
-      shardResults <- commanders.traverse(
-        _.ask(ref =>
-          UpdateEServiceState(
-            eServiceId,
-            PersistentClientComponentState.fromApi(payload.state),
-            payload.audience,
-            payload.voucherLifespan,
-            ref
-          )
-        )
-      )
-      summaryResult = shardResults
-        .collect {
-          case shardResult if shardResult.isSuccess => Right(shardResult.getValue)
-          case shardResult if shardResult.isError   => Left(shardResult.getError)
-        }
-        .sequence
-        .toFuture
-    } yield summaryResult
+    )
 
     onComplete(result) {
       case Success(_) =>
@@ -124,6 +108,24 @@ final case class PurposeApiServiceImpl(
         complete(problem.status, problem)
     }
 
+  }
+
+  private def updateStateOnClients(event: ActorRef[StatusReply[Unit]] => Command): Future[Seq[Unit]] = {
+    val commanders: Seq[EntityRef[Command]] =
+      (0 until settings.numberOfShards).map(shard =>
+        sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
+      )
+
+    for {
+      shardResults <- commanders.traverse(_.ask[StatusReply[Unit]](event))
+      summaryResult <- shardResults
+        .collect {
+          case shardResult if shardResult.isSuccess => Right(shardResult.getValue)
+          case shardResult if shardResult.isError   => Left(shardResult.getError)
+        }
+        .sequence
+        .toFuture
+    } yield summaryResult
   }
 
 }
