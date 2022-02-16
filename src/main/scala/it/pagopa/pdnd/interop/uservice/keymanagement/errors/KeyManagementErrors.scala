@@ -77,4 +77,13 @@ object KeyManagementErrors {
   final case class ClientPurposeAdditionError(clientId: String, purposeId: String)
       extends ComponentError("0025", s"Error adding Purpose $purposeId to Client $clientId")
 
+  final case class ClientEServiceStateUpdateError(eServiceId: String)
+      extends ComponentError("0026", s"Error updating EService $eServiceId state for all clients")
+
+  final case class ClientAgreementStateUpdateError(agreementId: String)
+      extends ComponentError("0027", s"Error updating Agreement $agreementId state for all clients")
+
+  final case class ClientPurposeStateUpdateError(purposeId: String)
+      extends ComponentError("0028", s"Error updating Purpose $purposeId state for all clients")
+
 }

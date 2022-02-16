@@ -137,6 +137,55 @@ package object v1 {
       )
     )
 
+  implicit def eServiceStateUpdatedV1PersistEventDeserializer
+    : PersistEventDeserializer[EServiceStateUpdatedV1, EServiceStateUpdated] =
+    event =>
+      for {
+        state <- protobufToComponentState(event.state)
+      } yield EServiceStateUpdated(
+        eServiceId = event.eServiceId,
+        state = state,
+        audience = event.audience,
+        voucherLifespan = event.voucherLifespan
+      )
+
+  implicit def eServiceStateUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[EServiceStateUpdated, EServiceStateUpdatedV1] = event =>
+    Right[Throwable, EServiceStateUpdatedV1](
+      EServiceStateUpdatedV1.of(
+        eServiceId = event.eServiceId,
+        state = componentStateToProtobuf(event.state),
+        audience = event.audience,
+        voucherLifespan = event.voucherLifespan
+      )
+    )
+
+  implicit def agreementStateUpdatedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementStateUpdatedV1, AgreementStateUpdated] =
+    event =>
+      for {
+        state <- protobufToComponentState(event.state)
+      } yield AgreementStateUpdated(agreementId = event.agreementId, state = state)
+
+  implicit def agreementStateUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementStateUpdated, AgreementStateUpdatedV1] = event =>
+    Right[Throwable, AgreementStateUpdatedV1](
+      AgreementStateUpdatedV1.of(agreementId = event.agreementId, state = componentStateToProtobuf(event.state))
+    )
+
+  implicit def purposeStateUpdatedV1PersistEventDeserializer
+    : PersistEventDeserializer[PurposeStateUpdatedV1, PurposeStateUpdated] =
+    event =>
+      for {
+        state <- protobufToComponentState(event.state)
+      } yield PurposeStateUpdated(purposeId = event.purposeId, state = state)
+
+  implicit def purposeStateUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[PurposeStateUpdated, PurposeStateUpdatedV1] = event =>
+    Right[Throwable, PurposeStateUpdatedV1](
+      PurposeStateUpdatedV1.of(purposeId = event.purposeId, state = componentStateToProtobuf(event.state))
+    )
+
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
     val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq
     entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)

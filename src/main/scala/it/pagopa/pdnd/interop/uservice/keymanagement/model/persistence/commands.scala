@@ -5,6 +5,7 @@ import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
   PersistentClient,
+  PersistentClientComponentState,
   PersistentClientPurpose
 }
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
@@ -45,6 +46,26 @@ final case class AddClientPurpose(
   clientId: String,
   persistentClientPurpose: PersistentClientPurpose,
   replyTo: ActorRef[StatusReply[PersistentClientPurpose]]
+) extends Command
+
+final case class UpdateEServiceState(
+  eServiceId: String,
+  state: PersistentClientComponentState,
+  audience: Seq[String],
+  voucherLifespan: Int,
+  replyTo: ActorRef[StatusReply[Unit]]
+) extends Command
+
+final case class UpdateAgreementState(
+  agreementId: String,
+  state: PersistentClientComponentState,
+  replyTo: ActorRef[StatusReply[Unit]]
+) extends Command
+
+final case class UpdatePurposeState(
+  purposeId: String,
+  state: PersistentClientComponentState,
+  replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command
 
 case object Idle extends Command

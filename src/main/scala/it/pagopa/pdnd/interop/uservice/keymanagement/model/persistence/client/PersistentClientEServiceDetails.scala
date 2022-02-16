@@ -8,7 +8,7 @@ import java.util.UUID
 final case class PersistentClientEServiceDetails(
   eServiceId: UUID,
   state: PersistentClientComponentState,
-  audience: String,
+  audience: Seq[String],
   voucherLifespan: Int
 ) extends Persistent {
 
