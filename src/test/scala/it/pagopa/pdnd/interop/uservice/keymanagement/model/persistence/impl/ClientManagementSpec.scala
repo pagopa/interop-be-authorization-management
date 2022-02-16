@@ -4,9 +4,10 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.Client
+import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import it.pagopa.pdnd.interop.uservice.keymanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
+import spray.json.enrichAny
 
 import java.util.UUID
 import scala.concurrent.Await
@@ -78,6 +79,142 @@ class ClientManagementSpec
       val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
 
       retrievedClient shouldBe createdClient
+    }
+
+    "be retrieved by asking for a purposeId it is associated with" in {
+      val clientId    = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val purposeId1  = UUID.randomUUID()
+      val purposeId2  = UUID.randomUUID()
+      val eServiceId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
+
+      val statesChainId = UUID.randomUUID()
+
+      createClient(clientId, consumerId)
+
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
+
+      val payload1 = PurposeSeed(
+        purposeId = purposeId1,
+        states = ClientStatesChainSeed(
+          eservice = ClientEServiceDetailsSeed(
+            eserviceId = eServiceId,
+            state = ClientComponentState.ACTIVE,
+            audience = Seq("some.audience"),
+            voucherLifespan = 10
+          ),
+          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+        )
+      )
+
+      val payload2 = PurposeSeed(
+        purposeId = purposeId2,
+        states = ClientStatesChainSeed(
+          eservice = ClientEServiceDetailsSeed(
+            eserviceId = eServiceId,
+            state = ClientComponentState.ACTIVE,
+            audience = Seq("some.audience"),
+            voucherLifespan = 10
+          ),
+          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId2, state = ClientComponentState.ACTIVE)
+        )
+      )
+
+      val _ =
+        request(
+          uri = s"$serviceURL/clients/$clientId/purposes",
+          method = HttpMethods.POST,
+          data = Some(payload1.toJson.prettyPrint)
+        )
+
+      val _ =
+        request(
+          uri = s"$serviceURL/clients/$clientId/purposes",
+          method = HttpMethods.POST,
+          data = Some(payload2.toJson.prettyPrint)
+        )
+
+      val response =
+        request(uri = s"$serviceURL/clients/$clientId/purposes/$purposeId1", method = HttpMethods.GET, data = None)
+
+      val expected = {
+        Client(
+          id = clientId,
+          consumerId = consumerId,
+          name = s"New Client ${clientId.toString}",
+          description = Some(s"New Client ${clientId.toString} description"),
+          purposes = Seq(
+            Purpose(
+              purposeId = purposeId1,
+              states = ClientStatesChain(
+                id = statesChainId,
+                eservice = ClientEServiceDetails(
+                  eserviceId = eServiceId,
+                  state = ClientComponentState.ACTIVE,
+                  audience = Seq("some.audience"),
+                  voucherLifespan = 10
+                ),
+                agreement = ClientAgreementDetails(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+                purpose = ClientPurposeDetails(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+              )
+            )
+          ),
+          relationships = Set.empty
+        )
+
+      }
+
+      val client = Await.result(Unmarshal(response).to[Client], Duration.Inf)
+
+      response.status shouldBe StatusCodes.OK
+      client shouldBe expected
+    }
+
+    "be fail if it is not associated with a purposeId" in {
+      val clientId    = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val purposeId   = UUID.randomUUID()
+      val eServiceId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
+
+      val statesChainId = UUID.randomUUID()
+
+      createClient(clientId, consumerId)
+
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
+
+      val payload = PurposeSeed(
+        purposeId = purposeId,
+        states = ClientStatesChainSeed(
+          eservice = ClientEServiceDetailsSeed(
+            eserviceId = eServiceId,
+            state = ClientComponentState.ACTIVE,
+            audience = Seq("some.audience"),
+            voucherLifespan = 10
+          ),
+          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
+        )
+      )
+
+      val _ =
+        request(
+          uri = s"$serviceURL/clients/$clientId/purposes",
+          method = HttpMethods.POST,
+          data = Some(payload.toJson.prettyPrint)
+        )
+
+      val response =
+        request(
+          uri = s"$serviceURL/clients/$clientId/purposes/${UUID.randomUUID()}",
+          method = HttpMethods.GET,
+          data = None
+        )
+
+      response.status shouldBe StatusCodes.NotFound
     }
 
   }

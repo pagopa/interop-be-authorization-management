@@ -133,6 +133,7 @@ paths:
           required: true
           schema:
             type: string
+            format: string
       responses:
         '200':
           description: Client retrieved
@@ -427,6 +428,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Purpose'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/purposes/{purposeId}':
+    get:
+      description: Retrieves a Client related to a purpose id
+      tags:
+        - client
+      summary: Get a Client related to a purpose id
+      operationId: getClientByPurposeId
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+            format: string
+        - name: purposeId
+          in: path
+          description: The Purpose id
+          required: true
+          schema:
+            type: string
+            format: string
+      responses:
+        '200':
+          description: Client retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
         '404':
           description: Client not found
           content:

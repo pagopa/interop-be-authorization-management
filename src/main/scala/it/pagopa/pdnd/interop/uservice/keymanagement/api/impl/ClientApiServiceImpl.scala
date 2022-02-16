@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onComplete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.Logger
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
@@ -64,7 +65,11 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => AddClient(persistentClient, ref))
 
     onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
+      case Success(statusReply) if statusReply.isSuccess =>
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => createClient201(client)
+        )
       case Success(statusReply) =>
         logger.error("Error while creating client for Consumer {}", clientSeed.consumerId, statusReply.getError)
         createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
@@ -91,11 +96,14 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        getClient200(statusReply.getValue.toApi)
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => getClient200(client)
+        )
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            logger.error("Error while retrieving Client {}", clientId, ex)
+            logger.info("Error while retrieving Client {}", clientId, ex)
             getClient404(problemOf(StatusCodes.NotFound, ex))
           case ex =>
             logger.error("Error while retrieving Client {}", clientId, ex)
@@ -133,9 +141,14 @@ final case class ClientApiServiceImpl(
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
-        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, relId, conId).map(_.toApi))
-        val paginatedClients     = clients.sortBy(_.id).slice(offset, offset + limit)
-        listClients200(paginatedClients)
+        val persistentClient: Seq[PersistentClient] = commanders.flatMap(ref => slices(ref, sliceSize, relId, conId))
+        val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
+        val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
+        paginatedClients.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          clients => listClients200(clients)
+        )
+
     }
   }
 
@@ -182,7 +195,11 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => AddRelationship(clientId, relationshipSeed.relationshipId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => addRelationship201(statusReply.getValue.toApi)
+      case statusReply if statusReply.isSuccess =>
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => addRelationship201(client)
+        )
       case statusReply if statusReply.isError =>
         logger.error(
           "Error while adding relationship {} to client {}",
@@ -192,8 +209,20 @@ final case class ClientApiServiceImpl(
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.info(
+              "Error while adding relationship {} to client {}",
+              relationshipSeed.relationshipId,
+              clientId,
+              ex
+            )
             addRelationship404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case ex =>
+            logger.error(
+              "Error while adding relationship {} to client {}",
+              relationshipSeed.relationshipId,
+              clientId,
+              ex
+            )
             internalServerError(
               problemOf(
                 StatusCodes.InternalServerError,
@@ -225,8 +254,10 @@ final case class ClientApiServiceImpl(
         logger.error("Error while deleting client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.info("Error while deleting client {}", clientId, ex)
             deleteClient404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case ex =>
+            logger.error("Error while deleting client {}", clientId, ex)
             internalServerError(problemOf(StatusCodes.InternalServerError, DeleteClientError(clientId)))
         }
     }
@@ -259,10 +290,13 @@ final case class ClientApiServiceImpl(
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.info("Error while removing relationship {} from client {}", relationshipId, clientId, ex)
             removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
           case ex: PartyRelationshipNotFoundError =>
+            logger.info("Error while removing relationship {} from client {}", relationshipId, clientId, ex)
             removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case ex =>
+            logger.error("Error while removing relationship {} from client {}", relationshipId, clientId, ex)
             internalServerError(
               problemOf(StatusCodes.InternalServerError, RemoveRelationshipError(relationshipId, clientId))
             )
@@ -270,4 +304,55 @@ final case class ClientApiServiceImpl(
     }
   }
 
+  /** Code: 200, Message: Client retrieved, DataType: Client
+    * Code: 404, Message: Client not found, DataType: Problem
+    */
+  override def getClientByPurposeId(clientId: String, purposeId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    toEntityMarshallerClient: ToEntityMarshaller[Client],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.info("Retrieving Client {}", clientId)
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[PersistentClient]] =
+      commander.ask(ref => GetClientByPurpose(clientId, purposeId, ref))
+
+    onSuccess(result) {
+      case statusReply if statusReply.isSuccess =>
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => getClientByPurposeId200(client)
+        )
+      case statusReply if statusReply.isError =>
+        statusReply.getError match {
+          case ex: ClientWithPurposeNotFoundError =>
+            logger.info(
+              s"Error while retrieving Client for client=$clientId/purpose=$purposeId",
+              clientId,
+              purposeId,
+              ex
+            )
+            getClientByPurposeId404(problemOf(StatusCodes.NotFound, ex))
+          case ex =>
+            logger.error(
+              s"Error while retrieving Client for client=$clientId/purpose=$purposeId",
+              clientId,
+              purposeId,
+              ex
+            )
+            internalServerError(problemOf(StatusCodes.InternalServerError, GetClientError(clientId)))
+        }
+      case unknownReply =>
+        logger.error(
+          s"Error while retrieving Client for client=$clientId/purpose=$purposeId, - Internal server error",
+          clientId,
+          purposeId
+        )
+        internalServerError(
+          problemOf(StatusCodes.InternalServerError, GetClientServerError(clientId, unknownReply.toString))
+        )
+    }
+  }
 }

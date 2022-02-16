@@ -1,6 +1,7 @@
 package it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer
 
 import cats.implicits._
+import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.PersistentClientPurposes.PersistentClientPurposes
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client._
@@ -17,7 +18,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serialize
   StateKeysEntryV1,
   StateV1
 }
-import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
+
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
@@ -123,16 +124,15 @@ package object v1 {
     : PersistEventDeserializer[ClientPurposeAddedV1, ClientPurposeAdded] =
     event =>
       for {
-        states      <- protobufToClientStatesChain(event.statesChain)
-        purposeUuid <- event.purposeId.toUUID.toEither
-      } yield ClientPurposeAdded(clientId = event.clientId, purposeId = purposeUuid, statesChain = states)
+        states <- protobufToClientStatesChain(event.statesChain)
+      } yield ClientPurposeAdded(clientId = event.clientId, purposeId = event.purposeId, statesChain = states)
 
   implicit def clientPurposeAddedV1PersistEventSerializer
     : PersistEventSerializer[ClientPurposeAdded, ClientPurposeAddedV1] = event =>
     Right[Throwable, ClientPurposeAddedV1](
       ClientPurposeAddedV1(
         clientId = event.clientId,
-        purposeId = event.purposeId.toString,
+        purposeId = event.purposeId,
         statesChain = clientStatesChainToProtobuf(event.statesChain)
       )
     )
@@ -220,7 +220,7 @@ package object v1 {
 
   private def purposeToProtobuf(purposes: PersistentClientPurposes): Seq[ClientPurposesEntryV1] =
     purposes.map { case (purposeId, statesChain) =>
-      ClientPurposesEntryV1.of(purposeId.toString, clientStatesChainToProtobuf(statesChain))
+      ClientPurposesEntryV1.of(purposeId, clientStatesChainToProtobuf(statesChain))
     }.toSeq
 
   private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
@@ -281,9 +281,8 @@ package object v1 {
     purposes
       .traverse(p =>
         for {
-          uuid  <- p.purposeId.toUUID.toEither
           state <- protobufToClientStatesChain(p.states)
-        } yield uuid -> state
+        } yield p.purposeId -> state
       )
       .map(_.toMap)
 

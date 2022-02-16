@@ -60,7 +60,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
 
-  def addClientPurpose(clientId: String, purposeId: UUID, statesChain: PersistentClientStatesChain): State = {
+  def addClientPurpose(clientId: String, purposeId: String, statesChain: PersistentClientStatesChain): State = {
     clients.get(clientId) match {
       case Some(client) =>
         val purposes      = client.purposes + (purposeId -> statesChain)

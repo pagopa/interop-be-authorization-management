@@ -15,8 +15,8 @@ import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDi
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.persistence.typed.PersistenceId
 import com.nimbusds.jose.util.Base64
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api._
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior}

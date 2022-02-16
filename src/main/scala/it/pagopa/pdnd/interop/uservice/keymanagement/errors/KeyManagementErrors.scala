@@ -86,4 +86,9 @@ object KeyManagementErrors {
   final case class ClientPurposeStateUpdateError(purposeId: String)
       extends ComponentError("0028", s"Error updating Purpose $purposeId state for all clients")
 
+  final case class ClientWithPurposeNotFoundError(clientId: String, purposeId: String)
+      extends ComponentError("0029", s"Not found a client for client=$clientId/purpose=$purposeId")
+
+  final case class GenericError(error: String) extends ComponentError("0030", s"Something went wrong: $error")
+
 }
