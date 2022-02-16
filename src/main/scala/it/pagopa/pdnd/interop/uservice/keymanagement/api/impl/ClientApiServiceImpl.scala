@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onComplete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.Logger
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
@@ -64,7 +65,11 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => AddClient(persistentClient, ref))
 
     onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
+      case Success(statusReply) if statusReply.isSuccess =>
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => createClient201(client)
+        )
       case Success(statusReply) =>
         logger.error("Error while creating client for Consumer {}", clientSeed.consumerId, statusReply.getError)
         createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
@@ -91,7 +96,10 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        getClient200(statusReply.getValue.toApi)
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => getClient200(client)
+        )
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
@@ -133,9 +141,14 @@ final case class ClientApiServiceImpl(
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
-        val clients: Seq[Client] = commanders.flatMap(ref => slices(ref, sliceSize, relId, conId).map(_.toApi))
-        val paginatedClients     = clients.sortBy(_.id).slice(offset, offset + limit)
-        listClients200(paginatedClients)
+        val persistentClient: Seq[PersistentClient] = commanders.flatMap(ref => slices(ref, sliceSize, relId, conId))
+        val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
+        val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
+        paginatedClients.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          clients => listClients200(clients)
+        )
+
     }
   }
 
@@ -182,7 +195,11 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => AddRelationship(clientId, relationshipSeed.relationshipId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess => addRelationship201(statusReply.getValue.toApi)
+      case statusReply if statusReply.isSuccess =>
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => addRelationship201(client)
+        )
       case statusReply if statusReply.isError =>
         logger.error(
           "Error while adding relationship {} to client {}",
@@ -287,7 +304,10 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        getClientByPurposeId200(statusReply.getValue.toApi)
+        statusReply.getValue.toApi.fold(
+          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+          client => getClientByPurposeId200(client)
+        )
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientWithPurposeNotFoundError =>

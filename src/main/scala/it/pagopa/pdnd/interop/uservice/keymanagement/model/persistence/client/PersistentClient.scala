@@ -15,15 +15,16 @@ final case class PersistentClient(
   relationships: Set[UUID]
 ) extends Persistent {
 
-  def toApi: Client =
+  def toApi: Either[Throwable, Client] = PersistentClientPurposes.toApi(purposes).map { purposes =>
     Client(
       id = id,
       consumerId = consumerId,
       name = name,
-      purposes = PersistentClientPurposes.toApi(purposes),
+      purposes = purposes,
       description = description,
       relationships = relationships
     )
+  }
 
 }
 

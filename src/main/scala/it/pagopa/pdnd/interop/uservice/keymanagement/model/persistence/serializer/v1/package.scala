@@ -8,8 +8,16 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.client._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.events._
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{KeyUseV1, PersistentKeyEntryV1, PersistentKeyV1}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.state.{StateClientsEntryV1, StateKeysEntryV1, StateV1}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.key.{
+  KeyUseV1,
+  PersistentKeyEntryV1,
+  PersistentKeyV1
+}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.serializer.v1.state.{
+  StateClientsEntryV1,
+  StateKeysEntryV1,
+  StateV1
+}
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
