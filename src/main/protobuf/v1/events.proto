@@ -51,3 +51,20 @@ message ClientPurposeAddedV1 {
   required string purposeId = 2;
   required ClientStatesChainV1 statesChain = 3;
 }
+
+message EServiceStateUpdatedV1 {
+  required string eServiceId = 1;
+  required ClientComponentStateV1 state = 2;
+  repeated string audience = 3;
+  required int32 voucherLifespan = 4;
+}
+
+message AgreementStateUpdatedV1 {
+  required string agreementId = 1;
+  required ClientComponentStateV1 state = 2;
+}
+
+message PurposeStateUpdatedV1 {
+  required string purposeId = 1;
+  required ClientComponentStateV1 state = 2;
+}

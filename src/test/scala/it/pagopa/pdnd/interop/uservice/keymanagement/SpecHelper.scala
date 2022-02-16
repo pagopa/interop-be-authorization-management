@@ -20,10 +20,10 @@ import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api._
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{Command, KeyPersistentBehavior}
-import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, KeysResponse}
+import it.pagopa.pdnd.interop.uservice.keymanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.pdnd.interop.uservice.keymanagement.server.Controller
 import org.scalamock.scalatest.MockFactory
-import spray.json.DefaultJsonProtocol
+import spray.json._
 
 import java.util.UUID
 import scala.concurrent.duration._
@@ -119,6 +119,23 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
     response.status shouldBe StatusCodes.Created
 
     Await.result(Unmarshal(response).to[Client], Duration.Inf)
+  }
+
+  def retrieveClient(clientId: UUID): Client = {
+    val result = request(uri = s"$serviceURL/clients/$clientId", method = HttpMethods.GET)
+    Await.result(Unmarshal(result).to[Client], Duration.Inf)
+  }
+
+  def addPurposeState(clientId: UUID, newState: PurposeSeed, statesChainId: UUID): Purpose = {
+    (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
+
+    val response = request(
+      uri = s"$serviceURL/clients/$clientId/purposes",
+      method = HttpMethods.POST,
+      data = Some(newState.toJson.prettyPrint)
+    )
+
+    Await.result(Unmarshal(response).to[Purpose], Duration.Inf)
   }
 
   def generateEncodedKey(): String = {

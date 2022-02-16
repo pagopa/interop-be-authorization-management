@@ -101,7 +101,7 @@ class ClientManagementSpec
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
+            audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
@@ -115,7 +115,7 @@ class ClientManagementSpec
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
+            audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
@@ -154,7 +154,7 @@ class ClientManagementSpec
                 eservice = ClientEServiceDetails(
                   eserviceId = eServiceId,
                   state = ClientComponentState.ACTIVE,
-                  audience = "some.audience",
+                  audience = Seq("some.audience"),
                   voucherLifespan = 10
                 ),
                 agreement = ClientAgreementDetails(agreementId = agreementId, state = ClientComponentState.INACTIVE),
@@ -192,7 +192,7 @@ class ClientManagementSpec
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             state = ClientComponentState.ACTIVE,
-            audience = "some.audience",
+            audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
