@@ -36,7 +36,7 @@ import it.pagopa.pdnd.interop.uservice.keymanagement.api.impl.{
   PurposeApiServiceImpl,
   problemOf
 }
-import it.pagopa.pdnd.interop.uservice.keymanagement.api.{ClientApi, HealthApi, KeyApi, KeyApiMarshaller, PurposeApi}
+import it.pagopa.pdnd.interop.uservice.keymanagement.api._
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system.{ApplicationConfiguration, shardingSettings}
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.{
   Command,
@@ -48,7 +48,6 @@ import kamon.Kamon
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 object Main extends App {
@@ -72,7 +71,6 @@ object Main extends App {
       Behaviors.setup[Nothing] { context =>
         import akka.actor.typed.scaladsl.adapter._
         implicit val classicSystem: classic.ActorSystem = context.system.toClassic
-        implicit val ec: ExecutionContext               = context.system.executionContext
         val keyApiMarshaller: KeyApiMarshaller          = KeyApiMarshallerImpl
         val uuidSupplier: UUIDSupplier                  = new UUIDSupplierImpl()
 

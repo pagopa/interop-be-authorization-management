@@ -24,8 +24,11 @@ final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Se
 
 final case class AddClient(client: PersistentClient, replyTo: ActorRef[StatusReply[PersistentClient]]) extends Command
 final case class GetClient(clientId: String, replyTo: ActorRef[StatusReply[PersistentClient]])         extends Command
-final case class GetClientByPurpose(clientId: String, purposeId: UUID, replyTo: ActorRef[StatusReply[PersistentClient]])
-    extends Command
+final case class GetClientByPurpose(
+  clientId: String,
+  purposeId: String,
+  replyTo: ActorRef[StatusReply[PersistentClient]]
+) extends Command
 final case class ListClients(
   from: Int,
   until: Int,

@@ -194,7 +194,7 @@ object KeyPersistentBehavior {
         val v: Either[ComponentError, Unit] = for {
           client <- state.clients.get(clientId).toRight(ClientNotFoundError(clientId))
           _ <- client.purposes
-            .get(purpose.id)
+            .get(purpose.id.toString)
             .toLeft(())
             .leftMap(_ => PurposeAlreadyExists(clientId, purpose.id.toString))
         } yield ()
@@ -203,7 +203,7 @@ object KeyPersistentBehavior {
           commandError(replyTo, _),
           _ =>
             Effect
-              .persist(ClientPurposeAdded(clientId, purpose.id, purpose.statesChain))
+              .persist(ClientPurposeAdded(clientId, purpose.id.toString, purpose.statesChain))
               .thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
         )
 

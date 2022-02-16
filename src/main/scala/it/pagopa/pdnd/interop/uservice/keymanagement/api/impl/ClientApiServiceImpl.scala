@@ -12,7 +12,6 @@ import akka.pattern.StatusReply
 import com.typesafe.scalalogging.Logger
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
-import it.pagopa.pdnd.interop.commons.utils.TypeConversions.StringOps
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.ClientApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 final case class ClientApiServiceImpl(
@@ -33,8 +32,7 @@ final case class ClientApiServiceImpl(
   sharding: ClusterSharding,
   entity: Entity[Command, ShardingEnvelope[Command]],
   uuidSupplier: UUIDSupplier
-)(implicit ec: ExecutionContext)
-    extends ClientApiService
+) extends ClientApiService
     with Validation {
 
   private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
@@ -284,10 +282,8 @@ final case class ClientApiServiceImpl(
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
-    val result: Future[StatusReply[PersistentClient]] = for {
-      purposeUUID <- purposeId.toFutureUUID
-      client      <- commander.ask(ref => GetClientByPurpose(clientId, purposeUUID, ref))
-    } yield client
+    val result: Future[StatusReply[PersistentClient]] =
+      commander.ask(ref => GetClientByPurpose(clientId, purposeId, ref))
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
