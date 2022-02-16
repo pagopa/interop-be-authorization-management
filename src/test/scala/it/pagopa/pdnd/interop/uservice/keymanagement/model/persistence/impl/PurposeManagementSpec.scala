@@ -371,4 +371,116 @@ class PurposeManagementSpec
 
   }
 
+  "Purpose state update" should {
+
+    "succeed" in {
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
+
+      val purposeId1 = UUID.randomUUID()
+      val purposeId2 = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
+
+      val statesChainId1 = UUID.randomUUID()
+      val statesChainId2 = UUID.randomUUID()
+      val statesChainId3 = UUID.randomUUID()
+      val statesChainId4 = UUID.randomUUID()
+
+      // Seed
+      val eServiceSeed = ClientEServiceDetailsSeed(
+        eserviceId = eServiceId,
+        state = ClientComponentState.ACTIVE,
+        audience = Seq("some.audience"),
+        voucherLifespan = 10
+      )
+      val purposeDetailsSeed1 = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+      val purposeDetailsSeed2 = ClientPurposeDetailsSeed(purposeId = purposeId2, state = ClientComponentState.ACTIVE)
+
+      val agreementSeed = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.ACTIVE)
+
+      val purposeSeed1 = PurposeSeed(
+        purposeId = purposeId1,
+        states =
+          ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed1)
+      )
+      val purposeSeed2 = PurposeSeed(
+        purposeId = purposeId2,
+        states =
+          ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed2)
+      )
+      // Seed
+
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
+
+      addPurposeState(clientId1, purposeSeed1, statesChainId1)
+      addPurposeState(clientId1, purposeSeed2, statesChainId2)
+      addPurposeState(clientId2, purposeSeed1, statesChainId3)
+      addPurposeState(clientId2, purposeSeed2, statesChainId4)
+
+      val updatePayload = ClientPurposeDetailsUpdate(state = ClientComponentState.INACTIVE)
+
+      val eServiceDetails  = PersistentClientEServiceDetails.fromSeed(eServiceSeed).toApi
+      val agreementDetails = PersistentClientAgreementDetails.fromSeed(agreementSeed).toApi
+
+      val expectedPurpose1State = ClientPurposeDetails(purposeId = purposeId1, state = updatePayload.state)
+
+      val expectedClient1Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId1,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = expectedPurpose1State
+          )
+        ),
+        Purpose(
+          purposeId = purposeId2,
+          states = ClientStatesChain(
+            id = statesChainId2,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = PersistentClientPurposeDetails.fromSeed(purposeSeed2.states.purpose).toApi
+          )
+        )
+      )
+
+      val expectedClient2Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId3,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = expectedPurpose1State
+          )
+        ),
+        Purpose(
+          purposeId = purposeId2,
+          states = ClientStatesChain(
+            id = statesChainId4,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = PersistentClientPurposeDetails.fromSeed(purposeSeed2.states.purpose).toApi
+          )
+        )
+      )
+
+      val response =
+        request(
+          uri = s"$serviceURL/bulk/purposes/$purposeId1/state",
+          method = HttpMethods.POST,
+          data = Some(updatePayload.toJson.prettyPrint)
+        )
+
+      response.status shouldBe StatusCodes.NoContent
+
+      retrieveClient(clientId1).purposes should contain theSameElementsAs expectedClient1Purposes
+      retrieveClient(clientId2).purposes should contain theSameElementsAs expectedClient2Purposes
+    }
+
+  }
 }

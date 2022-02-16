@@ -90,6 +90,12 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
       states => states.copy(agreement = states.agreement.copy(state = state))
     )
 
+  def updateClientsByPurpose(purposeId: String, state: PersistentClientComponentState): State =
+    updateClients(
+      _.purpose.purposeId.toString == purposeId,
+      states => states.copy(purpose = states.purpose.copy(state = state))
+    )
+
   private def updateClients(
     idComparison: PersistentClientStatesChain => Boolean,
     updateStates: PersistentClientStatesChain => PersistentClientStatesChain
