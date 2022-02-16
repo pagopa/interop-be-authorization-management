@@ -10,7 +10,7 @@ object PersistentClientPurposes {
 
   def toApi(persistent: PersistentClientPurposes): Seq[Purpose] =
     persistent.map { case (purposeId, statesChain) =>
-      // This UUID conversion should be safe because this purposeId ca
+      // This UUID conversion should be safe because this purposeId came from persistence
       Purpose(purposeId = UUID.fromString(purposeId), states = statesChain.toApi)
     }.toSeq
 }
