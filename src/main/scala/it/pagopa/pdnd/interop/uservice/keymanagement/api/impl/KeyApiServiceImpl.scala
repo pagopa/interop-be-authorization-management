@@ -17,9 +17,9 @@ import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.KeyApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
 import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
+import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
@@ -112,7 +112,7 @@ final case class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        logger.error("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
+        logger.info("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
         getClientKeyById404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
     }
   }
@@ -134,7 +134,7 @@ final case class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        logger.error("Error while getting keys for client {}", clientId, statusReply.getError)
+        logger.info("Error while getting keys for client {}", clientId, statusReply.getError)
         getClientKeys404(problemOf(StatusCodes.NotFound, ClientKeysNotFound(clientId)))
     }
   }
@@ -153,7 +153,7 @@ final case class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
       case statusReply if statusReply.isError =>
-        logger.error("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
+        logger.info("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
         deleteClientKeyById404(problemOf(StatusCodes.BadRequest, DeleteClientKeyNotFound(clientId, keyId)))
     }
   }
@@ -177,7 +177,7 @@ final case class KeyApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
       case statusReply if statusReply.isError =>
-        logger.error("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
+        logger.info("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
         getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, EncodedClientKeyNotFound(clientId, keyId)))
     }
   }

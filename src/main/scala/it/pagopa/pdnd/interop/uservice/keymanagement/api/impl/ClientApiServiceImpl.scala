@@ -103,7 +103,7 @@ final case class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            logger.error("Error while retrieving Client {}", clientId, ex)
+            logger.info("Error while retrieving Client {}", clientId, ex)
             getClient404(problemOf(StatusCodes.NotFound, ex))
           case ex =>
             logger.error("Error while retrieving Client {}", clientId, ex)
@@ -209,8 +209,20 @@ final case class ClientApiServiceImpl(
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.info(
+              "Error while adding relationship {} to client {}",
+              relationshipSeed.relationshipId,
+              clientId,
+              ex
+            )
             addRelationship404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case ex =>
+            logger.error(
+              "Error while adding relationship {} to client {}",
+              relationshipSeed.relationshipId,
+              clientId,
+              ex
+            )
             internalServerError(
               problemOf(
                 StatusCodes.InternalServerError,
@@ -242,8 +254,10 @@ final case class ClientApiServiceImpl(
         logger.error("Error while deleting client {}", clientId, statusReply.getError)
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.info("Error while deleting client {}", clientId, ex)
             deleteClient404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case ex =>
+            logger.error("Error while deleting client {}", clientId, ex)
             internalServerError(problemOf(StatusCodes.InternalServerError, DeleteClientError(clientId)))
         }
     }
@@ -276,10 +290,13 @@ final case class ClientApiServiceImpl(
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
+            logger.info("Error while removing relationship {} from client {}", relationshipId, clientId, ex)
             removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
           case ex: PartyRelationshipNotFoundError =>
+            logger.info("Error while removing relationship {} from client {}", relationshipId, clientId, ex)
             removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case ex =>
+            logger.error("Error while removing relationship {} from client {}", relationshipId, clientId, ex)
             internalServerError(
               problemOf(StatusCodes.InternalServerError, RemoveRelationshipError(relationshipId, clientId))
             )
@@ -311,7 +328,7 @@ final case class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientWithPurposeNotFoundError =>
-            logger.error(
+            logger.info(
               s"Error while retrieving Client for client=$clientId/purpose=$purposeId",
               clientId,
               purposeId,
