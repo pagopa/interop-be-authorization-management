@@ -16,11 +16,7 @@ import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.pdnd.interop.uservice.keymanagement.api.PurposeApiService
 import it.pagopa.pdnd.interop.uservice.keymanagement.common.system._
-import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors.{
-  ClientEServiceStateUpdateError,
-  ClientNotFoundError,
-  ClientPurposeAdditionError
-}
+import it.pagopa.pdnd.interop.uservice.keymanagement.errors.KeyManagementErrors._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence._
 import it.pagopa.pdnd.interop.uservice.keymanagement.model.persistence.client.{
@@ -105,6 +101,48 @@ final case class PurposeApiServiceImpl(
       case Failure(ex) =>
         logger.error("Error updating EService {} state for all clients", eServiceId, ex)
         val problem = problemOf(StatusCodes.InternalServerError, ClientEServiceStateUpdateError(eServiceId))
+        complete(problem.status, problem)
+    }
+
+  }
+
+  override def updateAgreementState(agreementId: String, payload: ClientAgreementDetailsUpdate)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.info("Updating Agreement {} state for all clients", agreementId)
+
+    val result: Future[Seq[Unit]] = updateStateOnClients(
+      UpdateAgreementState(agreementId, PersistentClientComponentState.fromApi(payload.state), _)
+    )
+
+    onComplete(result) {
+      case Success(_) =>
+        updateAgreementState204
+      case Failure(ex) =>
+        logger.error("Error updating Agreement {} state for all clients", agreementId, ex)
+        val problem = problemOf(StatusCodes.InternalServerError, ClientAgreementStateUpdateError(agreementId))
+        complete(problem.status, problem)
+    }
+
+  }
+
+  override def updatePurposeState(purposeId: String, payload: ClientPurposeDetailsUpdate)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.info("Updating Purpose {} state for all clients", purposeId)
+
+    val result: Future[Seq[Unit]] = updateStateOnClients(
+      UpdatePurposeState(purposeId, PersistentClientComponentState.fromApi(payload.state), _)
+    )
+
+    onComplete(result) {
+      case Success(_) =>
+        updatePurposeState204
+      case Failure(ex) =>
+        logger.error("Error updating Purpose {} state for all clients", purposeId, ex)
+        val problem = problemOf(StatusCodes.InternalServerError, ClientPurposeStateUpdateError(purposeId))
         complete(problem.status, problem)
     }
 

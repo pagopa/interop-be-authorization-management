@@ -253,4 +253,234 @@ class PurposeManagementSpec
 
   }
 
+  "Agreement state update" should {
+
+    "succeed" in {
+      val clientId1    = UUID.randomUUID()
+      val clientId2    = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val agreementId1 = UUID.randomUUID()
+      val agreementId2 = UUID.randomUUID()
+
+      val purposeId1 = UUID.randomUUID()
+      val purposeId2 = UUID.randomUUID()
+      val purposeId3 = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
+
+      val statesChainId1 = UUID.randomUUID()
+      val statesChainId2 = UUID.randomUUID()
+      val statesChainId3 = UUID.randomUUID()
+      val statesChainId4 = UUID.randomUUID()
+
+      // Seed
+      val eServiceSeed = ClientEServiceDetailsSeed(
+        eserviceId = eServiceId,
+        state = ClientComponentState.ACTIVE,
+        audience = Seq("some.audience"),
+        voucherLifespan = 10
+      )
+      val purposeSeed = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+
+      val agreementSeed1 = ClientAgreementDetailsSeed(agreementId = agreementId1, state = ClientComponentState.ACTIVE)
+      val agreementSeed2 = ClientAgreementDetailsSeed(agreementId = agreementId2, state = ClientComponentState.ACTIVE)
+
+      val purpose1Agreement1Seed = PurposeSeed(
+        purposeId = purposeId1,
+        states = ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed1, purpose = purposeSeed)
+      )
+      val purpose2Agreement1Seed = PurposeSeed(
+        purposeId = purposeId2,
+        states = ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed1, purpose = purposeSeed)
+      )
+
+      val purpose3Agreement2Seed = PurposeSeed(
+        purposeId = purposeId3,
+        states = ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed2, purpose = purposeSeed)
+      )
+      // Seed
+
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
+
+      addPurposeState(clientId1, purpose1Agreement1Seed, statesChainId1)
+      addPurposeState(clientId1, purpose3Agreement2Seed, statesChainId2)
+      addPurposeState(clientId2, purpose1Agreement1Seed, statesChainId3)
+      addPurposeState(clientId2, purpose2Agreement1Seed, statesChainId4)
+
+      val updatePayload = ClientAgreementDetailsUpdate(state = ClientComponentState.INACTIVE)
+
+      val eServiceDetails = PersistentClientEServiceDetails.fromSeed(eServiceSeed).toApi
+      val purposeDetails  = PersistentClientPurposeDetails.fromSeed(purposeSeed).toApi
+
+      val expectedAgreement1State = ClientAgreementDetails(agreementId = agreementId1, state = updatePayload.state)
+
+      val expectedClient1Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId1,
+            eservice = eServiceDetails,
+            agreement = expectedAgreement1State,
+            purpose = purposeDetails
+          )
+        ),
+        Purpose(
+          purposeId = purpose3Agreement2Seed.purposeId,
+          states = ClientStatesChain(
+            id = statesChainId2,
+            eservice = eServiceDetails,
+            agreement = PersistentClientAgreementDetails.fromSeed(purpose3Agreement2Seed.states.agreement).toApi,
+            purpose = purposeDetails
+          )
+        )
+      )
+
+      val expectedClient2Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId3,
+            eservice = eServiceDetails,
+            agreement = expectedAgreement1State,
+            purpose = purposeDetails
+          )
+        ),
+        Purpose(
+          purposeId = purpose2Agreement1Seed.purposeId,
+          states = ClientStatesChain(
+            id = statesChainId4,
+            eservice = eServiceDetails,
+            agreement = expectedAgreement1State,
+            purpose = purposeDetails
+          )
+        )
+      )
+
+      val response =
+        request(
+          uri = s"$serviceURL/bulk/agreements/$agreementId1/state",
+          method = HttpMethods.POST,
+          data = Some(updatePayload.toJson.prettyPrint)
+        )
+
+      response.status shouldBe StatusCodes.NoContent
+
+      retrieveClient(clientId1).purposes should contain theSameElementsAs expectedClient1Purposes
+      retrieveClient(clientId2).purposes should contain theSameElementsAs expectedClient2Purposes
+    }
+
+  }
+
+  "Purpose state update" should {
+
+    "succeed" in {
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
+
+      val purposeId1 = UUID.randomUUID()
+      val purposeId2 = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
+
+      val statesChainId1 = UUID.randomUUID()
+      val statesChainId2 = UUID.randomUUID()
+      val statesChainId3 = UUID.randomUUID()
+      val statesChainId4 = UUID.randomUUID()
+
+      // Seed
+      val eServiceSeed = ClientEServiceDetailsSeed(
+        eserviceId = eServiceId,
+        state = ClientComponentState.ACTIVE,
+        audience = Seq("some.audience"),
+        voucherLifespan = 10
+      )
+      val purposeDetailsSeed1 = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+      val purposeDetailsSeed2 = ClientPurposeDetailsSeed(purposeId = purposeId2, state = ClientComponentState.ACTIVE)
+
+      val agreementSeed = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.ACTIVE)
+
+      val purposeSeed1 = PurposeSeed(
+        purposeId = purposeId1,
+        states =
+          ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed1)
+      )
+      val purposeSeed2 = PurposeSeed(
+        purposeId = purposeId2,
+        states =
+          ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed2)
+      )
+      // Seed
+
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
+
+      addPurposeState(clientId1, purposeSeed1, statesChainId1)
+      addPurposeState(clientId1, purposeSeed2, statesChainId2)
+      addPurposeState(clientId2, purposeSeed1, statesChainId3)
+      addPurposeState(clientId2, purposeSeed2, statesChainId4)
+
+      val updatePayload = ClientPurposeDetailsUpdate(state = ClientComponentState.INACTIVE)
+
+      val eServiceDetails  = PersistentClientEServiceDetails.fromSeed(eServiceSeed).toApi
+      val agreementDetails = PersistentClientAgreementDetails.fromSeed(agreementSeed).toApi
+
+      val expectedPurpose1State = ClientPurposeDetails(purposeId = purposeId1, state = updatePayload.state)
+
+      val expectedClient1Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId1,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = expectedPurpose1State
+          )
+        ),
+        Purpose(
+          purposeId = purposeId2,
+          states = ClientStatesChain(
+            id = statesChainId2,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = PersistentClientPurposeDetails.fromSeed(purposeSeed2.states.purpose).toApi
+          )
+        )
+      )
+
+      val expectedClient2Purposes: Seq[Purpose] = Seq(
+        Purpose(
+          purposeId = purposeId1,
+          states = ClientStatesChain(
+            id = statesChainId3,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = expectedPurpose1State
+          )
+        ),
+        Purpose(
+          purposeId = purposeId2,
+          states = ClientStatesChain(
+            id = statesChainId4,
+            eservice = eServiceDetails,
+            agreement = agreementDetails,
+            purpose = PersistentClientPurposeDetails.fromSeed(purposeSeed2.states.purpose).toApi
+          )
+        )
+      )
+
+      val response =
+        request(
+          uri = s"$serviceURL/bulk/purposes/$purposeId1/state",
+          method = HttpMethods.POST,
+          data = Some(updatePayload.toJson.prettyPrint)
+        )
+
+      response.status shouldBe StatusCodes.NoContent
+
+      retrieveClient(clientId1).purposes should contain theSameElementsAs expectedClient1Purposes
+      retrieveClient(clientId2).purposes should contain theSameElementsAs expectedClient2Purposes
+    }
+
+  }
 }

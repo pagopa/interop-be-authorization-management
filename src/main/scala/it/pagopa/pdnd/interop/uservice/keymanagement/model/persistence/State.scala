@@ -75,20 +75,39 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     state: PersistentClientComponentState,
     audience: Seq[String],
     voucherLifespan: Int
+  ): State =
+    updateClients(
+      _.eService.eServiceId.toString == eServiceId,
+      states =>
+        states.copy(eService =
+          states.eService.copy(state = state, audience = audience, voucherLifespan = voucherLifespan)
+        )
+    )
+
+  def updateClientsByAgreement(agreementId: String, state: PersistentClientComponentState): State =
+    updateClients(
+      _.agreement.agreementId.toString == agreementId,
+      states => states.copy(agreement = states.agreement.copy(state = state))
+    )
+
+  def updateClientsByPurpose(purposeId: String, state: PersistentClientComponentState): State =
+    updateClients(
+      _.purpose.purposeId.toString == purposeId,
+      states => states.copy(purpose = states.purpose.copy(state = state))
+    )
+
+  private def updateClients(
+    idComparison: PersistentClientStatesChain => Boolean,
+    updateStates: PersistentClientStatesChain => PersistentClientStatesChain
   ): State = {
     val toUpdateClients = clients.filter { case (_, client) =>
-      client.purposes.exists { case (_, statesChain) => statesChain.eService.eServiceId.toString == eServiceId }
+      client.purposes.exists { case (_, statesChain) => idComparison(statesChain) }
     }
-
-    def updatePurpose(statesChain: PersistentClientStatesChain): PersistentClientStatesChain =
-      statesChain.copy(eService =
-        statesChain.eService.copy(state = state, audience = audience, voucherLifespan = voucherLifespan)
-      )
 
     def updateClient(client: PersistentClient): PersistentClient =
       client.copy(purposes = client.purposes.map {
-        case (purposeId, statesChain) if statesChain.eService.eServiceId.toString == eServiceId =>
-          purposeId -> updatePurpose(statesChain)
+        case (purposeId, statesChain) if idComparison(statesChain) =>
+          purposeId -> updateStates(statesChain)
         case (purposeId, statesChain) =>
           purposeId -> statesChain
       })

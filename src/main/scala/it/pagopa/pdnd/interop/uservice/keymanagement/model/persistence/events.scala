@@ -29,3 +29,6 @@ final case class EServiceStateUpdated(
   audience: Seq[String],
   voucherLifespan: Int
 ) extends Event
+
+final case class AgreementStateUpdated(agreementId: String, state: PersistentClientComponentState) extends Event
+final case class PurposeStateUpdated(purposeId: String, state: PersistentClientComponentState)     extends Event
