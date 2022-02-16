@@ -21,9 +21,8 @@ lazy val generateCode = taskKey[Unit]("A task for generating the code starting f
 val packagePrefix = settingKey[String]("The package prefix derived from the uservice name")
 
 packagePrefix := name.value
-  .replaceFirst("pdnd-", "pdnd.")
   .replaceFirst("interop-", "interop.")
-  .replaceFirst("uservice-", "uservice.")
+  .replaceFirst("be-", "be.")
   .replaceAll("-", "")
 
 generateCode := {
@@ -70,9 +69,9 @@ lazy val generated = project
 lazy val client = project
   .in(file("client"))
   .settings(
-    name := "pdnd-interop-uservice-key-management-client",
+    name := "interop-be-authorization-management-client",
     scalacOptions := Seq(),
-    scalafmtOnCompile:= true,
+    scalafmtOnCompile := true,
     libraryDependencies := Dependencies.Jars.client.map(m =>
       if (scalaVersion.value.startsWith("3.0"))
         m.withDottyCompat(scalaVersion.value)
@@ -94,9 +93,9 @@ lazy val client = project
 
 lazy val root = (project in file("."))
   .settings(
-    name := "pdnd-interop-uservice-key-management",
+    name := "interop-be-authorization-management",
     Test / parallelExecution := false,
-    scalafmtOnCompile:= true,
+    scalafmtOnCompile := true,
     dockerBuildOptions ++= Seq("--network=host"),
     dockerRepository := Some(System.getenv("DOCKER_REPO")),
     dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
@@ -108,7 +107,7 @@ lazy val root = (project in file("."))
       else
         s"v$buildVersion"
     }".toLowerCase,
-    Docker / packageName := s"services/${name.value}",
+    Docker / packageName := s"${name.value}",
     Docker / dockerExposedPorts := Seq(8080),
     Docker / maintainer := "https://pagopa.it",
     dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
