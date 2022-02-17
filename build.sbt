@@ -22,7 +22,7 @@ val packagePrefix = settingKey[String]("The package prefix derived from the user
 
 packagePrefix := name.value
   .replaceFirst("interop-", "interop.")
-  .replaceFirst("be-", "be.")
+  .replaceFirst("be-", "")
   .replaceAll("-", "")
 
 generateCode := {
