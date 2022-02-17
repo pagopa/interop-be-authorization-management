@@ -111,6 +111,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
       s"""{
          |  "consumerId": "${consumerUuid.toString}",
          |  "name": "$name",
+         |  "kind": "CONSUMER",
          |  "description": "$description"
          |}""".stripMargin
 

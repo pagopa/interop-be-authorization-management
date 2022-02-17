@@ -14,6 +14,7 @@ message PersistentClientV1 {
   optional string description = 5;
   repeated string relationships = 6;
   repeated ClientPurposesEntryV1 purposes = 7;
+  required ClientKindV1 kind = 8;
 }
 
 message ClientPurposesEntryV1 {
@@ -48,4 +49,9 @@ message ClientPurposeDetailsV1 {
 enum ClientComponentStateV1 {
   ACTIVE = 1;
   INACTIVE = 2;
+}
+
+enum ClientKindV1 {
+  CONSUMER = 1;
+  API = 2;
 }

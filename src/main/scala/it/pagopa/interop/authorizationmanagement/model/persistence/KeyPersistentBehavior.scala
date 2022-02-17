@@ -9,7 +9,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.persistence.client.{PersistentClient, PersistentClientKind}
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey.{
   toAPI,
@@ -131,11 +131,17 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId.toString))
         }
 
-      case ListClients(from, to, relationshipId, consumerId, replyTo) =>
-        val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
+      case ListClients(from, to, relationshipId, consumerId, kind, replyTo) =>
+        val clientsByKind: Seq[PersistentClient] = kind
+          .map(PersistentClientKind.fromApi)
+          .fold(state.clients.values)(k => state.clients.values.filter(_.kind == k))
+          .toSeq
+
+        val filteredClients: Seq[PersistentClient] = clientsByKind.filter { client =>
           relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
           consumerId.forall(_ == client.consumerId.toString)
         }
+
         val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)
 
         replyTo ! StatusReply.Success(paginatedClients)

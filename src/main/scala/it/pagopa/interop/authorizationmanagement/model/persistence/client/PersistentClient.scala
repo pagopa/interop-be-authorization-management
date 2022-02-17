@@ -12,7 +12,8 @@ final case class PersistentClient(
   name: String,
   purposes: PersistentClientPurposes,
   description: Option[String],
-  relationships: Set[UUID]
+  relationships: Set[UUID],
+  kind: PersistentClientKind
 ) extends Persistent {
 
   def toApi: Either[Throwable, Client] = PersistentClientPurposes.toApi(purposes).map { purposes =>
@@ -22,7 +23,8 @@ final case class PersistentClient(
       name = name,
       purposes = purposes,
       description = description,
-      relationships = relationships
+      relationships = relationships,
+      kind = kind.toApi
     )
   }
 
@@ -37,7 +39,8 @@ object PersistentClient {
       name = seed.name,
       purposes = Map.empty,
       description = seed.description,
-      relationships = Set.empty[UUID]
+      relationships = Set.empty[UUID],
+      kind = PersistentClientKind.fromApi(seed.kind)
     )
 
 }

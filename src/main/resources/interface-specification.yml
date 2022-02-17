@@ -119,6 +119,11 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: kind
+          in: query
+          description: Type of clients to list
+          schema:
+            $ref: '#/components/schemas/ClientKind'
   /clients/{clientId}:
     get:
       description: Retrieves a Client
@@ -700,9 +705,12 @@ components:
           type: string
         description:
           type: string
+        kind:
+          $ref: '#/components/schemas/ClientKind'
       required:
         - consumerId
         - name
+        - kind
     Client:
       description: Models a Client
       type: object
@@ -727,12 +735,15 @@ components:
             type: string
             format: uuid
           uniqueItems: true
+        kind:
+          $ref: '#/components/schemas/ClientKind'
       required:
         - id
         - consumerId
         - name
         - purposes
         - relationships
+        - kind
     Clients:
       type: array
       items:
@@ -924,6 +935,12 @@ components:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - state
+    ClientKind:
+      type: string
+      description: kind of client
+      enum:
+        - CONSUMER
+        - API
     Problem:
       properties:
         type:

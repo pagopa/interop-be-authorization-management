@@ -50,13 +50,15 @@ class ClientManagementSpec
           name = name,
           purposes = Seq.empty,
           description = description,
-          relationships = Set.empty
+          relationships = Set.empty,
+          kind = ClientKind.CONSUMER
         )
 
       val data =
         s"""{
            |  "consumerId": "${consumerUuid.toString}",
            |  "name": "$name",
+           |  "kind": "CONSUMER",
            |  "description": "${description.get}"
            |}""".stripMargin
 
@@ -147,6 +149,7 @@ class ClientManagementSpec
           consumerId = consumerId,
           name = s"New Client ${clientId.toString}",
           description = Some(s"New Client ${clientId.toString} description"),
+          kind = ClientKind.CONSUMER,
           purposes = Seq(
             Purpose(
               purposeId = purposeId1,

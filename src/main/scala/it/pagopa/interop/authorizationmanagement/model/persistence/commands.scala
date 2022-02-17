@@ -8,7 +8,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
   PersistentClientComponentState,
   PersistentClientPurpose
 }
-import it.pagopa.interop.authorizationmanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
+import it.pagopa.interop.authorizationmanagement.model.{ClientKey, ClientKind, EncodedClientKey, KeysResponse}
 
 import java.util.UUID
 
@@ -35,6 +35,7 @@ final case class ListClients(
   until: Int,
   relationshipId: Option[String],
   consumerId: Option[String],
+  kind: Option[ClientKind],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command
 final case class AddRelationship(

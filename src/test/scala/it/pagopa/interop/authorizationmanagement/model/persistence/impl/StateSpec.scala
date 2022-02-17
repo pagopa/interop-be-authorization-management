@@ -1,7 +1,7 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import it.pagopa.interop.authorizationmanagement.model.persistence.State
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.persistence.client.{Consumer, PersistentClient}
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.{PersistentKey, Sig}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -112,7 +112,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           name = "client 1",
           purposes = Map.empty,
           description = Some("client 1 desc"),
-          relationships = Set.empty
+          relationships = Set.empty,
+          kind = Consumer
         )
       val client2 =
         PersistentClient(
@@ -121,7 +122,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           name = "client 2",
           purposes = Map.empty,
           description = Some("client 2 desc"),
-          relationships = Set.empty
+          relationships = Set.empty,
+          kind = Consumer
         )
       val client3 =
         PersistentClient(
@@ -130,7 +132,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           name = "client 3",
           purposes = Map.empty,
           description = Some("client 3 desc"),
-          relationships = Set.empty
+          relationships = Set.empty,
+          kind = Consumer
         )
 
       val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys, clientId3 -> client3Keys)
