@@ -20,6 +20,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "1" -> PersistentKey(
           kid = "1",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
@@ -28,6 +29,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
@@ -36,6 +38,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "3" -> PersistentKey(
           kid = "3",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
@@ -44,6 +47,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "4" -> PersistentKey(
           kid = "4",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
@@ -79,6 +83,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid1" -> PersistentKey(
           kid = "kid1",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
@@ -89,6 +94,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid2" -> PersistentKey(
           kid = "kid2",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
@@ -99,6 +105,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid3" -> PersistentKey(
           kid = "kid3",
           relationshipId = relationshipId,
+          name = "Random Key",
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",

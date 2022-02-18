@@ -595,11 +595,15 @@ components:
         alg:
           type: string
           description: 'The algorithm type of the key.'
+        name:
+          type: string
+          description: 'Descriptive name of this key.'
       required:
         - relationshipId
         - key
         - use
         - alg
+        - name
     ClientKey:
       type: object
       properties:
@@ -608,10 +612,16 @@ components:
         relationshipId:
           type: string
           format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
       required:
         - key
-        - status
         - relationshipId
+        - name
+        - createdAt
     EncodedClientKey:
       type: object
       properties:

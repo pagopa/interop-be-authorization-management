@@ -198,6 +198,7 @@ package object v1 {
     Right(
       PersistentKeyV1(
         kid = key.kid,
+        name = key.name,
         relationshipId = key.relationshipId.toString,
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
@@ -339,6 +340,7 @@ package object v1 {
       use            <- persistentKeyUseFromProtobuf(key.use)
     } yield PersistentKey(
       kid = key.kid,
+      name = key.name,
       relationshipId = relationshipId,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
