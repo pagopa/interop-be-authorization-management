@@ -133,7 +133,7 @@ paths:
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
       responses:
         '200':
           description: Client retrieved
@@ -448,14 +448,14 @@ paths:
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
         - name: purposeId
           in: path
           description: The Purpose id
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
       responses:
         '200':
           description: Client retrieved
@@ -489,7 +489,7 @@ paths:
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
       responses:
         '204':
           description: Purpose added
