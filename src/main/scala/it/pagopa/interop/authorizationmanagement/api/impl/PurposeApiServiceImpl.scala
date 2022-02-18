@@ -96,7 +96,7 @@ final case class PurposeApiServiceImpl(
       case Success(statusReply) =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            logger.info("Client {} not found on Purpose remove", clientId, err)
+            logger.info("Client {} not found on Purpose {} remove", clientId, purposeId, err)
             val problem = problemOf(StatusCodes.NotFound, err)
             addClientPurpose404(problem)
           case err =>
