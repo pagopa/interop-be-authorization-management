@@ -137,6 +137,14 @@ package object v1 {
       )
     )
 
+  implicit def clientPurposeRemovedV1PersistEventDeserializer
+    : PersistEventDeserializer[ClientPurposeRemovedV1, ClientPurposeRemoved] =
+    event => Right(ClientPurposeRemoved(clientId = event.clientId, purposeId = event.purposeId))
+
+  implicit def clientPurposeRemovedV1PersistEventSerializer
+    : PersistEventSerializer[ClientPurposeRemoved, ClientPurposeRemovedV1] = event =>
+    Right(ClientPurposeRemovedV1(clientId = event.clientId, purposeId = event.purposeId))
+
   implicit def eServiceStateUpdatedV1PersistEventDeserializer
     : PersistEventDeserializer[EServiceStateUpdatedV1, EServiceStateUpdated] =
     event =>

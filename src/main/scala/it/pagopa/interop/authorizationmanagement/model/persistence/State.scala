@@ -70,6 +70,16 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     }
   }
 
+  def removeClientPurpose(clientId: String, purposeId: String): State = {
+    clients.get(clientId) match {
+      case Some(client) =>
+        val purposes      = client.purposes - purposeId
+        val updatedClient = client.copy(purposes = purposes)
+        copy(clients = clients + (clientId -> updatedClient))
+      case None => this
+    }
+  }
+
   def updateClientsByEService(
     eServiceId: String,
     state: PersistentClientComponentState,
