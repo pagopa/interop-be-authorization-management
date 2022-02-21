@@ -128,7 +128,7 @@ object KeyPersistentBehavior {
           case Some(client) =>
             replyTo ! StatusReply.Success(client)
             Effect.none[Event, State]
-          case None => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId.toString))
+          case None => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId))
         }
 
       case ListClients(from, to, relationshipId, consumerId, replyTo) =>
@@ -206,6 +206,18 @@ object KeyPersistentBehavior {
               .persist(ClientPurposeAdded(clientId, purpose.id.toString, purpose.statesChain))
               .thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
         )
+
+      case RemoveClientPurpose(clientId, purposeId, replyTo) =>
+        state.clients
+          .get(clientId)
+          .toRight(ClientNotFoundError(clientId))
+          .fold(
+            commandError(replyTo, _),
+            _ =>
+              Effect
+                .persist(ClientPurposeRemoved(clientId, purposeId))
+                .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+          )
 
       case UpdateEServiceState(eServiceId, state, audience, voucherLifespan, replyTo) =>
         Effect
@@ -289,6 +301,8 @@ object KeyPersistentBehavior {
       case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
       case ClientPurposeAdded(clientId, purposeId, statesChain) =>
         state.addClientPurpose(clientId, purposeId, statesChain)
+      case ClientPurposeRemoved(clientId, purposeId) =>
+        state.removeClientPurpose(clientId, purposeId)
       case EServiceStateUpdated(eServiceId, componentState, audience, voucherLifespan) =>
         state.updateClientsByEService(eServiceId, componentState, audience, voucherLifespan)
       case AgreementStateUpdated(agreementId, componentState) =>

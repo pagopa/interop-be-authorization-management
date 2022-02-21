@@ -53,6 +53,9 @@ final case class AddClientPurpose(
   replyTo: ActorRef[StatusReply[PersistentClientPurpose]]
 ) extends Command
 
+final case class RemoveClientPurpose(clientId: String, purposeId: String, replyTo: ActorRef[StatusReply[Unit]])
+    extends Command
+
 final case class UpdateEServiceState(
   eServiceId: String,
   state: PersistentClientComponentState,

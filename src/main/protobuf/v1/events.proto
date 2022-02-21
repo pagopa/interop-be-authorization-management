@@ -28,14 +28,6 @@ message ClientDeletedV1 {
   required string clientId = 1;
 }
 
-message ClientActivatedV1 {
-  required string clientId = 1;
-}
-
-message ClientSuspendedV1 {
-  required string clientId = 1;
-}
-
 message RelationshipAddedV1 {
   required PersistentClientV1 client = 1;
   required string relationshipId = 2;
@@ -50,6 +42,11 @@ message ClientPurposeAddedV1 {
   required string clientId = 1;
   required string purposeId = 2;
   required ClientStatesChainV1 statesChain = 3;
+}
+
+message ClientPurposeRemovedV1 {
+  required string clientId = 1;
+  required string purposeId = 2;
 }
 
 message EServiceStateUpdatedV1 {

@@ -79,6 +79,40 @@ final case class PurposeApiServiceImpl(
     }
   }
 
+  override def removeClientPurpose(clientId: String, purposeId: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.info("Removing Purpose {} from Client {}", purposeId, clientId)
+
+    val commander: EntityRef[Command] =
+      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+
+    val result: Future[StatusReply[Unit]] = commander.ask(ref => RemoveClientPurpose(clientId, purposeId, ref))
+
+    onComplete(result) {
+      case Success(statusReply) if statusReply.isSuccess =>
+        removeClientPurpose204
+      case Success(statusReply) =>
+        statusReply.getError match {
+          case err: ClientNotFoundError =>
+            logger.info("Client {} not found on Purpose {} remove", clientId, purposeId, err)
+            val problem = problemOf(StatusCodes.NotFound, err)
+            addClientPurpose404(problem)
+          case err =>
+            logger.error("Error removing Purpose {} from Client {}", purposeId, clientId, err)
+            val problem =
+              problemOf(StatusCodes.InternalServerError, ClientPurposeRemovalError(clientId, purposeId))
+            complete(problem.status, problem)
+        }
+      case Failure(ex) =>
+        logger.error("Error removing Purpose {} from Client {}", purposeId, clientId, ex)
+        val problem =
+          problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, purposeId))
+        complete(problem.status, problem)
+    }
+  }
+
   override def updateEServiceState(eServiceId: String, payload: ClientEServiceDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]

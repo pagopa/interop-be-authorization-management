@@ -91,4 +91,7 @@ object KeyManagementErrors {
 
   final case class GenericError(error: String) extends ComponentError("0030", s"Something went wrong: $error")
 
+  final case class ClientPurposeRemovalError(clientId: String, purposeId: String)
+      extends ComponentError("0031", s"Error removing Purpose $purposeId from Client $clientId")
+
 }

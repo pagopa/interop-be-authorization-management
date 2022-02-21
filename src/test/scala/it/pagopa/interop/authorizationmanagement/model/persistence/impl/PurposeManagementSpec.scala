@@ -127,6 +127,56 @@ class PurposeManagementSpec
 
   }
 
+  "Purpose removal" should {
+
+    "succeed" in {
+      val clientId    = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val purposeId   = UUID.randomUUID()
+      val eServiceId  = UUID.randomUUID()
+      val agreementId = UUID.randomUUID()
+
+      val statesChainId = UUID.randomUUID()
+      val payload = PurposeSeed(
+        purposeId = purposeId,
+        states = ClientStatesChainSeed(
+          eservice = ClientEServiceDetailsSeed(
+            eserviceId = eServiceId,
+            state = ClientComponentState.ACTIVE,
+            audience = Seq("some.audience"),
+            voucherLifespan = 10
+          ),
+          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
+        )
+      )
+
+      createClient(clientId, consumerId)
+      addPurposeState(clientId, payload, statesChainId)
+
+      val response =
+        request(uri = s"$serviceURL/clients/$clientId/purposes/$purposeId", method = HttpMethods.DELETE)
+
+      response.status shouldBe StatusCodes.NoContent
+
+      retrieveClient(clientId).purposes shouldBe empty
+    }
+
+    "fail if client does not exist" in {
+      val clientId  = UUID.randomUUID()
+      val purposeId = UUID.randomUUID()
+
+      val response =
+        request(uri = s"$serviceURL/clients/$clientId/purposes/$purposeId", method = HttpMethods.DELETE)
+
+      response.status shouldBe StatusCodes.NotFound
+      val problem = Unmarshal(response).to[Problem].futureValue
+
+      problem.errors.head.code shouldBe "006-0002"
+    }
+
+  }
+
   "EService state update" should {
 
     "succeed" in {

@@ -133,7 +133,7 @@ paths:
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
       responses:
         '200':
           description: Client retrieved
@@ -448,14 +448,14 @@ paths:
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
         - name: purposeId
           in: path
           description: The Purpose id
           required: true
           schema:
             type: string
-            format: string
+            format: uuid
       responses:
         '200':
           description: Client retrieved
@@ -463,6 +463,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+        '404':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    delete:
+      tags:
+        - purpose
+      summary: Removed a purpose from the given client
+      description: 'Removed a purpose from the given client'
+      operationId: removeClientPurpose
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: purposeId
+          in: path
+          description: The Purpose id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Purpose added
         '404':
           description: Client not found
           content:
