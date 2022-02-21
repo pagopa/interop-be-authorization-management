@@ -116,13 +116,13 @@ object Main extends App {
         val keyApi = new KeyApi(
           KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
           keyApiMarshaller,
-          jwtValidator.OAuth2JWTValidatorAsContexts
+          SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
         )
 
         val clientApi = new ClientApi(
           ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
           ClientApiMarshallerImpl,
-          jwtValidator.OAuth2JWTValidatorAsContexts
+          SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
         )
 
         val purposeApi = new PurposeApi(

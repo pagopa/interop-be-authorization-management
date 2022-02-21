@@ -16,7 +16,7 @@ import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.persistence.client.{PersistentClient, PersistentClientKind}
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
@@ -143,7 +143,8 @@ final case class ClientApiServiceImpl(
         logger.error("Error listing clients: no required parameters have been provided")
         listClients400(problemOf(StatusCodes.BadRequest, ListClientErrors))
       case (relId, conId) =>
-        val kindEnum: Option[ClientKind] = kind.flatMap(k => ClientKind.fromValue(k).toOption)
+        val kindEnum: Option[PersistentClientKind] =
+          kind.flatMap(ClientKind.fromValue(_).toOption).map(PersistentClientKind.fromApi)
         val commanders: Seq[EntityRef[Command]] =
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
@@ -165,7 +166,7 @@ final case class ClientApiServiceImpl(
     sliceSize: Int,
     relationshipId: Option[String],
     consumerId: Option[String],
-    kind: Option[ClientKind]
+    kind: Option[PersistentClientKind]
   ): LazyList[PersistentClient] = {
     @tailrec
     def readSlice(

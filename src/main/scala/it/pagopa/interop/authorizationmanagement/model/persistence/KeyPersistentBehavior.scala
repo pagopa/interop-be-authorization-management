@@ -9,7 +9,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{PersistentClient, PersistentClientKind}
+import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey.{
   toAPI,
@@ -133,7 +133,6 @@ object KeyPersistentBehavior {
 
       case ListClients(from, to, relationshipId, consumerId, kind, replyTo) =>
         val clientsByKind: Seq[PersistentClient] = kind
-          .map(PersistentClientKind.fromApi)
           .fold(state.clients.values)(k => state.clients.values.filter(_.kind == k))
           .toSeq
 
