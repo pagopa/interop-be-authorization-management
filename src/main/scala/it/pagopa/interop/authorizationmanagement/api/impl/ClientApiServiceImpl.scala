@@ -126,13 +126,14 @@ final case class ClientApiServiceImpl(
     limit: Int,
     relationshipId: Option[String],
     consumerId: Option[String],
-    kind: Option[String]
+    kind: Option[String],
+    purposeId: Option[String]
   )(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info("Listing clients for relationship {} and consumer {} and kind - {}", relationshipId, consumerId, kind)
+    logger.info("Listing clients for relationship {} and consumer {}, purpose {} and kind - {}", relationshipId, consumerId, purposeId, kind)
 
     val sliceSize = 1000
 
@@ -150,7 +151,7 @@ final case class ClientApiServiceImpl(
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
         val persistentClient: Seq[PersistentClient] =
-          commanders.flatMap(ref => slices(ref, sliceSize, relId, conId, kindEnum))
+          commanders.flatMap(ref => slices(ref, sliceSize, relId, conId, purposeId, kindEnum))
         val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
         val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
         paginatedClients.fold(
@@ -166,6 +167,7 @@ final case class ClientApiServiceImpl(
     sliceSize: Int,
     relationshipId: Option[String],
     consumerId: Option[String],
+    purposeId: Option[String],
     kind: Option[PersistentClientKind]
   ): LazyList[PersistentClient] = {
     @tailrec
@@ -177,7 +179,7 @@ final case class ClientApiServiceImpl(
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
         Await
-          .result(commander.ask(ref => ListClients(from, to, relationshipId, consumerId, kind, ref)), Duration.Inf)
+          .result(commander.ask(ref => ListClients(from, to, relationshipId, consumerId, purposeId, kind, ref)), Duration.Inf)
           .getValue
       if (slice.isEmpty)
         lazyList
