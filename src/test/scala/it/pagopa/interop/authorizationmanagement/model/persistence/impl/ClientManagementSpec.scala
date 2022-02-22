@@ -177,7 +177,7 @@ class ClientManagementSpec
       client shouldBe expected
     }
 
-    "be fail if it is not associated with a purposeId" in {
+    "fail if it is not associated with a purposeId" in {
       val clientId    = UUID.randomUUID()
       val consumerId  = UUID.randomUUID()
       val purposeId   = UUID.randomUUID()
@@ -295,6 +295,48 @@ class ClientManagementSpec
 
       retrievedClients.size shouldBe 2
       retrievedClients should contain only (client1, client2)
+
+    }
+
+    "correctly filter by purpose id" in {
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val clientId3  = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val purposeId1 = UUID.randomUUID()
+      val purposeId2 = UUID.randomUUID()
+
+      createClient(clientId1, consumerId)
+      createClient(clientId2, consumerId)
+      createClient(clientId3, consumerId)
+
+      val purposeSeed1 = PurposeSeed(
+        purposeId = purposeId1,
+        states = ClientStatesChainSeed(
+          eservice = ClientEServiceDetailsSeed(
+            eserviceId = UUID.randomUUID(),
+            state = ACTIVE,
+            audience = Seq("some.audience"),
+            voucherLifespan = 10
+          ),
+          agreement = ClientAgreementDetailsSeed(agreementId = UUID.randomUUID(), state = INACTIVE),
+          purpose = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+        )
+      )
+      val purposeSeed2 = purposeSeed1.copy(purposeId = purposeId2)
+
+      addPurposeState(clientId1, purposeSeed1, UUID.randomUUID())
+      addPurposeState(clientId2, purposeSeed1, UUID.randomUUID())
+      addPurposeState(clientId3, purposeSeed2, UUID.randomUUID())
+
+      val response =
+        request(uri = s"$serviceURL/clients?purposeId=$purposeId1&consumerId=$consumerId", method = HttpMethods.GET)
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients.size shouldBe 2
+      retrievedClients.map(_.id) should contain theSameElementsAs Seq(clientId1, clientId2)
 
     }
 

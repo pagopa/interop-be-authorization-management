@@ -36,6 +36,7 @@ final case class ListClients(
   until: Int,
   relationshipId: Option[String],
   consumerId: Option[String],
+  purposeId: Option[String],
   kind: Option[PersistentClientKind],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command

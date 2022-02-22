@@ -119,6 +119,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: purposeId
+          in: query
+          description: Purpose ID that MUST be related to the Client
+          schema:
+            type: string
+            format: uuid
         - name: kind
           in: query
           description: Type of clients to list
