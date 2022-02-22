@@ -14,10 +14,10 @@ import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.authorizationmanagement.api.ClientApiService
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
+import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.persistence.client.{PersistentClient, PersistentClientKind}
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.authorizationmanagement.model.{Client, ClientSeed, PartyRelationshipSeed, Problem}
 import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
@@ -121,12 +121,18 @@ final case class ClientApiServiceImpl(
   /** Code: 200, Message: Client list retrieved, DataType: Seq[Client]
     * Code: 400, Message: Missing Required Information, DataType: Problem
     */
-  override def listClients(offset: Int, limit: Int, relationshipId: Option[String], consumerId: Option[String])(implicit
+  override def listClients(
+    offset: Int,
+    limit: Int,
+    relationshipId: Option[String],
+    consumerId: Option[String],
+    kind: Option[String]
+  )(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info("Listing clients for relationship {} and consumer {}", relationshipId, consumerId)
+    logger.info("Listing clients for relationship {} and consumer {} and kind - {}", relationshipId, consumerId, kind)
 
     val sliceSize = 1000
 
@@ -137,11 +143,14 @@ final case class ClientApiServiceImpl(
         logger.error("Error listing clients: no required parameters have been provided")
         listClients400(problemOf(StatusCodes.BadRequest, ListClientErrors))
       case (relId, conId) =>
+        val kindEnum: Option[PersistentClientKind] =
+          kind.flatMap(ClientKind.fromValue(_).toOption).map(PersistentClientKind.fromApi)
         val commanders: Seq[EntityRef[Command]] =
           (0 until settings.numberOfShards).map(shard =>
             sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
           )
-        val persistentClient: Seq[PersistentClient] = commanders.flatMap(ref => slices(ref, sliceSize, relId, conId))
+        val persistentClient: Seq[PersistentClient] =
+          commanders.flatMap(ref => slices(ref, sliceSize, relId, conId, kindEnum))
         val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
         val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
         paginatedClients.fold(
@@ -156,7 +165,8 @@ final case class ClientApiServiceImpl(
     commander: EntityRef[Command],
     sliceSize: Int,
     relationshipId: Option[String],
-    consumerId: Option[String]
+    consumerId: Option[String],
+    kind: Option[PersistentClientKind]
   ): LazyList[PersistentClient] = {
     @tailrec
     def readSlice(
@@ -167,7 +177,7 @@ final case class ClientApiServiceImpl(
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
         Await
-          .result(commander.ask(ref => ListClients(from, to, relationshipId, consumerId, ref)), Duration.Inf)
+          .result(commander.ask(ref => ListClients(from, to, relationshipId, consumerId, kind, ref)), Duration.Inf)
           .getValue
       if (slice.isEmpty)
         lazyList

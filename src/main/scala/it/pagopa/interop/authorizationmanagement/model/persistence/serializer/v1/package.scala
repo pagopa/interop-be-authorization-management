@@ -206,6 +206,7 @@ package object v1 {
     Right(
       PersistentKeyV1(
         kid = key.kid,
+        name = key.name,
         relationshipId = key.relationshipId.toString,
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
@@ -222,7 +223,8 @@ package object v1 {
         name = client.name,
         purposes = purposeToProtobuf(client.purposes),
         description = client.description,
-        relationships = client.relationships.map(_.toString).toSeq
+        relationships = client.relationships.map(_.toString).toSeq,
+        kind = clientKindToProtobufV1(client.kind)
       )
     )
 
@@ -276,13 +278,15 @@ package object v1 {
       consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
       purposes      <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
+      kind          <- clientKindFromProtobufV1(client.kind)
     } yield PersistentClient(
       id = clientId,
       consumerId = consumerId,
       name = client.name,
       purposes = purposes,
       description = client.description,
-      relationships = relationships.toSet
+      relationships = relationships.toSet,
+      kind = kind
     )
 
   private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[PersistentClientPurposes] =
@@ -344,6 +348,7 @@ package object v1 {
       use            <- persistentKeyUseFromProtobuf(key.use)
     } yield PersistentKey(
       kid = key.kid,
+      name = key.name,
       relationshipId = relationshipId,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
@@ -367,5 +372,19 @@ package object v1 {
     case KeyUseV1.ENC             => Right(Enc)
     case KeyUseV1.Unrecognized(v) => Left(new RuntimeException(s"Unable to deserialize Key Use value $v"))
   }
+
+  def clientKindFromProtobufV1(protobufClientKind: ClientKindV1): Either[Throwable, PersistentClientKind] =
+    protobufClientKind match {
+      case ClientKindV1.CONSUMER => Right(Consumer)
+      case ClientKindV1.API      => Right(Api)
+      case ClientKindV1.Unrecognized(value) =>
+        Left(new RuntimeException(s"Unable to deserialize client kind value $value"))
+    }
+
+  def clientKindToProtobufV1(clientKind: PersistentClientKind): ClientKindV1 =
+    clientKind match {
+      case Consumer => ClientKindV1.CONSUMER
+      case Api      => ClientKindV1.API
+    }
 
 }

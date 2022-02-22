@@ -131,11 +131,16 @@ object KeyPersistentBehavior {
           case None => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId))
         }
 
-      case ListClients(from, to, relationshipId, consumerId, replyTo) =>
-        val filteredClients: Seq[PersistentClient] = state.clients.values.toSeq.filter { client =>
+      case ListClients(from, to, relationshipId, consumerId, kind, replyTo) =>
+        val clientsByKind: Seq[PersistentClient] = kind
+          .fold(state.clients.values)(k => state.clients.values.filter(_.kind == k))
+          .toSeq
+
+        val filteredClients: Seq[PersistentClient] = clientsByKind.filter { client =>
           relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
           consumerId.forall(_ == client.consumerId.toString)
         }
+
         val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)
 
         replyTo ! StatusReply.Success(paginatedClients)

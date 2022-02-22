@@ -12,6 +12,7 @@ import java.util.UUID
 final case class PersistentKey(
   relationshipId: UUID,
   kid: String,
+  name: String,
   encodedPem: String,
   algorithm: String,
   use: PersistentKeyUse,
@@ -26,6 +27,7 @@ object PersistentKey {
     } yield PersistentKey(
       relationshipId = validKey._1.relationshipId,
       kid = kid,
+      name = validKey._1.name,
       encodedPem = validKey._1.key,
       algorithm = validKey._1.alg,
       use = PersistentKeyUse.fromApi(validKey._1.use),
@@ -43,7 +45,7 @@ object PersistentKey {
             persistentKey.use,
             persistentKey.algorithm
           )
-          .map(ClientKey(_, persistentKey.relationshipId))
+          .map(ClientKey(_, persistentKey.relationshipId, persistentKey.name, persistentKey.creationTimestamp))
       }
     } yield key
 
@@ -58,7 +60,7 @@ object PersistentKey {
         persistentKey.use,
         persistentKey.algorithm
       )
-      .map(ClientKey(_, persistentKey.relationshipId))
+      .map(ClientKey(_, persistentKey.relationshipId, persistentKey.name, persistentKey.creationTimestamp))
   }
 
 }

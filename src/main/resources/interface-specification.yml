@@ -11,7 +11,7 @@ info:
   x-api-id: an x-api-id
   x-summary: an x-summary
 servers:
-  - url: '/authorization-management/{{version}}'
+  - url: '/interop-be-authorization-management/{{version}}'
     description: This contains key management routes
 tags:
   - name: key
@@ -119,6 +119,11 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: kind
+          in: query
+          description: Type of clients to list
+          schema:
+            $ref: '#/components/schemas/ClientKind'
   /clients/{clientId}:
     get:
       description: Retrieves a Client
@@ -620,11 +625,15 @@ components:
         alg:
           type: string
           description: 'The algorithm type of the key.'
+        name:
+          type: string
+          description: 'Descriptive name of this key.'
       required:
         - relationshipId
         - key
         - use
         - alg
+        - name
     ClientKey:
       type: object
       properties:
@@ -633,10 +642,16 @@ components:
         relationshipId:
           type: string
           format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
       required:
         - key
-        - status
         - relationshipId
+        - name
+        - createdAt
     EncodedClientKey:
       type: object
       properties:
@@ -730,9 +745,12 @@ components:
           type: string
         description:
           type: string
+        kind:
+          $ref: '#/components/schemas/ClientKind'
       required:
         - consumerId
         - name
+        - kind
     Client:
       description: Models a Client
       type: object
@@ -757,12 +775,15 @@ components:
             type: string
             format: uuid
           uniqueItems: true
+        kind:
+          $ref: '#/components/schemas/ClientKind'
       required:
         - id
         - consumerId
         - name
         - purposes
         - relationships
+        - kind
     Clients:
       type: array
       items:
@@ -954,6 +975,12 @@ components:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - state
+    ClientKind:
+      type: string
+      description: kind of client
+      enum:
+        - CONSUMER
+        - API
     Problem:
       properties:
         type:

@@ -19,6 +19,7 @@ message PersistentKeyV1 {
   required KeyUseV1 use = 4;
   required string algorithm = 5;
   required string creationTimestamp = 6;
+  required string name = 7;
 }
 
 enum KeyUseV1 {

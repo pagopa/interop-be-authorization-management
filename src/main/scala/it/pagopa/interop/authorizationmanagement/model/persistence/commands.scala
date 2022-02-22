@@ -6,6 +6,7 @@ import akka.pattern.StatusReply
 import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
   PersistentClient,
   PersistentClientComponentState,
+  PersistentClientKind,
   PersistentClientPurpose
 }
 import it.pagopa.interop.authorizationmanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
@@ -35,6 +36,7 @@ final case class ListClients(
   until: Int,
   relationshipId: Option[String],
   consumerId: Option[String],
+  kind: Option[PersistentClientKind],
   replyTo: ActorRef[StatusReply[Seq[PersistentClient]]]
 ) extends Command
 final case class AddRelationship(

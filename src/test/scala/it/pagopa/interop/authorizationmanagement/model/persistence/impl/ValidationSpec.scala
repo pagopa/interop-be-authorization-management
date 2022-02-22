@@ -35,7 +35,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END PUBLIC KEY-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID()
+        relationshipId = UUID.randomUUID(),
+        name = "Random Key"
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -64,7 +65,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID()
+        relationshipId = UUID.randomUUID(),
+        name = "Random Key"
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -94,7 +96,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID()
+        relationshipId = UUID.randomUUID(),
+        name = "Random Key"
       )
 
       val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, Enc, "123")
@@ -118,7 +121,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END RSA PRIVATE KEY-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID()
+        relationshipId = UUID.randomUUID(),
+        name = "Random Key"
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))

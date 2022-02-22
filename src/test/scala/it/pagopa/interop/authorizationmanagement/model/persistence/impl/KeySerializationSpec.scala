@@ -9,7 +9,7 @@ import spray.json.enrichAny
 class KeySerializationSpec extends AnyWordSpecLike with Matchers {
 
   "serialization of Key" should {
-    "contains x5t#s256" in {
+    "contain x5t#s256" in {
       val key = Key(
         kty = "1",
         keyOps = None,
