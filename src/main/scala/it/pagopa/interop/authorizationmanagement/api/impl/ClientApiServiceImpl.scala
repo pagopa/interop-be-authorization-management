@@ -126,14 +126,20 @@ final case class ClientApiServiceImpl(
     limit: Int,
     relationshipId: Option[String],
     consumerId: Option[String],
-    kind: Option[String],
-    purposeId: Option[String]
+    purposeId: Option[String],
+    kind: Option[String]
   )(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
   ): Route = {
-    logger.info("Listing clients for relationship {} and consumer {}, purpose {} and kind - {}", relationshipId, consumerId, purposeId, kind)
+    logger.info(
+      "Listing clients for relationship {} and consumer {}, purpose {} and kind {}",
+      relationshipId,
+      consumerId,
+      purposeId,
+      kind
+    )
 
     val sliceSize = 1000
 
@@ -179,7 +185,10 @@ final case class ClientApiServiceImpl(
     ): LazyList[PersistentClient] = {
       lazy val slice: Seq[PersistentClient] =
         Await
-          .result(commander.ask(ref => ListClients(from, to, relationshipId, consumerId, purposeId, kind, ref)), Duration.Inf)
+          .result(
+            commander.ask(ref => ListClients(from, to, relationshipId, consumerId, purposeId, kind, ref)),
+            Duration.Inf
+          )
           .getValue
       if (slice.isEmpty)
         lazyList
