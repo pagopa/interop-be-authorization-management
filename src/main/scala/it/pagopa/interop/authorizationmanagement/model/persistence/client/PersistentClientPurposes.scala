@@ -2,7 +2,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.client
 
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.authorizationmanagement.model.Purpose
-import it.pagopa.pdnd.interop.commons.utils.TypeConversions.StringOps
+import it.pagopa.interop.commons.utils.TypeConversions.StringOps
 
 object PersistentClientPurposes {
   type PurposeId                = String

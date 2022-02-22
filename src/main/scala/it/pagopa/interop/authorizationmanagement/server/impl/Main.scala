@@ -36,14 +36,14 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.{
   KeyPersistentProjection
 }
 import it.pagopa.interop.authorizationmanagement.server.Controller
-import it.pagopa.pdnd.interop.commons.jwt.service.JWTReader
-import it.pagopa.pdnd.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
-import it.pagopa.pdnd.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
-import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
-import it.pagopa.pdnd.interop.commons.utils.OpenapiUtils
-import it.pagopa.pdnd.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.pdnd.interop.commons.utils.service.impl.UUIDSupplierImpl
+import it.pagopa.interop.commons.jwt.service.JWTReader
+import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
+import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
+import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
+import it.pagopa.interop.commons.utils.OpenapiUtils
+import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.utils.service.impl.UUIDSupplierImpl
 import kamon.Kamon
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile

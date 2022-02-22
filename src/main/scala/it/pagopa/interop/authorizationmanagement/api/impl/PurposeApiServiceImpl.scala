@@ -20,10 +20,10 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
   PersistentClientPurpose
 }
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.pdnd.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.getShard
-import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.AkkaUtils.getShard
+import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}

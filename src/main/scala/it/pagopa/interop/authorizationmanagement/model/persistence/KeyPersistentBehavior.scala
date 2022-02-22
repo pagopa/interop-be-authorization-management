@@ -17,7 +17,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.key.Persisten
   toPersistentKey
 }
 import it.pagopa.interop.authorizationmanagement.model.{EncodedClientKey, KeysResponse}
-import it.pagopa.pdnd.interop.commons.utils.errors.ComponentError
+import it.pagopa.interop.commons.utils.errors.ComponentError
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit

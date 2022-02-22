@@ -2,7 +2,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.client
 
 import it.pagopa.interop.authorizationmanagement.model.persistence.Persistent
 import it.pagopa.interop.authorizationmanagement.model.{ClientStatesChain, ClientStatesChainSeed}
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 import java.util.UUID
 
