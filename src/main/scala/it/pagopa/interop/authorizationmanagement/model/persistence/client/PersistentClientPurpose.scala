@@ -1,7 +1,7 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.client
 
 import it.pagopa.interop.authorizationmanagement.model.{Purpose, PurposeSeed}
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 import java.util.UUID
 

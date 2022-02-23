@@ -1,7 +1,7 @@
 import ProjectSettings.ProjectFrom
 import com.typesafe.sbt.packager.docker.Cmd
 
-ThisBuild / scalaVersion := "2.13.5"
+ThisBuild / scalaVersion := "2.13.6"
 ThisBuild / organization := "it.pagopa"
 ThisBuild / organizationName := "Pagopa S.p.A."
 ThisBuild / libraryDependencies := Dependencies.Jars.`server`.map(m =>
@@ -25,13 +25,19 @@ packagePrefix := name.value
   .replaceFirst("be-", "")
   .replaceAll("-", "")
 
+val projectName = settingKey[String]("The project name prefix derived from the uservice name")
+
+projectName:= name.value
+  .replaceFirst("interop-", "")
+  .replaceFirst("be-", "")
+
 generateCode := {
   import sys.process._
 
   Process(s"""openapi-generator-cli generate -t template/scala-akka-http-server
              |                               -i src/main/resources/interface-specification.yml
              |                               -g scala-akka-http-server
-             |                               -p projectName=${name.value}
+             |                               -p projectName=${projectName.value}
              |                               -p invokerPackage=it.pagopa.${packagePrefix.value}.server
              |                               -p modelPackage=it.pagopa.${packagePrefix.value}.model
              |                               -p apiPackage=it.pagopa.${packagePrefix.value}.api
@@ -42,7 +48,7 @@ generateCode := {
   Process(s"""openapi-generator-cli generate -t template/scala-akka-http-client
              |                               -i src/main/resources/interface-specification.yml
              |                               -g scala-akka
-             |                               -p projectName=${name.value}
+             |                               -p projectName=${projectName.value}
              |                               -p invokerPackage=it.pagopa.${packagePrefix.value}.client.invoker
              |                               -p modelPackage=it.pagopa.${packagePrefix.value}.client.model
              |                               -p apiPackage=it.pagopa.${packagePrefix.value}.client.api
@@ -50,6 +56,8 @@ generateCode := {
              |                               -o client""".stripMargin).!!
 
 }
+
+(Compile / compile) := ((Compile / compile) dependsOn generateCode).value
 
 Compile / PB.targets := Seq(scalapb.gen() -> (Compile / sourceManaged).value / "protobuf")
 

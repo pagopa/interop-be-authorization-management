@@ -20,8 +20,8 @@ import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
-import it.pagopa.pdnd.interop.commons.utils.AkkaUtils.Authenticator
-import it.pagopa.pdnd.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 import spray.json._
 

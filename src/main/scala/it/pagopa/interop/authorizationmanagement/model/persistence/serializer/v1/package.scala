@@ -17,7 +17,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
   StateKeysEntryV1,
   StateV1
 }
-import it.pagopa.pdnd.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}

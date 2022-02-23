@@ -1,7 +1,7 @@
 package it.pagopa.interop.authorizationmanagement.errors
 
 import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientId, RelationshipId}
-import it.pagopa.pdnd.interop.commons.utils.errors.ComponentError
+import it.pagopa.interop.commons.utils.errors.ComponentError
 
 object KeyManagementErrors {
   final case class ClientAlreadyActiveError(clientId: String)
