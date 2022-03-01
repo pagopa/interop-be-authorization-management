@@ -68,7 +68,7 @@ class RelationshipManagementSpec
   }
 
   "Relationship deletion" should {
-    "be successful and remove keys" in {
+    "be successful" in {
       val clientId        = UUID.randomUUID()
       val consumerId      = UUID.randomUUID()
       val relationshipId1 = UUID.randomUUID()
@@ -77,8 +77,8 @@ class RelationshipManagementSpec
       createClient(clientId, consumerId)
       addRelationship(clientId, relationshipId1)
       addRelationship(clientId, relationshipId2)
-      createKey(clientId, relationshipId1)
-      val relationship2Keys = createKey(clientId, relationshipId2)
+      val keyOne = createKey(clientId, relationshipId1)
+      val keyTwo = createKey(clientId, relationshipId2)
 
       val response =
         request(uri = s"$serviceURL/clients/$clientId/relationships/$relationshipId1", method = HttpMethods.DELETE)
@@ -91,7 +91,7 @@ class RelationshipManagementSpec
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)
-      retrievedKeys.keys shouldBe relationship2Keys.keys
+      retrievedKeys.keys shouldEqual (keyOne.keys ++ keyTwo.keys)
     }
 
     "be successful and don't remove same relationship keys of different client" in {

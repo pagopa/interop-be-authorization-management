@@ -1,6 +1,5 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence
 
-import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
   PersistentClient,
   PersistentClientComponentState,
@@ -46,15 +45,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
         clients
     }
 
-    val updatedKeys = keys.get(clientId) match {
-      case Some(ks) =>
-        val updated = ks.filter { case (_, key) => key.relationshipId.toString =!= relationshipId }
-        keys + (clientId -> updated)
-      case None =>
-        keys
-    }
-
-    copy(clients = updatedClients, keys = updatedKeys)
+    copy(clients = updatedClients)
   }
 
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
