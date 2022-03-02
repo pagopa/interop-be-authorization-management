@@ -143,29 +143,20 @@ final case class ClientApiServiceImpl(
 
     val sliceSize = 1000
 
-    // This could be implemented using 'anyOf' function of OpenApi, but the generator does not support it yet
-    // see https://github.com/OpenAPITools/openapi-generator/issues/634
-    (relationshipId, consumerId) match {
-      case (None, None) =>
-        logger.error("Error listing clients: no required parameters have been provided")
-        listClients400(problemOf(StatusCodes.BadRequest, ListClientErrors))
-      case (relId, conId) =>
-        val kindEnum: Option[PersistentClientKind] =
-          kind.flatMap(ClientKind.fromValue(_).toOption).map(PersistentClientKind.fromApi)
-        val commanders: Seq[EntityRef[Command]] =
-          (0 until settings.numberOfShards).map(shard =>
-            sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
-          )
-        val persistentClient: Seq[PersistentClient] =
-          commanders.flatMap(ref => slices(ref, sliceSize, relId, conId, purposeId, kindEnum))
-        val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
-        val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
-        paginatedClients.fold(
-          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
-          clients => listClients200(clients)
-        )
-
-    }
+    val kindEnum: Option[PersistentClientKind] =
+      kind.flatMap(ClientKind.fromValue(_).toOption).map(PersistentClientKind.fromApi)
+    val commanders: Seq[EntityRef[Command]] =
+      (0 until settings.numberOfShards).map(shard =>
+        sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
+      )
+    val persistentClient: Seq[PersistentClient] =
+      commanders.flatMap(ref => slices(ref, sliceSize, relationshipId, consumerId, purposeId, kindEnum))
+    val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
+    val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
+    paginatedClients.fold(
+      ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
+      clients => listClients200(clients)
+    )
   }
 
   private def slices(
