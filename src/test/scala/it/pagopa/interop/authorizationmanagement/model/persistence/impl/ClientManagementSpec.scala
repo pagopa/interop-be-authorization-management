@@ -330,7 +330,7 @@ class ClientManagementSpec
       addPurposeState(clientId3, purposeSeed2, UUID.randomUUID())
 
       val response =
-        request(uri = s"$serviceURL/clients?purposeId=$purposeId1&consumerId=$consumerId", method = HttpMethods.GET)
+        request(uri = s"$serviceURL/clients?purposeId=$purposeId1", method = HttpMethods.GET)
 
       response.status shouldBe StatusCodes.OK
       val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
@@ -338,6 +338,20 @@ class ClientManagementSpec
       retrievedClients.size shouldBe 2
       retrievedClients.map(_.id) should contain theSameElementsAs Seq(clientId1, clientId2)
 
+    }
+
+    "correctly retrieved without filters" in {
+      val clientId1   = UUID.randomUUID()
+      val consumerId1 = UUID.randomUUID()
+
+      createClient(clientId1, consumerId1)
+
+      val response = request(uri = s"$serviceURL/clients", method = HttpMethods.GET)
+
+      response.status shouldBe StatusCodes.OK
+      val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)
+
+      retrievedClients.size should be > 0
     }
 
     "correctly paginate elements" in {
@@ -379,12 +393,6 @@ class ClientManagementSpec
       retrievedClients2.size shouldBe 1
 
       retrievedClients1.intersect(retrievedClients2) shouldBe empty
-    }
-
-    "not be retrieved without required fields" in {
-      val response = request(uri = s"$serviceURL/clients", method = HttpMethods.GET)
-
-      response.status shouldBe StatusCodes.BadRequest
     }
 
   }
