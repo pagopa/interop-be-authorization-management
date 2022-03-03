@@ -59,13 +59,13 @@ final case class KeyApiServiceImpl(
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply if statusReply.isError =>
-            logger.error("Error while creating keys for client {}", clientId, statusReply.getError)
+            logger.error(s"Error while creating keys for client $clientId - ${statusReply.getError.getMessage}")
             createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysBadRequest(clientId: String)))
         }
 
       case Invalid(errors) =>
         val errorsStr = errors.toList.mkString(", ")
-        logger.error("Error while creating keys for client {} - {}", clientId, errorsStr)
+        logger.error(s"Error while creating keys for client ${clientId} - ${errorsStr}")
         createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysInvalid(clientId)))
     }
   }
