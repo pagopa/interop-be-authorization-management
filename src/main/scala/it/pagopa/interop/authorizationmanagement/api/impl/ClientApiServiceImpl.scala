@@ -105,7 +105,7 @@ final case class ClientApiServiceImpl(
       case statusReply if statusReply.isError =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            logger.error(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
+            logger.info(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
             getClient404(problemOf(StatusCodes.NotFound, ex))
           case ex =>
             logger.error(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
@@ -113,7 +113,7 @@ final case class ClientApiServiceImpl(
         }
       // This should never occur, but with this check the pattern matching is exhaustive
       case unknownReply =>
-        logger.error(s"Error while retrieving Client ${clientId} - Internal server error")
+        logger.error(s"Error while retrieving Client ${clientId} - $unknownReply")
         internalServerError(
           problemOf(StatusCodes.InternalServerError, GetClientServerError(clientId, unknownReply.toString))
         )
