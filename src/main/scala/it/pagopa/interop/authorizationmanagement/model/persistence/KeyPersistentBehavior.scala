@@ -230,9 +230,9 @@ object KeyPersistentBehavior {
           .persist(EServiceStateUpdated(eServiceId, state, audience, voucherLifespan))
           .thenRun((_: State) => replyTo ! StatusReply.Success(()))
 
-      case UpdateAgreementState(agreementId, state, replyTo) =>
+      case UpdateAgreementState(eServiceId, consumerId, state, replyTo) =>
         Effect
-          .persist(AgreementStateUpdated(agreementId, state))
+          .persist(AgreementStateUpdated(eServiceId, consumerId, state))
           .thenRun((_: State) => replyTo ! StatusReply.Success(()))
 
       case UpdatePurposeState(purposeId, state, replyTo) =>
@@ -311,8 +311,8 @@ object KeyPersistentBehavior {
         state.removeClientPurpose(clientId, purposeId)
       case EServiceStateUpdated(eServiceId, componentState, audience, voucherLifespan) =>
         state.updateClientsByEService(eServiceId, componentState, audience, voucherLifespan)
-      case AgreementStateUpdated(agreementId, componentState) =>
-        state.updateClientsByAgreement(agreementId, componentState)
+      case AgreementStateUpdated(eServiceId, consumerId, componentState) =>
+        state.updateClientsByAgreement(eServiceId, consumerId, componentState)
       case PurposeStateUpdated(purposeId, componentState) =>
         state.updateClientsByPurpose(purposeId, componentState)
     }

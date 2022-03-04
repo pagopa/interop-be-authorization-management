@@ -5,18 +5,22 @@ import it.pagopa.interop.authorizationmanagement.model.{ClientAgreementDetails, 
 
 import java.util.UUID
 
-final case class PersistentClientAgreementDetails(agreementId: UUID, state: PersistentClientComponentState)
-    extends Persistent {
+final case class PersistentClientAgreementDetails(
+  eServiceId: UUID,
+  consumerId: UUID,
+  state: PersistentClientComponentState
+) extends Persistent {
 
   def toApi: ClientAgreementDetails =
-    ClientAgreementDetails(agreementId = agreementId, state = state.toApi)
+    ClientAgreementDetails(eserviceId = eServiceId, consumerId = consumerId, state = state.toApi)
 
 }
 
 object PersistentClientAgreementDetails {
   def fromSeed(seed: ClientAgreementDetailsSeed): PersistentClientAgreementDetails =
     PersistentClientAgreementDetails(
-      agreementId = seed.agreementId,
+      eServiceId = seed.eserviceId,
+      consumerId = seed.consumerId,
       state = PersistentClientComponentState.fromApi(seed.state)
     )
 }

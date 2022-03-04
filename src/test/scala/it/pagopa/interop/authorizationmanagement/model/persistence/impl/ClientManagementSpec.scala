@@ -85,12 +85,11 @@ class ClientManagementSpec
     }
 
     "be retrieved by asking for a purposeId it is associated with" in {
-      val clientId    = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val purposeId1  = UUID.randomUUID()
-      val purposeId2  = UUID.randomUUID()
-      val eServiceId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val purposeId1 = UUID.randomUUID()
+      val purposeId2 = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
 
@@ -107,7 +106,7 @@ class ClientManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = INACTIVE),
+          agreement = ClientAgreementDetailsSeed(eserviceId = eServiceId, consumerId = consumerId, state = INACTIVE),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
         )
       )
@@ -121,7 +120,11 @@ class ClientManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          agreement = ClientAgreementDetailsSeed(
+            eserviceId = eServiceId,
+            consumerId = consumerId,
+            state = ClientComponentState.INACTIVE
+          ),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId2, state = ClientComponentState.ACTIVE)
         )
       )
@@ -161,7 +164,11 @@ class ClientManagementSpec
                   audience = Seq("some.audience"),
                   voucherLifespan = 10
                 ),
-                agreement = ClientAgreementDetails(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+                agreement = ClientAgreementDetails(
+                  eserviceId = eServiceId,
+                  consumerId = consumerId,
+                  state = ClientComponentState.INACTIVE
+                ),
                 purpose = ClientPurposeDetails(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
               )
             )
@@ -178,11 +185,10 @@ class ClientManagementSpec
     }
 
     "fail if it is not associated with a purposeId" in {
-      val clientId    = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val purposeId   = UUID.randomUUID()
-      val eServiceId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val purposeId  = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
 
@@ -199,7 +205,11 @@ class ClientManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          agreement = ClientAgreementDetailsSeed(
+            eserviceId = eServiceId,
+            consumerId = consumerId,
+            state = ClientComponentState.INACTIVE
+          ),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
@@ -319,7 +329,11 @@ class ClientManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = UUID.randomUUID(), state = INACTIVE),
+          agreement = ClientAgreementDetailsSeed(
+            eserviceId = UUID.randomUUID(),
+            consumerId = UUID.randomUUID(),
+            state = INACTIVE
+          ),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
         )
       )
