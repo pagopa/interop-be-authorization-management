@@ -540,7 +540,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /bulk/agreements/{agreementId}/state:
+  /bulk/agreements/eserviceId/{eserviceId}/consumerId/{consumerId}/state:
     post:
       tags:
         - purpose
@@ -548,9 +548,16 @@ paths:
       description: 'Updates the Agreement state for all clients that contain it'
       operationId: updateAgreementState
       parameters:
-        - name: agreementId
+        - name: eserviceId
           in: path
-          description: ID of the Agreement
+          description: ID of the EService
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: consumerId
+          in: path
+          description: ID of the Consumer
           required: true
           schema:
             type: string
@@ -920,24 +927,32 @@ components:
     ClientAgreementDetails:
       type: object
       properties:
-        agreementId:
+        eserviceId:
+          type: string
+          format: uuid
+        consumerId:
           type: string
           format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
-        - agreementId
+        - eserviceId
+        - consumerId
         - state
     ClientAgreementDetailsSeed:
       type: object
       properties:
-        agreementId:
+        eserviceId:
+          type: string
+          format: uuid
+        consumerId:
           type: string
           format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
-        - agreementId
+        - eserviceId
+        - consumerId
         - state
     ClientPurposeDetails:
       type: object

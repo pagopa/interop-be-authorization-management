@@ -34,11 +34,10 @@ class PurposeManagementSpec
   "Purpose addition" should {
 
     "succeed" in {
-      val clientId    = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val purposeId   = UUID.randomUUID()
-      val eServiceId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val purposeId  = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
 
@@ -56,7 +55,11 @@ class PurposeManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetails(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          agreement = ClientAgreementDetails(
+            eserviceId = eServiceId,
+            consumerId = consumerId,
+            state = ClientComponentState.INACTIVE
+          ),
           purpose = ClientPurposeDetails(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
@@ -70,7 +73,11 @@ class PurposeManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          agreement = ClientAgreementDetailsSeed(
+            eserviceId = eServiceId,
+            consumerId = consumerId,
+            state = ClientComponentState.INACTIVE
+          ),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
@@ -89,10 +96,10 @@ class PurposeManagementSpec
     }
 
     "fail if client does not exist" in {
-      val clientId    = UUID.randomUUID()
-      val purposeId   = UUID.randomUUID()
-      val eServiceId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val purposeId  = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
 
@@ -107,7 +114,11 @@ class PurposeManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          agreement = ClientAgreementDetailsSeed(
+            eserviceId = eServiceId,
+            consumerId = consumerId,
+            state = ClientComponentState.INACTIVE
+          ),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
@@ -130,11 +141,10 @@ class PurposeManagementSpec
   "Purpose removal" should {
 
     "succeed" in {
-      val clientId    = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val purposeId   = UUID.randomUUID()
-      val eServiceId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val purposeId  = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
       val payload = PurposeSeed(
@@ -146,7 +156,11 @@ class PurposeManagementSpec
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
-          agreement = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.INACTIVE),
+          agreement = ClientAgreementDetailsSeed(
+            eserviceId = eServiceId,
+            consumerId = consumerId,
+            state = ClientComponentState.INACTIVE
+          ),
           purpose = ClientPurposeDetailsSeed(purposeId = purposeId, state = ClientComponentState.ACTIVE)
         )
       )
@@ -180,10 +194,9 @@ class PurposeManagementSpec
   "EService state update" should {
 
     "succeed" in {
-      val clientId1   = UUID.randomUUID()
-      val clientId2   = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
 
       val purposeId1  = UUID.randomUUID()
       val purposeId2  = UUID.randomUUID()
@@ -204,8 +217,12 @@ class PurposeManagementSpec
         voucherLifespan = 10
       )
       val eService2Seed = eService1Seed.copy(eserviceId = eServiceId2)
-      val agreementSeed = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.ACTIVE)
-      val purposeSeed   = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+      val agreementSeed = ClientAgreementDetailsSeed(
+        eserviceId = eServiceId1,
+        consumerId = consumerId,
+        state = ClientComponentState.ACTIVE
+      )
+      val purposeSeed = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
 
       val purpose1EService1Seed = PurposeSeed(
         purposeId = purposeId1,
@@ -306,16 +323,15 @@ class PurposeManagementSpec
   "Agreement state update" should {
 
     "succeed" in {
-      val clientId1    = UUID.randomUUID()
-      val clientId2    = UUID.randomUUID()
-      val consumerId   = UUID.randomUUID()
-      val agreementId1 = UUID.randomUUID()
-      val agreementId2 = UUID.randomUUID()
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val consumerId  = UUID.randomUUID()
+      val eServiceId1 = UUID.randomUUID()
+      val eServiceId2 = UUID.randomUUID()
 
       val purposeId1 = UUID.randomUUID()
       val purposeId2 = UUID.randomUUID()
       val purposeId3 = UUID.randomUUID()
-      val eServiceId = UUID.randomUUID()
 
       val statesChainId1 = UUID.randomUUID()
       val statesChainId2 = UUID.randomUUID()
@@ -324,15 +340,23 @@ class PurposeManagementSpec
 
       // Seed
       val eServiceSeed = ClientEServiceDetailsSeed(
-        eserviceId = eServiceId,
+        eserviceId = eServiceId1,
         state = ClientComponentState.ACTIVE,
         audience = Seq("some.audience"),
         voucherLifespan = 10
       )
       val purposeSeed = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
 
-      val agreementSeed1 = ClientAgreementDetailsSeed(agreementId = agreementId1, state = ClientComponentState.ACTIVE)
-      val agreementSeed2 = ClientAgreementDetailsSeed(agreementId = agreementId2, state = ClientComponentState.ACTIVE)
+      val agreementSeed1 = ClientAgreementDetailsSeed(
+        eserviceId = eServiceId1,
+        consumerId = consumerId,
+        state = ClientComponentState.ACTIVE
+      )
+      val agreementSeed2 = ClientAgreementDetailsSeed(
+        eserviceId = eServiceId2,
+        consumerId = consumerId,
+        state = ClientComponentState.ACTIVE
+      )
 
       val purpose1Agreement1Seed = PurposeSeed(
         purposeId = purposeId1,
@@ -362,7 +386,8 @@ class PurposeManagementSpec
       val eServiceDetails = PersistentClientEServiceDetails.fromSeed(eServiceSeed).toApi
       val purposeDetails  = PersistentClientPurposeDetails.fromSeed(purposeSeed).toApi
 
-      val expectedAgreement1State = ClientAgreementDetails(agreementId = agreementId1, state = updatePayload.state)
+      val expectedAgreement1State =
+        ClientAgreementDetails(eserviceId = eServiceId1, consumerId = consumerId, state = updatePayload.state)
 
       val expectedClient1Purposes: Seq[Purpose] = Seq(
         Purpose(
@@ -408,7 +433,7 @@ class PurposeManagementSpec
 
       val response =
         request(
-          uri = s"$serviceURL/bulk/agreements/$agreementId1/state",
+          uri = s"$serviceURL/bulk/agreements/eserviceId/$eServiceId1/consumerId/$consumerId/state",
           method = HttpMethods.POST,
           data = Some(updatePayload.toJson.prettyPrint)
         )
@@ -424,10 +449,9 @@ class PurposeManagementSpec
   "Purpose state update" should {
 
     "succeed" in {
-      val clientId1   = UUID.randomUUID()
-      val clientId2   = UUID.randomUUID()
-      val consumerId  = UUID.randomUUID()
-      val agreementId = UUID.randomUUID()
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
 
       val purposeId1 = UUID.randomUUID()
       val purposeId2 = UUID.randomUUID()
@@ -448,7 +472,11 @@ class PurposeManagementSpec
       val purposeDetailsSeed1 = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
       val purposeDetailsSeed2 = ClientPurposeDetailsSeed(purposeId = purposeId2, state = ClientComponentState.ACTIVE)
 
-      val agreementSeed = ClientAgreementDetailsSeed(agreementId = agreementId, state = ClientComponentState.ACTIVE)
+      val agreementSeed = ClientAgreementDetailsSeed(
+        eserviceId = eServiceId,
+        consumerId = consumerId,
+        state = ClientComponentState.ACTIVE
+      )
 
       val purposeSeed1 = PurposeSeed(
         purposeId = purposeId1,
