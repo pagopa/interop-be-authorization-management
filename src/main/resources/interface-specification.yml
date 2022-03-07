@@ -11,7 +11,7 @@ info:
   x-api-id: an x-api-id
   x-summary: an x-summary
 servers:
-  - url: '/interop-be-authorization-management/{{version}}'
+  - url: '/authorization-management/{{version}}'
     description: This contains key management routes
 tags:
   - name: key
