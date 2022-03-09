@@ -320,7 +320,11 @@ object KeyPersistentBehavior {
   val TypeKey: EntityTypeKey[Command] =
     EntityTypeKey[Command]("interop-be-authorization-management-persistence")
 
-  def apply(shard: ActorRef[ClusterSharding.ShardCommand], persistenceId: PersistenceId): Behavior[Command] = {
+  def apply(
+    shard: ActorRef[ClusterSharding.ShardCommand],
+    persistenceId: PersistenceId,
+    projectionTag: String
+  ): Behavior[Command] = {
     Behaviors.setup { context =>
       context.log.info(s"Starting Key Shard ${persistenceId.id}")
       val numberOfEvents =
@@ -331,7 +335,7 @@ object KeyPersistentBehavior {
         commandHandler = commandHandler(shard, context),
         eventHandler = eventHandler
       ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
-        .withTagger(_ => Set(persistenceId.id))
+        .withTagger(_ => Set(projectionTag))
         .onPersistFailure(SupervisorStrategy.restartWithBackoff(200 millis, 5 seconds, 0.1))
     }
   }

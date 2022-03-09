@@ -13,13 +13,13 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.persistence.typed.PersistenceId
 import com.nimbusds.jose.util.Base64
 import it.pagopa.interop.authorizationmanagement.api._
 import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
+import it.pagopa.interop.authorizationmanagement.server.impl.Main.behaviorFactory
 import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
@@ -57,12 +57,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
 
   def startServer(): Unit = {
     val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
-      Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
-        KeyPersistentBehavior(
-          entityContext.shard,
-          PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
-        )
-      }
+      Entity(KeyPersistentBehavior.TypeKey)(behaviorFactory)
 
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
