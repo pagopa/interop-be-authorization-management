@@ -13,6 +13,6 @@ object ApplicationConfiguration {
 
   lazy val numberOfProjectionTags: Int = config.getInt("akka.cluster.sharding.number-of-shards")
 
-  def projectionTag(index: Int) = s"interop-be-key-management-persistence|$index"
+  def projectionTag(index: Int) = s"interop-be-authorization-management-persistence|$index"
 
 }
