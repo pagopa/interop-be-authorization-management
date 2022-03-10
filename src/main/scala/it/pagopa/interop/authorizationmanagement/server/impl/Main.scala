@@ -109,7 +109,7 @@ object Main extends App {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
-          val keyPersistentProjection = KeyPersistentProjection(context.system, keyPersistentEntity, dbConfig)
+          val keyPersistentProjection = new KeyPersistentProjection(context.system, dbConfig)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "keys-projections",
