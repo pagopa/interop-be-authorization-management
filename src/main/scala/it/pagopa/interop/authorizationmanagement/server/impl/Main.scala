@@ -1,10 +1,10 @@
 package it.pagopa.interop.authorizationmanagement.server.impl
 
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior}
 import akka.cluster.ClusterEvent
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, ShardedDaemonProcess}
-import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityContext, ShardedDaemonProcess}
 import akka.cluster.typed.{Cluster, Subscribe}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
@@ -29,7 +29,11 @@ import it.pagopa.interop.authorizationmanagement.api.impl.{
   PurposeApiServiceImpl,
   problemOf
 }
-import it.pagopa.interop.authorizationmanagement.common.system.{ApplicationConfiguration, shardingSettings}
+import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
+import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration.{
+  numberOfProjectionTags,
+  projectionTag
+}
 import it.pagopa.interop.authorizationmanagement.model.persistence.{
   Command,
   KeyPersistentBehavior,
@@ -67,6 +71,15 @@ object Main extends App {
 
   Kamon.init()
 
+  lazy val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
+    val index = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
+    KeyPersistentBehavior(
+      entityContext.shard,
+      PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+      projectionTag(index)
+    )
+  }
+
   locally {
     val _ = ActorSystem[Nothing](
       Behaviors.setup[Nothing] { context =>
@@ -86,16 +99,9 @@ object Main extends App {
         val sharding: ClusterSharding = ClusterSharding(context.system)
 
         val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
-          Entity(typeKey = KeyPersistentBehavior.TypeKey) { entityContext =>
-            KeyPersistentBehavior(
-              entityContext.shard,
-              PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId)
-            )
-          }
+          Entity(KeyPersistentBehavior.TypeKey)(behaviorFactory)
 
         val _ = sharding.init(keyPersistentEntity)
-
-        val keySettings: ClusterShardingSettings = shardingSettings(keyPersistentEntity, context.system)
 
         val persistence = classicSystem.classicSystem.settings.config.getString("akka.persistence.journal.plugin")
 
@@ -103,12 +109,12 @@ object Main extends App {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
-          val keyPersistentProjection = new KeyPersistentProjection(context.system, keyPersistentEntity, dbConfig)
+          val keyPersistentProjection = new KeyPersistentProjection(context.system, dbConfig)
 
           ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
             name = "keys-projections",
-            numberOfInstances = keySettings.numberOfShards,
-            behaviorFactory = (i: Int) => ProjectionBehavior(keyPersistentProjection.projections(i)),
+            numberOfInstances = numberOfProjectionTags,
+            behaviorFactory = (i: Int) => ProjectionBehavior(keyPersistentProjection.projection(projectionTag(i))),
             stopMessage = ProjectionBehavior.Stop
           )
         }
