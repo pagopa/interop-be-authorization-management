@@ -13,6 +13,8 @@ object ApplicationConfiguration {
 
   lazy val numberOfProjectionTags: Int = config.getInt("akka.cluster.sharding.number-of-shards")
 
+  lazy val projectionsEnabled: Boolean = config.getBoolean("akka.projection.enabled")
+
   def projectionTag(index: Int) = s"interop-be-authorization-management-persistence|$index"
 
 }

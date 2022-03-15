@@ -32,7 +32,8 @@ import it.pagopa.interop.authorizationmanagement.api.impl.{
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration.{
   numberOfProjectionTags,
-  projectionTag
+  projectionTag,
+  projectionsEnabled
 }
 import it.pagopa.interop.authorizationmanagement.model.persistence.{
   Command,
@@ -103,8 +104,7 @@ object Main extends App {
 
         val _ = sharding.init(keyPersistentEntity)
 
-        val projectionEnabled = classicSystem.classicSystem.settings.config.getBoolean("akka.projection.enabled")
-        if (projectionEnabled) {
+        if (projectionsEnabled) {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
