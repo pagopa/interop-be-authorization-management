@@ -103,9 +103,8 @@ object Main extends App {
 
         val _ = sharding.init(keyPersistentEntity)
 
-        val persistence = classicSystem.classicSystem.settings.config.getString("akka.persistence.journal.plugin")
-        val enabled     = false
-        if (persistence == "jdbc-journal" && enabled) {
+        val projectionEnabled = classicSystem.classicSystem.settings.config.getBoolean("akka.projection.enabled")
+        if (projectionEnabled) {
           val dbConfig: DatabaseConfig[JdbcProfile] =
             DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
