@@ -69,6 +69,7 @@ object KeyProcessor extends KeyProcessor {
       case KeyType.EC  => ec(kid, jwk.toECKey)
       case KeyType.OKP => okp(kid, jwk.toOctetKeyPair)
       case KeyType.OCT => oct(kid, jwk.toOctetSequenceKey)
+      case _           => throw new RuntimeException(s"Unknown KeyType ${jwk.getKeyType}")
     }
 
     key.map(_.copy(alg = Some(algorithm), use = Some(use.toRfcValue)))

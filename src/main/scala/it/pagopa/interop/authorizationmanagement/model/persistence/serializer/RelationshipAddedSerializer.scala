@@ -16,17 +16,21 @@ class RelationshipAddedSerializer extends SerializerWithStringManifest {
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
-  final val RelationshipAddedManifest: String = classOf[RelationshipAdded].getName
+  final val className: String = classOf[RelationshipAdded].getName
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
     case event: RelationshipAdded =>
-      serialize(event, RelationshipAddedManifest, currentVersion)
+      serialize(event, className, currentVersion)
+    case _                        =>
+      throw new NotSerializableException(
+        s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
+      )
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
-    case RelationshipAddedManifest :: `version1` :: Nil =>
+    case `className` :: `version1` :: Nil =>
       deserialize(v1.events.RelationshipAddedV1, bytes, manifest, currentVersion)
-    case _ =>
+    case _                                =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "
       )

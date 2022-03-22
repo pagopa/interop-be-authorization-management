@@ -16,17 +16,21 @@ class ClientPurposeAddedSerializer extends SerializerWithStringManifest {
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
-  final val ClientPurposeAddedManifest: String = classOf[ClientPurposeAdded].getName
+  final val className: String = classOf[ClientPurposeAdded].getName
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
     case event: ClientPurposeAdded =>
-      serialize(event, ClientPurposeAddedManifest, currentVersion)
+      serialize(event, className, currentVersion)
+    case _                         =>
+      throw new NotSerializableException(
+        s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
+      )
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
-    case ClientPurposeAddedManifest :: `version1` :: Nil =>
+    case `className` :: `version1` :: Nil =>
       deserialize(v1.events.ClientPurposeAddedV1, bytes, manifest, currentVersion)
-    case _ =>
+    case _                                =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "
       )
