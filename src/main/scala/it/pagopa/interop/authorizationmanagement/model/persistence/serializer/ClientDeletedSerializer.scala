@@ -21,6 +21,10 @@ class ClientDeletedSerializer extends SerializerWithStringManifest {
   override def toBinary(o: AnyRef): Array[Byte] = o match {
     case event: ClientDeleted =>
       serialize(event, ClientDeletedManifest, currentVersion)
+    case _ =>
+      throw new NotSerializableException(
+        s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
+      )
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {

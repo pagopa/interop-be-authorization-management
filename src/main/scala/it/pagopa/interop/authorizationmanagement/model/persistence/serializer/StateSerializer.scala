@@ -20,6 +20,10 @@ class StateSerializer extends SerializerWithStringManifest {
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
     case s: State => serialize(s, StateManifest, currentVersion)
+    case _ =>
+      throw new NotSerializableException(
+        s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
+      )
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef =

@@ -214,7 +214,7 @@ final case class ClientApiServiceImpl(
           ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
           client => addRelationship201(client)
         )
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.error(
           s"Error while adding relationship ${relationshipSeed.relationshipId} to client ${clientId} - ${statusReply.getError.getMessage}"
         )
@@ -249,7 +249,7 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClient204
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.error(s"Error while deleting client ${clientId} - ${statusReply.getError.getMessage}")
         statusReply.getError match {
           case ex: ClientNotFoundError =>
@@ -278,7 +278,7 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => removeClientRelationship204
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.error(
           s"Error while removing relationship ${relationshipId} from client ${clientId} - ${statusReply.getError.getMessage}"
         )

@@ -58,7 +58,7 @@ final case class KeyApiServiceImpl(
           commander.ask(ref => AddKeys(clientId, validKeys, ref))
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
-          case statusReply if statusReply.isError =>
+          case statusReply =>
             logger.error(s"Error while creating keys for client $clientId - ${statusReply.getError.getMessage}")
             createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysBadRequest(clientId: String)))
         }
@@ -111,7 +111,7 @@ final case class KeyApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.info("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
         getClientKeyById404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
     }
@@ -133,7 +133,7 @@ final case class KeyApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.info("Error while getting keys for client {}", clientId, statusReply.getError)
         getClientKeys404(problemOf(StatusCodes.NotFound, ClientKeysNotFound(clientId)))
     }
@@ -152,7 +152,7 @@ final case class KeyApiServiceImpl(
     val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.info("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
         deleteClientKeyById404(problemOf(StatusCodes.BadRequest, DeleteClientKeyNotFound(clientId, keyId)))
     }
@@ -176,7 +176,7 @@ final case class KeyApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
-      case statusReply if statusReply.isError =>
+      case statusReply =>
         logger.info("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
         getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, EncodedClientKeyNotFound(clientId, keyId)))
     }

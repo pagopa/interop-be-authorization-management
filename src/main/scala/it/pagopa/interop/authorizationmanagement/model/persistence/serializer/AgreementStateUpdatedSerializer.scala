@@ -21,6 +21,10 @@ class AgreementStateUpdatedSerializer extends SerializerWithStringManifest {
   override def toBinary(o: AnyRef): Array[Byte] = o match {
     case event: AgreementStateUpdated =>
       serialize(event, AgreementStateUpdatedManifest, currentVersion)
+    case _ =>
+      throw new NotSerializableException(
+        s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
+      )
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
