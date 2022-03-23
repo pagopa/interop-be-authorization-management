@@ -23,25 +23,25 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val clientAgreementDetailsFormat: RootJsonFormat[ClientAgreementDetails] =
     jsonFormat3(ClientAgreementDetails)
-  implicit val clientEServiceDetailsFormat: RootJsonFormat[ClientEServiceDetails] = jsonFormat4(ClientEServiceDetails)
-  implicit val clientPurposeDetailsFormat: RootJsonFormat[ClientPurposeDetails]   = jsonFormat2(ClientPurposeDetails)
-  implicit val clientStatesChainFormat: RootJsonFormat[ClientStatesChain]         = jsonFormat4(ClientStatesChain)
-  implicit val purposeFormat: RootJsonFormat[Purpose]                             = jsonFormat2(Purpose)
+  implicit val clientEServiceDetailsFormat: RootJsonFormat[ClientEServiceDetails]   = jsonFormat4(ClientEServiceDetails)
+  implicit val clientPurposeDetailsFormat: RootJsonFormat[ClientPurposeDetails]     = jsonFormat2(ClientPurposeDetails)
+  implicit val clientStatesChainFormat: RootJsonFormat[ClientStatesChain]           = jsonFormat4(ClientStatesChain)
+  implicit val purposeFormat: RootJsonFormat[Purpose]                               = jsonFormat2(Purpose)
 
-  implicit val eServiceDetailsSeedFormat: RootJsonFormat[ClientEServiceDetailsSeed] =
+  implicit val eServiceDetailsSeedFormat: RootJsonFormat[ClientEServiceDetailsSeed]   =
     jsonFormat4(ClientEServiceDetailsSeed)
   implicit val agreementDetailsSeedFormat: RootJsonFormat[ClientAgreementDetailsSeed] =
     jsonFormat3(ClientAgreementDetailsSeed)
-  implicit val purposeDetailsSeedFormat: RootJsonFormat[ClientPurposeDetailsSeed] =
+  implicit val purposeDetailsSeedFormat: RootJsonFormat[ClientPurposeDetailsSeed]     =
     jsonFormat2(ClientPurposeDetailsSeed)
   implicit val statesChainSeedFormat: RootJsonFormat[ClientStatesChainSeed] = jsonFormat3(ClientStatesChainSeed)
   implicit val purposeSeedFormat: RootJsonFormat[PurposeSeed]               = jsonFormat2(PurposeSeed)
 
-  implicit val eServiceDetailsUpdateFormat: RootJsonFormat[ClientEServiceDetailsUpdate] =
+  implicit val eServiceDetailsUpdateFormat: RootJsonFormat[ClientEServiceDetailsUpdate]   =
     jsonFormat3(ClientEServiceDetailsUpdate)
   implicit val agreementDetailsUpdateFormat: RootJsonFormat[ClientAgreementDetailsUpdate] =
     jsonFormat1(ClientAgreementDetailsUpdate)
-  implicit val purposeDetailsUpdateFormat: RootJsonFormat[ClientPurposeDetailsUpdate] =
+  implicit val purposeDetailsUpdateFormat: RootJsonFormat[ClientPurposeDetailsUpdate]     =
     jsonFormat1(ClientPurposeDetailsUpdate)
 
   implicit val clientSeedFormat: RootJsonFormat[ClientSeed]                  = jsonFormat4(ClientSeed)

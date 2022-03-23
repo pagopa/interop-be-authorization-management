@@ -21,8 +21,8 @@ final case class GetKeys(clientId: String, replyTo: ActorRef[StatusReply[KeysRes
 final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[ClientKey]]) extends Command
 final case class GetEncodedKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[EncodedClientKey]])
     extends Command
-final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
-final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])         extends Command
+final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])   extends Command
+final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])           extends Command
 
 final case class AddClient(client: PersistentClient, replyTo: ActorRef[StatusReply[PersistentClient]]) extends Command
 final case class GetClient(clientId: String, replyTo: ActorRef[StatusReply[PersistentClient]])         extends Command
@@ -44,8 +44,8 @@ final case class AddRelationship(
   clientId: String,
   relationshipId: UUID,
   replyTo: ActorRef[StatusReply[PersistentClient]]
-)                                                                                     extends Command
-final case class DeleteClient(clientId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
+) extends Command
+final case class DeleteClient(clientId: String, replyTo: ActorRef[StatusReply[Done]])                  extends Command
 
 final case class RemoveRelationship(clientId: String, relationshipId: String, replyTo: ActorRef[StatusReply[Done]])
     extends Command

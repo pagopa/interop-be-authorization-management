@@ -147,7 +147,7 @@ class PurposeManagementSpec
       val eServiceId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
-      val payload = PurposeSeed(
+      val payload       = PurposeSeed(
         purposeId = purposeId,
         states = ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
@@ -222,7 +222,7 @@ class PurposeManagementSpec
         consumerId = consumerId,
         state = ClientComponentState.ACTIVE
       )
-      val purposeSeed = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+      val purposeSeed   = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
 
       val purpose1EService1Seed = PurposeSeed(
         purposeId = purposeId1,
@@ -345,7 +345,7 @@ class PurposeManagementSpec
         audience = Seq("some.audience"),
         voucherLifespan = 10
       )
-      val purposeSeed = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
+      val purposeSeed  = ClientPurposeDetailsSeed(purposeId = purposeId1, state = ClientComponentState.ACTIVE)
 
       val agreementSeed1 = ClientAgreementDetailsSeed(
         eserviceId = eServiceId1,
@@ -463,7 +463,7 @@ class PurposeManagementSpec
       val statesChainId4 = UUID.randomUUID()
 
       // Seed
-      val eServiceSeed = ClientEServiceDetailsSeed(
+      val eServiceSeed        = ClientEServiceDetailsSeed(
         eserviceId = eServiceId,
         state = ClientComponentState.ACTIVE,
         audience = Seq("some.audience"),

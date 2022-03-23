@@ -39,7 +39,7 @@ object KeyPersistentBehavior {
         state.clients.get(clientId) match {
           case Some(client) =>
             val persistentKeys: Either[Throwable, Seq[PersistentKey]] = for {
-              _ <- validateRelationships(client, validKeys)
+              _              <- validateRelationships(client, validKeys)
               persistentKeys <- validKeys
                 .map(toPersistentKey)
                 .sequence
@@ -70,7 +70,7 @@ object KeyPersistentBehavior {
           case Some(key) =>
             replyTo ! StatusReply.Success(EncodedClientKey(key = key.encodedPem))
             Effect.none[Event, State]
-          case None => commandKeyNotFoundError(replyTo)
+          case None      => commandKeyNotFoundError(replyTo)
         }
 
       case DeleteKey(clientId, keyId, replyTo) =>
@@ -79,7 +79,7 @@ object KeyPersistentBehavior {
             Effect
               .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
-          case None => commandKeyNotFoundError(replyTo)
+          case None    => commandKeyNotFoundError(replyTo)
         }
 
       case GetKeys(clientId, replyTo) =>
@@ -101,7 +101,7 @@ object KeyPersistentBehavior {
         Effect.none[Event, State]
 
       // TODO Client commands should be in a separated behavior
-      case AddClient(persistentClient, replyTo) =>
+      case AddClient(persistentClient, replyTo)    =>
         val client: Option[PersistentClient] = state.clients.get(persistentClient.id.toString)
 
         client
@@ -120,7 +120,7 @@ object KeyPersistentBehavior {
           case Some(client) =>
             replyTo ! StatusReply.Success(client)
             Effect.none[Event, State]
-          case None => commandError(replyTo, ClientNotFoundError(clientId))
+          case None         => commandError(replyTo, ClientNotFoundError(clientId))
         }
 
       case GetClientByPurpose(clientId, purposeId, replyTo) =>
@@ -128,7 +128,7 @@ object KeyPersistentBehavior {
           case Some(client) =>
             replyTo ! StatusReply.Success(client)
             Effect.none[Event, State]
-          case None => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId))
+          case None         => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId))
         }
 
       case ListClients(from, to, relationshipId, consumerId, purposeId, kind, replyTo) =>
@@ -180,7 +180,7 @@ object KeyPersistentBehavior {
 
         val validations: Either[Throwable, PersistentClient] = for {
           persistentClient <- client.toRight(ClientNotFoundError(clientId))
-          _ <- persistentClient.relationships
+          _                <- persistentClient.relationships
             .find(_.toString == relationshipId)
             .toRight(PartyRelationshipNotFoundError(clientId, relationshipId))
         } yield persistentClient
@@ -199,7 +199,7 @@ object KeyPersistentBehavior {
       case AddClientPurpose(clientId, purpose, replyTo) =>
         val v: Either[ComponentError, Unit] = for {
           client <- state.clients.get(clientId).toRight(ClientNotFoundError(clientId))
-          _ <- client.purposes
+          _      <- client.purposes
             .get(purpose.id.toString)
             .toLeft(())
             .leftMap(_ => PurposeAlreadyExists(clientId, purpose.id.toString))
@@ -299,21 +299,21 @@ object KeyPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case KeysAdded(clientId, keys)                     => state.addKeys(clientId, keys)
-      case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
-      case ClientAdded(client)                           => state.addClient(client)
-      case ClientDeleted(clientId)                       => state.deleteClient(clientId)
-      case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
-      case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
+      case KeysAdded(clientId, keys)                            => state.addKeys(clientId, keys)
+      case KeyDeleted(clientId, keyId, _)                       => state.deleteKey(clientId, keyId)
+      case ClientAdded(client)                                  => state.addClient(client)
+      case ClientDeleted(clientId)                              => state.deleteClient(clientId)
+      case RelationshipAdded(client, relationshipId)            => state.addRelationship(client, relationshipId)
+      case RelationshipRemoved(clientId, relationshipId)        => state.removeRelationship(clientId, relationshipId)
       case ClientPurposeAdded(clientId, purposeId, statesChain) =>
         state.addClientPurpose(clientId, purposeId, statesChain)
-      case ClientPurposeRemoved(clientId, purposeId) =>
+      case ClientPurposeRemoved(clientId, purposeId)            =>
         state.removeClientPurpose(clientId, purposeId)
       case EServiceStateUpdated(eServiceId, componentState, audience, voucherLifespan) =>
         state.updateClientsByEService(eServiceId, componentState, audience, voucherLifespan)
-      case AgreementStateUpdated(eServiceId, consumerId, componentState) =>
+      case AgreementStateUpdated(eServiceId, consumerId, componentState)               =>
         state.updateClientsByAgreement(eServiceId, consumerId, componentState)
-      case PurposeStateUpdated(purposeId, componentState) =>
+      case PurposeStateUpdated(purposeId, componentState)                              =>
         state.updateClientsByPurpose(purposeId, componentState)
     }
 

@@ -60,7 +60,7 @@ final case class ClientApiServiceImpl(
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId.toString, settings.numberOfShards))
 
-    val persistentClient = PersistentClient.toPersistentClient(clientId, clientSeed)
+    val persistentClient                              = PersistentClient.toPersistentClient(clientId, clientSeed)
     val result: Future[StatusReply[PersistentClient]] =
       commander.ask(ref => AddClient(persistentClient, ref))
 
@@ -70,12 +70,12 @@ final case class ClientApiServiceImpl(
           ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
           client => createClient201(client)
         )
-      case Success(statusReply) =>
+      case Success(statusReply)                          =>
         logger.error(
           s"Error while creating client for Consumer ${clientSeed.consumerId} - ${statusReply.getError.getMessage}"
         )
         createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
-      case Failure(ex) =>
+      case Failure(ex)                                   =>
         logger.error(s"Error while creating client for Consumer ${clientSeed.consumerId} - ${ex.getMessage}")
         createClient400(problemOf(StatusCodes.BadRequest, CreateClientError(clientSeed.consumerId.toString)))
     }
@@ -102,17 +102,17 @@ final case class ClientApiServiceImpl(
           ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
           client => getClient200(client)
         )
-      case statusReply if statusReply.isError =>
+      case statusReply if statusReply.isError   =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             logger.info(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
             getClient404(problemOf(StatusCodes.NotFound, ex))
-          case ex =>
+          case ex                      =>
             logger.error(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
             internalServerError(problemOf(StatusCodes.InternalServerError, GetClientError(clientId)))
         }
       // This should never occur, but with this check the pattern matching is exhaustive
-      case unknownReply =>
+      case unknownReply                         =>
         logger.error(s"Error while retrieving Client ${clientId} - $unknownReply")
         internalServerError(
           problemOf(StatusCodes.InternalServerError, GetClientServerError(clientId, unknownReply.toString))
@@ -145,9 +145,9 @@ final case class ClientApiServiceImpl(
 
     val sliceSize = 1000
 
-    val kindEnum: Option[PersistentClientKind] =
+    val kindEnum: Option[PersistentClientKind]  =
       kind.flatMap(ClientKind.fromValue(_).toOption).map(PersistentClientKind.fromApi)
-    val commanders: Seq[EntityRef[Command]] =
+    val commanders: Seq[EntityRef[Command]]     =
       (0 until settings.numberOfShards).map(shard =>
         sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
       )
@@ -214,14 +214,14 @@ final case class ClientApiServiceImpl(
           ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
           client => addRelationship201(client)
         )
-      case statusReply =>
+      case statusReply                          =>
         logger.error(
           s"Error while adding relationship ${relationshipSeed.relationshipId} to client ${clientId} - ${statusReply.getError.getMessage}"
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             addRelationship404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case _                       =>
             internalServerError(
               problemOf(
                 StatusCodes.InternalServerError,
@@ -249,12 +249,12 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClient204
-      case statusReply =>
+      case statusReply                          =>
         logger.error(s"Error while deleting client ${clientId} - ${statusReply.getError.getMessage}")
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             deleteClient404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case _                       =>
             internalServerError(problemOf(StatusCodes.InternalServerError, DeleteClientError(clientId)))
         }
     }
@@ -278,16 +278,16 @@ final case class ClientApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => removeClientRelationship204
-      case statusReply =>
+      case statusReply                          =>
         logger.error(
           s"Error while removing relationship ${relationshipId} from client ${clientId} - ${statusReply.getError.getMessage}"
         )
         statusReply.getError match {
-          case ex: ClientNotFoundError =>
+          case ex: ClientNotFoundError            =>
             removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
           case ex: PartyRelationshipNotFoundError =>
             removeClientRelationship404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case _                                  =>
             internalServerError(
               problemOf(StatusCodes.InternalServerError, RemoveRelationshipError(relationshipId, clientId))
             )
@@ -316,17 +316,17 @@ final case class ClientApiServiceImpl(
           ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
           client => getClientByPurposeId200(client)
         )
-      case statusReply if statusReply.isError =>
+      case statusReply if statusReply.isError   =>
         logger.info(
           s"Error while retrieving Client for client=$clientId/purpose=$purposeId - ${statusReply.getError.getMessage}"
         )
         statusReply.getError match {
           case ex: ClientWithPurposeNotFoundError =>
             getClientByPurposeId404(problemOf(StatusCodes.NotFound, ex))
-          case _ =>
+          case _                                  =>
             internalServerError(problemOf(StatusCodes.InternalServerError, GetClientError(clientId)))
         }
-      case unknownReply =>
+      case unknownReply                         =>
         logger.error(s"Error while retrieving Client for client=$clientId/purpose=$purposeId, - Internal server error")
         internalServerError(
           problemOf(StatusCodes.InternalServerError, GetClientServerError(clientId, unknownReply.toString))

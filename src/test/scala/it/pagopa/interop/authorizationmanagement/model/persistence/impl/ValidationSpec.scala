@@ -74,7 +74,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
     }
 
     "return an error since certificates are not uploadable on the platform" in {
-      //given
+      // given
       val encodedPem = KeySeed(
         key = Base64Encoder.encode("""-----BEGIN CERTIFICATE-----
                                      |MIIC6jCCAdKgAwIBAgIGAXqBCekBMA0GCSqGSIb3DQEBCwUAMDYxNDAyBgNVBAMM

@@ -31,7 +31,7 @@ package object v1 {
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
       for {
-        keys <- state.keys
+        keys    <- state.keys
           .traverse[ErrorOr, (String, Keys)] { key =>
             protoEntryToKey(key.keyEntries)
               .map(entry => key.clientId -> entry.toMap)
@@ -46,7 +46,7 @@ package object v1 {
   implicit def stateV1PersistEventSerializer: PersistEventSerializer[State, StateV1] =
     state => {
       for {
-        keys <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
+        keys    <- state.keys.toSeq.traverse[ErrorOr, StateKeysEntryV1] { case (client, keys) =>
           keyToEntry(keys).map(entries => StateKeysEntryV1(client, entries))
         }
         clients <- state.clients.toSeq.traverse[ErrorOr, StateClientsEntryV1] { case (_, client) =>
@@ -339,8 +339,8 @@ package object v1 {
 
   private def protobufToComponentState(state: ClientComponentStateV1): ErrorOr[PersistentClientComponentState] =
     state match {
-      case ClientComponentStateV1.ACTIVE   => Right(PersistentClientComponentState.Active)
-      case ClientComponentStateV1.INACTIVE => Right(PersistentClientComponentState.Inactive)
+      case ClientComponentStateV1.ACTIVE          => Right(PersistentClientComponentState.Active)
+      case ClientComponentStateV1.INACTIVE        => Right(PersistentClientComponentState.Inactive)
       case ClientComponentStateV1.Unrecognized(v) =>
         Left(new RuntimeException(s"Unable to deserialize Component State value $v"))
     }
@@ -362,7 +362,7 @@ package object v1 {
   private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
   def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
-  def toTime(timestamp: String): OffsetDateTime =
+  def toTime(timestamp: String): OffsetDateTime   =
     OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
@@ -378,8 +378,8 @@ package object v1 {
 
   def clientKindFromProtobufV1(protobufClientKind: ClientKindV1): Either[Throwable, PersistentClientKind] =
     protobufClientKind match {
-      case ClientKindV1.CONSUMER => Right(Consumer)
-      case ClientKindV1.API      => Right(Api)
+      case ClientKindV1.CONSUMER            => Right(Consumer)
+      case ClientKindV1.API                 => Right(Api)
       case ClientKindV1.Unrecognized(value) =>
         Left(new RuntimeException(s"Unable to deserialize client kind value $value"))
     }
