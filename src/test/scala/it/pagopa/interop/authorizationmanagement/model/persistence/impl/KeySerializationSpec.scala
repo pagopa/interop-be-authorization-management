@@ -10,7 +10,7 @@ class KeySerializationSpec extends AnyWordSpecLike with Matchers {
 
   "serialization of Key" should {
     "contain x5t#s256" in {
-      val key = Key(
+      val key       = Key(
         kty = "1",
         keyOps = None,
         use = Some("sig"),

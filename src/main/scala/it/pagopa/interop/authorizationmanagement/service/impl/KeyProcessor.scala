@@ -75,7 +75,7 @@ object KeyProcessor extends KeyProcessor {
     key.map(_.copy(alg = Some(algorithm), use = Some(use.toRfcValue)))
   }
 
-  private def rsa(kid: String, key: RSAKey): Key = {
+  private def rsa(kid: String, key: RSAKey): Key           = {
     val otherPrimes = Option(key.getOtherPrimes)
       .map(list =>
         list.asScala
@@ -115,7 +115,7 @@ object KeyProcessor extends KeyProcessor {
       oth = otherPrimes
     )
   }
-  private def ec(kid: String, key: ECKey): Key = Key(
+  private def ec(kid: String, key: ECKey): Key             = Key(
     use = None,
     alg = None,
     kty = key.getKeyType.getValue,
@@ -139,7 +139,7 @@ object KeyProcessor extends KeyProcessor {
     qi = None,
     oth = None
   )
-  private def okp(kid: String, key: OctetKeyPair): Key = {
+  private def okp(kid: String, key: OctetKeyPair): Key     = {
     Key(
       use = None,
       alg = None,
@@ -193,7 +193,7 @@ object KeyProcessor extends KeyProcessor {
 
   }
 
-  //encapsulating in a method to avoid compilation errors because of Nimbus deprecated method
+  // encapsulating in a method to avoid compilation errors because of Nimbus deprecated method
   @nowarn
   @inline private def getX5T(key: JWK): Option[String] = Option(key.getX509CertThumbprint).map(_.toString)
 }

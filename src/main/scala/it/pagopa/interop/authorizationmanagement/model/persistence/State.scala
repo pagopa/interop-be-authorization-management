@@ -13,14 +13,14 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def deleteKey(clientId: String, keyId: String): State = keys.get(clientId) match {
     case Some(entries) =>
       copy(keys = keys + (clientId -> (entries - keyId)))
-    case None => this
+    case None          => this
   }
 
   def addKeys(clientId: String, addedKeys: Keys): State = {
     keys.get(clientId) match {
       case Some(entries) =>
         copy(keys = keys + (clientId -> (entries ++ addedKeys)))
-      case None => copy(keys = keys + (clientId -> addedKeys))
+      case None          => copy(keys = keys + (clientId -> addedKeys))
     }
   }
 
@@ -41,7 +41,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
       case Some(client) =>
         val updated = client.copy(relationships = client.relationships.filter(_.toString != relationshipId))
         clients + (clientId -> updated)
-      case None =>
+      case None         =>
         clients
     }
 
@@ -57,7 +57,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
         val purposes      = client.purposes + (purposeId -> statesChain)
         val updatedClient = client.copy(purposes = purposes)
         copy(clients = clients + (clientId -> updatedClient))
-      case None => this
+      case None         => this
     }
   }
 
@@ -67,7 +67,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
         val purposes      = client.purposes - purposeId
         val updatedClient = client.copy(purposes = purposes)
         copy(clients = clients + (clientId -> updatedClient))
-      case None => this
+      case None         => this
     }
   }
 
@@ -110,7 +110,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
       client.copy(purposes = client.purposes.map {
         case (purposeId, statesChain) if idComparison(statesChain) =>
           purposeId -> updateStates(statesChain)
-        case (purposeId, statesChain) =>
+        case (purposeId, statesChain)                              =>
           purposeId -> statesChain
       })
 

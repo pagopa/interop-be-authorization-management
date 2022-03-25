@@ -14,9 +14,9 @@ class StateSpec extends AnyWordSpecLike with Matchers {
   "given an application state" should {
 
     "physically delete the keys properly" in {
-      //given
+      // given
       val relationshipId = UUID.randomUUID()
-      val fooBarKeys = Map(
+      val fooBarKeys     = Map(
         "1" -> PersistentKey(
           kid = "1",
           relationshipId = relationshipId,
@@ -54,14 +54,14 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           creationTimestamp = OffsetDateTime.now()
         )
       )
-      val keys  = Map("fooBarKeys" -> fooBarKeys)
-      val state = State(keys = keys, clients = Map.empty)
+      val keys           = Map("fooBarKeys" -> fooBarKeys)
+      val state          = State(keys = keys, clients = Map.empty)
       state.keys("fooBarKeys").size shouldBe 4
 
-      //when
+      // when
       val updatedState = state.deleteKey("fooBarKeys", "2")
 
-      //then
+      // then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe None
       updatedState.keys("fooBarKeys").size shouldBe 3
     }
@@ -78,7 +78,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val consumerUuid   = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
 
-      //given
+      // given
       val client1Keys = Map(
         "kid1" -> PersistentKey(
           kid = "kid1",
@@ -112,7 +112,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           creationTimestamp = OffsetDateTime.now()
         )
       )
-      val client1 =
+      val client1     =
         PersistentClient(
           id = clientUuid1,
           consumerId = consumerUuid,
@@ -122,7 +122,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           relationships = Set.empty,
           kind = Consumer
         )
-      val client2 =
+      val client2     =
         PersistentClient(
           id = clientUuid2,
           consumerId = consumerUuid,
@@ -132,7 +132,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           relationships = Set.empty,
           kind = Consumer
         )
-      val client3 =
+      val client3     =
         PersistentClient(
           id = clientUuid3,
           consumerId = consumerUuid,
@@ -147,10 +147,10 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val clients = Map(clientId1 -> client1, clientId2 -> client2, clientId3 -> client3)
       val state   = State(keys = keys, clients = clients)
 
-      //when
+      // when
       val updatedState = state.deleteClient(clientId2)
 
-      //then
+      // then
       updatedState.keys.get(clientId2) shouldBe None
       updatedState.keys.size shouldBe 2
       updatedState.clients.get(clientId2) shouldBe None

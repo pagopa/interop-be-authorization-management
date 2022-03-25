@@ -10,7 +10,7 @@ import spray.json._
 object KeyApiMarshallerImpl extends KeyApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
   override implicit def fromEntityUnmarshallerKeySeedList: FromEntityUnmarshaller[Seq[KeySeed]] =
     sprayJsonUnmarshaller[Seq[KeySeed]]
-  override implicit def toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse] =
+  override implicit def toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse]        =
     sprayJsonMarshaller[KeysResponse]
   override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem]     = sprayJsonMarshaller[Problem]
   override implicit def toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey] = sprayJsonMarshaller[ClientKey]

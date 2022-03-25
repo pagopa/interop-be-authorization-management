@@ -46,19 +46,19 @@ final case class KeyApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    //TODO consider a preauthorize for user rights validations...
+    // TODO consider a preauthorize for user rights validations...
     logger.info("Creating keys for client {}", clientId)
     val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
     validatedPayload.andThen(k => validateWithCurrentKeys(k, keysIdentifiers)) match {
       case Valid(validKeys) =>
-        val commander: EntityRef[Command] =
+        val commander: EntityRef[Command]             =
           sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
         val result: Future[StatusReply[KeysResponse]] =
           commander.ask(ref => AddKeys(clientId, validKeys, ref))
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
-          case statusReply =>
+          case statusReply                          =>
             logger.error(s"Error while creating keys for client $clientId - ${statusReply.getError.getMessage}")
             createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysBadRequest(clientId: String)))
         }
@@ -73,11 +73,11 @@ final case class KeyApiServiceImpl(
   /** Code: 200, Message: List of keyIdentifiers, DataType: Seq[Pet]
     */
   private def keysIdentifiers: LazyList[Kid] = {
-    val sliceSize = 1000
+    val sliceSize                           = 1000
     val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
     )
-    val keyIdentifiers: LazyList[Kid] = commanders.to(LazyList).flatMap(ref => slices(ref, sliceSize))
+    val keyIdentifiers: LazyList[Kid]       = commanders.to(LazyList).flatMap(ref => slices(ref, sliceSize))
 
     keyIdentifiers
   }
@@ -111,7 +111,7 @@ final case class KeyApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
-      case statusReply =>
+      case statusReply                          =>
         logger.info("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
         getClientKeyById404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
     }
@@ -133,7 +133,7 @@ final case class KeyApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
-      case statusReply =>
+      case statusReply                          =>
         logger.info("Error while getting keys for client {}", clientId, statusReply.getError)
         getClientKeys404(problemOf(StatusCodes.NotFound, ClientKeysNotFound(clientId)))
     }
@@ -147,12 +147,12 @@ final case class KeyApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     logger.info("Deleting key {} belonging to {}", keyId, clientId)
-    val commander: EntityRef[Command] =
+    val commander: EntityRef[Command]     =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
     val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClientKeyById204
-      case statusReply =>
+      case statusReply                          =>
         logger.info("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
         deleteClientKeyById404(problemOf(StatusCodes.BadRequest, DeleteClientKeyNotFound(clientId, keyId)))
     }
@@ -176,7 +176,7 @@ final case class KeyApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
-      case statusReply =>
+      case statusReply                          =>
         logger.info("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
         getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, EncodedClientKeyNotFound(clientId, keyId)))
     }

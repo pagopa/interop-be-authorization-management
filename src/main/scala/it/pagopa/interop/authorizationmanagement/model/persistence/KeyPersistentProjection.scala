@@ -32,7 +32,7 @@ class KeyPersistentProjection(system: ActorSystem[_], dbConfig: DatabaseConfig[J
 }
 
 class ProjectionHandler(tag: String) extends SlickHandler[EventEnvelope[Event]] {
-  val logger = LoggerFactory.getLogger(this.getClass)
+  val logger                                           = LoggerFactory.getLogger(this.getClass)
   override def process(envelope: EventEnvelope[Event]) = {
     envelope.event match {
       case _ =>

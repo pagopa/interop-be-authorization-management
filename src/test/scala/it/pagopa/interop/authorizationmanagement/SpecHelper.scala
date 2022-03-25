@@ -50,7 +50,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
 
   val sharding: ClusterSharding = ClusterSharding(system)
 
-  val httpSystem: ActorSystem[Any] =
+  val httpSystem: ActorSystem[Any]                        =
     ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
   implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
   val classicSystem: actor.ActorSystem                    = httpSystem.classicSystem
@@ -136,7 +136,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
 
   def generateEncodedKey(): String = {
     import java.security.KeyPairGenerator
-    val gen = KeyPairGenerator.getInstance("RSA")
+    val gen     = KeyPairGenerator.getInstance("RSA")
     gen.initialize(1024)
     val keyPair = gen.generateKeyPair
 

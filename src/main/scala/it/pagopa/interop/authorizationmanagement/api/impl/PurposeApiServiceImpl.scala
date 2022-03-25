@@ -52,26 +52,26 @@ final case class PurposeApiServiceImpl(
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
-    val persistentClientPurpose = PersistentClientPurpose.fromSeed(uuidSupplier)(seed)
+    val persistentClientPurpose                              = PersistentClientPurpose.fromSeed(uuidSupplier)(seed)
     val result: Future[StatusReply[PersistentClientPurpose]] =
       commander.ask(ref => AddClientPurpose(clientId, persistentClientPurpose, ref))
 
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess =>
         addClientPurpose200(statusReply.getValue.toApi)
-      case Success(statusReply) =>
+      case Success(statusReply)                          =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
             logger.info(s"Client $clientId not found on Purpose add - ${err.getMessage}")
             val problem = problemOf(StatusCodes.NotFound, err)
             addClientPurpose404(problem)
-          case err =>
+          case err                      =>
             logger.error(s"Error adding Purpose for Client ${clientId} - ${err.getMessage}")
             val problem =
               problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
             complete(problem.status, problem)
         }
-      case Failure(ex) =>
+      case Failure(ex)                                   =>
         logger.error(s"Error adding Purpose for Client ${clientId} - ${ex.getMessage}")
         val problem =
           problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
@@ -93,19 +93,19 @@ final case class PurposeApiServiceImpl(
     onComplete(result) {
       case Success(statusReply) if statusReply.isSuccess =>
         removeClientPurpose204
-      case Success(statusReply) =>
+      case Success(statusReply)                          =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
             logger.info(s"Client ${clientId} not found on Purpose ${purposeId} remove - ${err.getMessage}")
             val problem = problemOf(StatusCodes.NotFound, err)
             addClientPurpose404(problem)
-          case err =>
+          case err                      =>
             logger.error(s"Error removing Purpose ${purposeId} from Client ${clientId} - ${err.getMessage}")
             val problem =
               problemOf(StatusCodes.InternalServerError, ClientPurposeRemovalError(clientId, purposeId))
             complete(problem.status, problem)
         }
-      case Failure(ex) =>
+      case Failure(ex)                                   =>
         logger.error(s"Error removing Purpose ${purposeId} from Client ${clientId} - ${ex.getMessage}")
         val problem =
           problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, purposeId))
@@ -130,7 +130,7 @@ final case class PurposeApiServiceImpl(
     )
 
     onComplete(result) {
-      case Success(_) =>
+      case Success(_)  =>
         updateEServiceState204
       case Failure(ex) =>
         logger.error(s"Error updating EService ${eServiceId} state for all clients - ${ex.getMessage}")
@@ -152,7 +152,7 @@ final case class PurposeApiServiceImpl(
     )
 
     onComplete(result) {
-      case Success(_) =>
+      case Success(_)  =>
         updateAgreementState204
       case Failure(ex) =>
         logger.error(
@@ -176,7 +176,7 @@ final case class PurposeApiServiceImpl(
     )
 
     onComplete(result) {
-      case Success(_) =>
+      case Success(_)  =>
         updatePurposeState204
       case Failure(ex) =>
         logger.error(s"Error updating Purpose ${purposeId} state for all clients - ${ex.getMessage}")
@@ -193,7 +193,7 @@ final case class PurposeApiServiceImpl(
       )
 
     for {
-      shardResults <- commanders.traverse(_.ask[StatusReply[Unit]](event))
+      shardResults  <- commanders.traverse(_.ask[StatusReply[Unit]](event))
       summaryResult <- shardResults
         .collect {
           case shardResult if shardResult.isSuccess => Right(shardResult.getValue)
