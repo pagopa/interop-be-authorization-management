@@ -10,7 +10,7 @@ import akka.cluster.typed.{Cluster, Join}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import com.nimbusds.jose.util.Base64
@@ -25,6 +25,7 @@ import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 import spray.json._
 
+import java.net.InetAddress
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -32,8 +33,13 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSupport with DefaultJsonProtocol {
   self: ScalaTestWithActorTestKit =>
 
-  val bearerToken: String               = "token"
-  val authorization: Seq[Authorization] = Seq(Authorization(OAuth2BearerToken(bearerToken)))
+  val bearerToken: String                   = "token"
+  final val requestHeaders: Seq[HttpHeader] =
+    Seq(
+      headers.Authorization(OAuth2BearerToken("token")),
+      headers.RawHeader("X-Correlation-Id", "test-id"),
+      headers.`X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
+    )
 
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
@@ -191,7 +197,7 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
   }
 
   def request(uri: String, method: HttpMethod, data: Option[String] = None): HttpResponse = {
-    val httpRequest: HttpRequest = HttpRequest(uri = uri, method = method, headers = authorization)
+    val httpRequest: HttpRequest = HttpRequest(uri = uri, method = method, headers = requestHeaders)
 
     val requestWithEntity: HttpRequest =
       data.fold(httpRequest)(d => httpRequest.withEntity(HttpEntity(ContentTypes.`application/json`, d)))

@@ -38,6 +38,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - client
@@ -131,6 +134,9 @@ paths:
           schema:
             $ref: '#/components/schemas/ClientKind'
   /clients/{clientId}:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     get:
       description: Retrieves a Client
       tags:
@@ -181,6 +187,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/relationships':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - client
@@ -216,6 +225,9 @@ paths:
               $ref: '#/components/schemas/PartyRelationshipSeed'
       description: Adds a Party Relationship to a Client
   '/clients/{clientId}/relationships/{relationshipId}':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     delete:
       description: Removes a Party Relationship from a Client
       tags:
@@ -247,6 +259,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - key
@@ -315,6 +330,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/keys/{keyId}':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     get:
       tags:
         - key
@@ -378,6 +396,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/encoded/keys/{keyId}':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     get:
       tags:
         - key
@@ -412,6 +433,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/purposes':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -446,6 +470,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   '/clients/{clientId}/purposes/{purposeId}':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     get:
       description: Retrieves a Client related to a purpose id
       tags:
@@ -511,6 +538,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   /bulk/eservices/{eserviceId}/state:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -541,6 +571,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   /bulk/agreements/eserviceId/{eserviceId}/consumerId/{consumerId}/state:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -578,6 +611,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
   /bulk/purposes/{purposeId}/state:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -608,6 +644,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 components:
+  parameters:
+    CorrelationIdHeader:
+      in: header
+      name: X-Correlation-Id
+      required: true
+      schema:
+        type: string
+    IpAddress:
+      in: header
+      name: X-Forwarded-For
+      schema:
+        type: string
   schemas:
     KeysResponse:
       type: object
