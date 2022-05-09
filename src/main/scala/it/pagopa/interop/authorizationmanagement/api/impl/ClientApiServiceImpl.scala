@@ -21,7 +21,6 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validati
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -36,7 +35,7 @@ final case class ClientApiServiceImpl(
 ) extends ClientApiService
     with Validation {
 
-  private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
+  private val logger = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
@@ -71,12 +70,10 @@ final case class ClientApiServiceImpl(
           client => createClient201(client)
         )
       case Success(statusReply)                          =>
-        logger.error(
-          s"Error while creating client for Consumer ${clientSeed.consumerId} - ${statusReply.getError.getMessage}"
-        )
+        logger.error(s"Error while creating client for Consumer ${clientSeed.consumerId}", statusReply.getError)
         createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
       case Failure(ex)                                   =>
-        logger.error(s"Error while creating client for Consumer ${clientSeed.consumerId} - ${ex.getMessage}")
+        logger.error(s"Error while creating client for Consumer ${clientSeed.consumerId}", ex)
         createClient400(problemOf(StatusCodes.BadRequest, CreateClientError(clientSeed.consumerId.toString)))
     }
 
@@ -105,10 +102,10 @@ final case class ClientApiServiceImpl(
       case statusReply if statusReply.isError   =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
-            logger.info(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
+            logger.info(s"Error while retrieving Client ${clientId}", ex)
             getClient404(problemOf(StatusCodes.NotFound, ex))
           case ex                      =>
-            logger.error(s"Error while retrieving Client ${clientId} - ${ex.getMessage}")
+            logger.error(s"Error while retrieving Client ${clientId}", ex)
             internalServerError(problemOf(StatusCodes.InternalServerError, GetClientError(clientId)))
         }
       // This should never occur, but with this check the pattern matching is exhaustive
@@ -216,7 +213,8 @@ final case class ClientApiServiceImpl(
         )
       case statusReply                          =>
         logger.error(
-          s"Error while adding relationship ${relationshipSeed.relationshipId} to client ${clientId} - ${statusReply.getError.getMessage}"
+          s"Error while adding relationship ${relationshipSeed.relationshipId} to client ${clientId}",
+          statusReply.getError
         )
         statusReply.getError match {
           case ex: ClientNotFoundError =>
@@ -250,7 +248,7 @@ final case class ClientApiServiceImpl(
     onSuccess(result) {
       case statusReply if statusReply.isSuccess => deleteClient204
       case statusReply                          =>
-        logger.error(s"Error while deleting client ${clientId} - ${statusReply.getError.getMessage}")
+        logger.error(s"Error while deleting client ${clientId}", statusReply.getError)
         statusReply.getError match {
           case ex: ClientNotFoundError =>
             deleteClient404(problemOf(StatusCodes.NotFound, ex))
@@ -280,7 +278,8 @@ final case class ClientApiServiceImpl(
       case statusReply if statusReply.isSuccess => removeClientRelationship204
       case statusReply                          =>
         logger.error(
-          s"Error while removing relationship ${relationshipId} from client ${clientId} - ${statusReply.getError.getMessage}"
+          s"Error while removing relationship ${relationshipId} from client ${clientId}",
+          statusReply.getError
         )
         statusReply.getError match {
           case ex: ClientNotFoundError            =>
@@ -317,9 +316,7 @@ final case class ClientApiServiceImpl(
           client => getClientByPurposeId200(client)
         )
       case statusReply if statusReply.isError   =>
-        logger.info(
-          s"Error while retrieving Client for client=$clientId/purpose=$purposeId - ${statusReply.getError.getMessage}"
-        )
+        logger.info(s"Error while retrieving Client for client=$clientId/purpose=$purposeId", statusReply.getError)
         statusReply.getError match {
           case ex: ClientWithPurposeNotFoundError =>
             getClientByPurposeId404(problemOf(StatusCodes.NotFound, ex))

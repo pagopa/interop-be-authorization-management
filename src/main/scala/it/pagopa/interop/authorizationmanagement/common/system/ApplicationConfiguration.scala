@@ -3,6 +3,8 @@ package it.pagopa.interop.authorizationmanagement.common.system
 import com.typesafe.config.{Config, ConfigFactory}
 
 object ApplicationConfiguration {
+  System.setProperty("kanela.show-banner", "false")
+
   val config: Config = ConfigFactory.load()
 
   val serverPort: Int = config.getInt("key-management.port")
