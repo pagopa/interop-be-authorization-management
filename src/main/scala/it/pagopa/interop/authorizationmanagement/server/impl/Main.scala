@@ -1,181 +1,83 @@
 package it.pagopa.interop.authorizationmanagement.server.impl
 
+import cats.syntax.all._
+import buildinfo.BuildInfo
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.ActorSystem
 import akka.cluster.ClusterEvent
-import akka.cluster.sharding.typed.ShardingEnvelope
-import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityContext, ShardedDaemonProcess}
+import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.typed.{Cluster, Subscribe}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.complete
-import akka.http.scaladsl.server.directives.SecurityDirectives
+import akka.http.scaladsl.Http.ServerBinding
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import akka.persistence.typed.PersistenceId
-import akka.projection.ProjectionBehavior
-import akka.{actor => classic}
-import com.nimbusds.jose.proc.SecurityContext
-import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
-import it.pagopa.interop.authorizationmanagement.api._
-import it.pagopa.interop.authorizationmanagement.api.impl.{
-  ClientApiMarshallerImpl,
-  ClientApiServiceImpl,
-  HealthApiMarshallerImpl,
-  HealthServiceApiImpl,
-  KeyApiMarshallerImpl,
-  KeyApiServiceImpl,
-  PurposeApiMarshallerImpl,
-  PurposeApiServiceImpl,
-  problemOf
-}
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
-import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration.{
-  numberOfProjectionTags,
-  projectionTag,
-  projectionsEnabled
-}
-import it.pagopa.interop.authorizationmanagement.model.persistence.{
-  Command,
-  KeyPersistentBehavior,
-  KeyPersistentProjection
-}
 import it.pagopa.interop.authorizationmanagement.server.Controller
-import it.pagopa.interop.commons.jwt.service.JWTReader
-import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
-import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
-import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
-import it.pagopa.interop.commons.utils.OpenapiUtils
-import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.interop.commons.utils.service.impl.UUIDSupplierImpl
+import it.pagopa.interop.commons.logging.renderBuildInfo
 import kamon.Kamon
-import slick.basic.DatabaseConfig
-import slick.jdbc.JdbcProfile
-
 import scala.concurrent.ExecutionContext
-import scala.util.Try
+import com.typesafe.scalalogging.Logger
+import scala.concurrent.Future
+import scala.util.{Success, Failure}
 
-object Main extends App {
+object Main extends App with Dependencies {
 
-  val dependenciesLoaded: Try[JWTReader] = for {
-    keyset <- JWTConfiguration.jwtReader.loadKeyset()
-    jwtValidator = new DefaultJWTReader with PublicKeysHolder {
-      var publicKeyset: Map[KID, SerializedKey]                                        = keyset
-      override protected val claimsVerifier: DefaultJWTClaimsVerifier[SecurityContext] =
-        getClaimsVerifier(audience = ApplicationConfiguration.jwtAudience)
-    }
-  } yield jwtValidator
+  val logger: Logger = Logger(this.getClass())
 
-  val jwtValidator =
-    dependenciesLoaded.get // THIS IS THE END OF THE WORLD. Exceptions are welcomed here.
+  val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
+    Behaviors.setup[Nothing] { context =>
+      implicit val actorSystem: ActorSystem[_]        = context.system
+      implicit val executionContext: ExecutionContext = actorSystem.executionContext
 
-  Kamon.init()
+      Kamon.init()
+      AkkaManagement.get(actorSystem).start()
 
-  lazy val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
-    val index = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
-    KeyPersistentBehavior(
-      entityContext.shard,
-      PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-      projectionTag(index)
-    )
-  }
+      val sharding: ClusterSharding = ClusterSharding(context.system)
+      sharding.init(keyPersistentEntity)
 
-  locally {
-    val _ = ActorSystem[Nothing](
-      Behaviors.setup[Nothing] { context =>
-        import akka.actor.typed.scaladsl.adapter._
-        implicit val classicSystem: classic.ActorSystem = context.system.toClassic
-        implicit val executionContext: ExecutionContext = context.system.executionContext
+      val cluster: Cluster = Cluster(context.system)
+      ClusterBootstrap.get(actorSystem).start()
 
-        val keyApiMarshaller: KeyApiMarshaller = KeyApiMarshallerImpl
-        val uuidSupplier: UUIDSupplier         = new UUIDSupplierImpl()
+      val listener = context.spawn(
+        Behaviors.receive[ClusterEvent.MemberEvent]((ctx, event) => {
+          ctx.log.info("MemberEvent: {}", event)
+          Behaviors.same
+        }),
+        "listener"
+      )
 
-        val cluster = Cluster(context.system)
+      cluster.subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
-        context.log.info(
-          "Started [" + context.system + "], cluster.selfAddress = " + cluster.selfMember.address + ", build information = " + buildinfo.BuildInfo.toString + ")"
-        )
+      if (ApplicationConfiguration.projectionsEnabled) initProjections()
 
-        val sharding: ClusterSharding = ClusterSharding(context.system)
+      logger.info(renderBuildInfo(BuildInfo))
+      logger.info(s"Started cluster at ${cluster.selfMember.address}")
 
-        val keyPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
-          Entity(KeyPersistentBehavior.TypeKey)(behaviorFactory)
-
-        val _ = sharding.init(keyPersistentEntity)
-
-        if (projectionsEnabled) {
-          val dbConfig: DatabaseConfig[JdbcProfile] =
-            DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
-
-          val keyPersistentProjection = new KeyPersistentProjection(context.system, dbConfig)
-
-          ShardedDaemonProcess(context.system).init[ProjectionBehavior.Command](
-            name = "keys-projections",
-            numberOfInstances = numberOfProjectionTags,
-            behaviorFactory = (i: Int) => ProjectionBehavior(keyPersistentProjection.projection(projectionTag(i))),
-            stopMessage = ProjectionBehavior.Stop
-          )
-        }
-
-        val keyApi = new KeyApi(
-          KeyApiServiceImpl(context.system, sharding, keyPersistentEntity),
-          keyApiMarshaller,
-          jwtValidator.OAuth2JWTValidatorAsContexts
-        )
-
-        val clientApi = new ClientApi(
-          ClientApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
-          ClientApiMarshallerImpl,
-          jwtValidator.OAuth2JWTValidatorAsContexts
-        )
-
-        val purposeApi = new PurposeApi(
-          PurposeApiServiceImpl(context.system, sharding, keyPersistentEntity, uuidSupplier),
-          PurposeApiMarshallerImpl,
-          jwtValidator.OAuth2JWTValidatorAsContexts
-        )
-
-        val healthApi: HealthApi = new HealthApi(
-          HealthServiceApiImpl,
-          HealthApiMarshallerImpl,
-          SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
-        )
-
-        val _ = AkkaManagement.get(classicSystem).start()
-
-        val controller = new Controller(
-          clientApi,
+      val serverBinding: Future[ServerBinding] = for {
+        jwtValidator <- getJwtValidator()
+        controller = new Controller(
+          clientApi(jwtValidator, sharding),
           healthApi,
-          keyApi,
-          purposeApi,
-          validationExceptionToRoute = Some(report => {
-            val error =
-              problemOf(
-                StatusCodes.BadRequest,
-                ValidationRequestError(OpenapiUtils.errorFromRequestValidationReport(report))
-              )
-            complete(error.status, error)(keyApiMarshaller.toEntityMarshallerProblem)
-          })
-        )
+          keyApi(jwtValidator, sharding),
+          purposeApi(jwtValidator, sharding),
+          validationExceptionToRoute.some
+        )(actorSystem.classicSystem)
+        binding <- Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
+      } yield binding
 
-        val _ = Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)
+      serverBinding.onComplete {
+        case Success(b) =>
+          logger.info(s"Started server at ${b.localAddress.getHostString()}:${b.localAddress.getPort()}")
+        case Failure(e) =>
+          actorSystem.terminate()
+          logger.error("Startup error: ", e)
+      }
 
-        val listener = context.spawn(
-          Behaviors.receive[ClusterEvent.MemberEvent]((ctx, event) => {
-            ctx.log.info("MemberEvent: {}", event)
-            Behaviors.same
-          }),
-          "listener"
-        )
+      Behaviors.empty
+    },
+    BuildInfo.name
+  )
 
-        Cluster(context.system).subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
+  actorSystem.whenTerminated.onComplete { case _ => Kamon.stop() }(scala.concurrent.ExecutionContext.global)
 
-        val _ = AkkaManagement(classicSystem).start()
-        ClusterBootstrap.get(classicSystem).start()
-        Behaviors.empty
-      },
-      "interop-be-authorization-management"
-    )
-  }
 }

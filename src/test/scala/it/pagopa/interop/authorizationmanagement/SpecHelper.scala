@@ -19,7 +19,6 @@ import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
-import it.pagopa.interop.authorizationmanagement.server.impl.Main.behaviorFactory
 import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
@@ -29,8 +28,14 @@ import java.net.InetAddress
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 
-trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSupport with DefaultJsonProtocol {
+trait SpecHelper
+    extends SpecConfiguration
+    with MockFactory
+    with SprayJsonSupport
+    with DefaultJsonProtocol
+    with Dependencies {
   self: ScalaTestWithActorTestKit =>
 
   val bearerToken: String                   = "token"
@@ -44,7 +49,6 @@ trait SpecHelper extends SpecConfiguration with MockFactory with SprayJsonSuppor
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
 
-  val keyApiMarshaller: KeyApiMarshaller         = KeyApiMarshallerImpl
   val clientApiMarshaller: ClientApiMarshaller   = ClientApiMarshallerImpl
   val purposeApiMarshaller: PurposeApiMarshaller = PurposeApiMarshallerImpl
 
