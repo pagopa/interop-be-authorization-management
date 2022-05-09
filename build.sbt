@@ -58,8 +58,6 @@ runStandalone := {
   (Compile / run).evaluated
 }
 
-scalacOptions -= "-Xfatal-warnings"
-
 (Compile / compile) := ((Compile / compile) dependsOn generateCode).value
 (Test / test)       := ((Test / test) dependsOn generateCode).value
 

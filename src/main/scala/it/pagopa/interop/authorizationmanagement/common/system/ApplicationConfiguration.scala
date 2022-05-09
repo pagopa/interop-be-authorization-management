@@ -5,6 +5,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 object ApplicationConfiguration {
   System.setProperty("kanela.show-banner", "false")
 
+  println(System.getProperty("kanela.show-banner"))
+
   val config: Config = ConfigFactory.load()
 
   val serverPort: Int = config.getInt("key-management.port")
