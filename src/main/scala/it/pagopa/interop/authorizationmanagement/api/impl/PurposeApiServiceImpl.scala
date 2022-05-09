@@ -24,7 +24,6 @@ import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLo
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -38,7 +37,7 @@ final case class PurposeApiServiceImpl(
     extends PurposeApiService
     with Validation {
 
-  private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
+  private val logger = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
@@ -62,17 +61,17 @@ final case class PurposeApiServiceImpl(
       case Success(statusReply)                          =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            logger.info(s"Client $clientId not found on Purpose add - ${err.getMessage}")
+            logger.info(s"Client $clientId not found on Purpose add", err)
             val problem = problemOf(StatusCodes.NotFound, err)
             addClientPurpose404(problem)
           case err                      =>
-            logger.error(s"Error adding Purpose for Client ${clientId} - ${err.getMessage}")
+            logger.error(s"Error adding Purpose for Client ${clientId}", err)
             val problem =
               problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
             complete(problem.status, problem)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error adding Purpose for Client ${clientId} - ${ex.getMessage}")
+        logger.error(s"Error adding Purpose for Client ${clientId}", ex)
         val problem =
           problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
         complete(problem.status, problem)
@@ -96,17 +95,17 @@ final case class PurposeApiServiceImpl(
       case Success(statusReply)                          =>
         statusReply.getError match {
           case err: ClientNotFoundError =>
-            logger.info(s"Client ${clientId} not found on Purpose ${purposeId} remove - ${err.getMessage}")
+            logger.info(s"Client ${clientId} not found on Purpose ${purposeId} remove", err)
             val problem = problemOf(StatusCodes.NotFound, err)
             addClientPurpose404(problem)
           case err                      =>
-            logger.error(s"Error removing Purpose ${purposeId} from Client ${clientId} - ${err.getMessage}")
+            logger.error(s"Error removing Purpose ${purposeId} from Client ${clientId}", err)
             val problem =
               problemOf(StatusCodes.InternalServerError, ClientPurposeRemovalError(clientId, purposeId))
             complete(problem.status, problem)
         }
       case Failure(ex)                                   =>
-        logger.error(s"Error removing Purpose ${purposeId} from Client ${clientId} - ${ex.getMessage}")
+        logger.error(s"Error removing Purpose ${purposeId} from Client ${clientId}", ex)
         val problem =
           problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, purposeId))
         complete(problem.status, problem)
@@ -133,7 +132,7 @@ final case class PurposeApiServiceImpl(
       case Success(_)  =>
         updateEServiceState204
       case Failure(ex) =>
-        logger.error(s"Error updating EService ${eServiceId} state for all clients - ${ex.getMessage}")
+        logger.error(s"Error updating EService ${eServiceId} state for all clients", ex)
         val problem = problemOf(StatusCodes.InternalServerError, ClientEServiceStateUpdateError(eServiceId))
         complete(problem.status, problem)
     }
@@ -156,7 +155,8 @@ final case class PurposeApiServiceImpl(
         updateAgreementState204
       case Failure(ex) =>
         logger.error(
-          s"Error updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients - ${ex.getMessage}"
+          s"Error updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients",
+          ex
         )
         val problem =
           problemOf(StatusCodes.InternalServerError, ClientAgreementStateUpdateError(eServiceId, consumerId))
@@ -179,7 +179,7 @@ final case class PurposeApiServiceImpl(
       case Success(_)  =>
         updatePurposeState204
       case Failure(ex) =>
-        logger.error(s"Error updating Purpose ${purposeId} state for all clients - ${ex.getMessage}")
+        logger.error(s"Error updating Purpose ${purposeId} state for all clients", ex)
         val problem = problemOf(StatusCodes.InternalServerError, ClientPurposeStateUpdateError(purposeId))
         complete(problem.status, problem)
     }

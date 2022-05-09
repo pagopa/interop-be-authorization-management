@@ -20,7 +20,6 @@ import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
-import org.slf4j.LoggerFactory
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -33,7 +32,7 @@ final case class KeyApiServiceImpl(
 ) extends KeyApiService
     with Validation {
 
-  private val logger = Logger.takingImplicit[ContextFieldsToLog](LoggerFactory.getLogger(this.getClass))
+  private val logger = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
@@ -59,7 +58,7 @@ final case class KeyApiServiceImpl(
         onSuccess(result) {
           case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
           case statusReply                          =>
-            logger.error(s"Error while creating keys for client $clientId - ${statusReply.getError.getMessage}")
+            logger.error(s"Error while creating keys for client $clientId", statusReply.getError)
             createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysBadRequest(clientId: String)))
         }
 
