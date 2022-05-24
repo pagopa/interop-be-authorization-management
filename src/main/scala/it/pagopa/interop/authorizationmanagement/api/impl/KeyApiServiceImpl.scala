@@ -102,7 +102,7 @@ final case class KeyApiServiceImpl(
     toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
     logger.info("Getting key {} for client {}", keyId, clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
