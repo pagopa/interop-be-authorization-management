@@ -20,7 +20,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
   PersistentClientPurpose
 }
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, M2M_ROLE, SECURITY_ROLE}
+import it.pagopa.interop.commons.jwt.ADMIN_ROLE
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.TypeConversions._
@@ -46,7 +46,7 @@ final case class PurposeApiServiceImpl(
     toEntityMarshallerPurpose: ToEntityMarshaller[Purpose],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Adding Purpose for Client {}", clientId)
 
     val commander: EntityRef[Command] =
@@ -82,7 +82,7 @@ final case class PurposeApiServiceImpl(
   override def removeClientPurpose(clientId: String, purposeId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Removing Purpose {} from Client {}", purposeId, clientId)
 
     val commander: EntityRef[Command] =
@@ -116,7 +116,7 @@ final case class PurposeApiServiceImpl(
   override def updateEServiceState(eServiceId: String, payload: ClientEServiceDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Updating EService {} state for all clients", eServiceId)
 
     val result: Future[Seq[Unit]] = updateStateOnClients(
@@ -144,7 +144,7 @@ final case class PurposeApiServiceImpl(
     implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info(s"Updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients")
 
     val result: Future[Seq[Unit]] = updateStateOnClients(
@@ -169,7 +169,7 @@ final case class PurposeApiServiceImpl(
   override def updatePurposeState(purposeId: String, payload: ClientPurposeDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Updating Purpose {} state for all clients", purposeId)
 
     val result: Future[Seq[Unit]] =
