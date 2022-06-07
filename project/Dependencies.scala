@@ -31,6 +31,7 @@ object Dependencies {
     lazy val clusterHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
     lazy val slf4j       = namespace                       %% "akka-slf4j"                   % akkaVersion
     lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
+    lazy val httpTestkit = namespace                       %% "akka-http-testkit"            % akkaHttpVersion
     lazy val management  = "com.lightbend.akka.management" %% "akka-management"              % akkaManagementVersion
     lazy val managementLogLevels =
       "com.lightbend.akka.management" %% "akka-management-loglevels-logback" % akkaManagementVersion
@@ -110,6 +111,11 @@ object Dependencies {
     lazy val kix       = namespace % "bcpkix-jdk15on" % bouncycastleVersion
   }
 
+  private[this] object nameOf {
+    lazy val namespace = "com.github.dwickern"
+    lazy val nameOf    = namespace %% "scala-nameof" % nameOfVersion
+  }
+
   object Jars {
     lazy val overrides: Seq[ModuleID] =
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
@@ -153,6 +159,8 @@ object Dependencies {
       postgres.jdbc               % Compile,
       scalaprotobuf.core          % Protobuf,
       akka.testkit                % Test,
+      akka.httpTestkit            % Test,
+      nameOf.nameOf               % Test,
       scalatest.core              % Test,
       scalamock.core              % Test
     )

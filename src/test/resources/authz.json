@@ -1,0 +1,145 @@
+{
+  "endpoints": [
+    {
+      "route": "createKeys",
+      "roles": [
+        "admin",
+        "security"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "getClientKeys",
+      "roles": [
+        "admin",
+        "security",
+        "m2m"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "getClientKeyById",
+      "roles": [
+        "admin",
+        "security",
+        "m2m"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "deleteClientKeyById",
+      "roles": [
+        "admin",
+        "security"
+      ],
+      "verb": "DELETE"
+    },
+    {
+      "route": "getEncodedClientKeyById",
+      "roles": [
+        "admin",
+        "security",
+        "m2m",
+        "internal"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "createClient",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "listClients",
+      "roles": [
+        "admin",
+        "m2m"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "getClient",
+      "roles": [
+        "admin",
+        "security",
+        "m2m",
+        "internal"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "deleteClient",
+      "roles": [
+        "admin"
+      ],
+      "verb": "DELETE"
+    },
+    {
+      "route": "addRelationship",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "removeClientRelationship",
+      "roles": [
+        "admin"
+      ],
+      "verb": "DELETE"
+    },
+    {
+      "route": "getClientByPurposeId",
+      "roles": [
+        "admin",
+        "security",
+        "m2m"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "addClientPurpose",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "removeClientPurpose",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "getClientByPurposeId",
+      "roles": [
+        "admin"
+      ],
+      "verb": "GET"
+    },
+    {
+      "route": "updateEServiceState",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "updateAgreementState",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
+      "route": "updatePurposeState",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    }
+  ]
+}
