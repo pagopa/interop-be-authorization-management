@@ -149,9 +149,11 @@ package object v1 {
     : PersistEventDeserializer[EServiceStateUpdatedV1, EServiceStateUpdated] =
     event =>
       for {
-        state <- protobufToComponentState(event.state)
+        descriptorId <- event.descriptorId.toUUID.toEither
+        state        <- protobufToComponentState(event.state)
       } yield EServiceStateUpdated(
         eServiceId = event.eServiceId,
+        descriptorId = descriptorId,
         state = state,
         audience = event.audience,
         voucherLifespan = event.voucherLifespan
@@ -162,6 +164,7 @@ package object v1 {
     Right[Throwable, EServiceStateUpdatedV1](
       EServiceStateUpdatedV1.of(
         eServiceId = event.eServiceId,
+        descriptorId = event.descriptorId.toString,
         state = componentStateToProtobuf(event.state),
         audience = event.audience,
         voucherLifespan = event.voucherLifespan
@@ -172,27 +175,44 @@ package object v1 {
     : PersistEventDeserializer[AgreementStateUpdatedV1, AgreementStateUpdated] =
     event =>
       for {
-        state <- protobufToComponentState(event.state)
-      } yield AgreementStateUpdated(eServiceId = event.eServiceId, consumerId = event.consumerId, state = state)
+        agreementId <- event.agreementId.toUUID.toEither
+        state       <- protobufToComponentState(event.state)
+      } yield AgreementStateUpdated(
+        eServiceId = event.eServiceId,
+        consumerId = event.consumerId,
+        agreementId = agreementId,
+        state = state
+      )
 
   implicit def agreementStateUpdatedV1PersistEventSerializer
     : PersistEventSerializer[AgreementStateUpdated, AgreementStateUpdatedV1] = event =>
     Right[Throwable, AgreementStateUpdatedV1](
       AgreementStateUpdatedV1
-        .of(eServiceId = event.eServiceId, consumerId = event.consumerId, state = componentStateToProtobuf(event.state))
+        .of(
+          eServiceId = event.eServiceId,
+          consumerId = event.consumerId,
+          agreementId = event.agreementId.toString,
+          state = componentStateToProtobuf(event.state)
+        )
     )
 
   implicit def purposeStateUpdatedV1PersistEventDeserializer
     : PersistEventDeserializer[PurposeStateUpdatedV1, PurposeStateUpdated] =
     event =>
       for {
-        state <- protobufToComponentState(event.state)
-      } yield PurposeStateUpdated(purposeId = event.purposeId, state = state)
+        versionId <- event.versionId.toUUID.toEither
+        state     <- protobufToComponentState(event.state)
+      } yield PurposeStateUpdated(purposeId = event.purposeId, versionId = versionId, state = state)
 
   implicit def purposeStateUpdatedV1PersistEventSerializer
     : PersistEventSerializer[PurposeStateUpdated, PurposeStateUpdatedV1] = event =>
     Right[Throwable, PurposeStateUpdatedV1](
-      PurposeStateUpdatedV1.of(purposeId = event.purposeId, state = componentStateToProtobuf(event.state))
+      PurposeStateUpdatedV1
+        .of(
+          purposeId = event.purposeId,
+          versionId = event.versionId.toString,
+          state = componentStateToProtobuf(event.state)
+        )
     )
 
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] =

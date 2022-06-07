@@ -969,6 +969,9 @@ components:
       properties:
         state:
           $ref: '#/components/schemas/ClientComponentState'
+        descriptorId:
+          type: string
+          format: uuid
         audience:
           type: array
           items:
@@ -977,6 +980,7 @@ components:
           type: integer
           format: int32
       required:
+        - descriptorId
         - state
         - audience
         - voucherLifespan
@@ -1036,9 +1040,13 @@ components:
     ClientAgreementDetailsUpdate:
       type: object
       properties:
+        agreementId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
+        - agreementId
         - state
     ClientPurposeDetailsSeed:
       type: object
@@ -1064,9 +1072,13 @@ components:
     ClientPurposeDetailsUpdate:
       type: object
       properties:
+        versionId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
+        - versionId
         - state
     ClientKind:
       type: string

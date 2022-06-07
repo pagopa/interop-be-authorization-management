@@ -73,6 +73,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
   def updateClientsByEService(
     eServiceId: String,
+    descriptorId: UUID,
     state: PersistentClientComponentState,
     audience: Seq[String],
     voucherLifespan: Int
@@ -81,21 +82,27 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
       _.eService.eServiceId.toString == eServiceId,
       states =>
         states.copy(eService =
-          states.eService.copy(state = state, audience = audience, voucherLifespan = voucherLifespan)
+          states.eService
+            .copy(descriptorId = descriptorId, state = state, audience = audience, voucherLifespan = voucherLifespan)
         )
     )
 
-  def updateClientsByAgreement(eServiceId: String, consumerId: String, state: PersistentClientComponentState): State =
+  def updateClientsByAgreement(
+    eServiceId: String,
+    consumerId: String,
+    agreementId: UUID,
+    state: PersistentClientComponentState
+  ): State =
     updateClients(
       states =>
         states.agreement.eServiceId.toString == eServiceId && states.agreement.consumerId.toString == consumerId,
-      states => states.copy(agreement = states.agreement.copy(state = state))
+      states => states.copy(agreement = states.agreement.copy(agreementId = agreementId, state = state))
     )
 
-  def updateClientsByPurpose(purposeId: String, state: PersistentClientComponentState): State =
+  def updateClientsByPurpose(purposeId: String, versionId: UUID, state: PersistentClientComponentState): State =
     updateClients(
       _.purpose.purposeId.toString == purposeId,
-      states => states.copy(purpose = states.purpose.copy(state = state))
+      states => states.copy(purpose = states.purpose.copy(versionId = versionId, state = state))
     )
 
   private def updateClients(
