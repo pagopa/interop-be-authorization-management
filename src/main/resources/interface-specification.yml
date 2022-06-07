@@ -922,24 +922,7 @@ components:
         eserviceId:
           type: string
           format: uuid
-        state:
-          $ref: '#/components/schemas/ClientComponentState'
-        audience:
-          type: array
-          items:
-            type: string
-        voucherLifespan:
-          type: integer
-          format: int32
-      required:
-        - eserviceId
-        - state
-        - audience
-        - voucherLifespan
-    ClientEServiceDetailsSeed:
-      type: object
-      properties:
-        eserviceId:
+        descriptorId:
           type: string
           format: uuid
         state:
@@ -953,6 +936,31 @@ components:
           format: int32
       required:
         - eserviceId
+        - descriptorId
+        - state
+        - audience
+        - voucherLifespan
+    ClientEServiceDetailsSeed:
+      type: object
+      properties:
+        eserviceId:
+          type: string
+          format: uuid
+        descriptorId:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/ClientComponentState'
+        audience:
+          type: array
+          items:
+            type: string
+        voucherLifespan:
+          type: integer
+          format: int32
+      required:
+        - eserviceId
+        - descriptorId
         - state
         - audience
         - voucherLifespan
@@ -981,11 +989,15 @@ components:
         consumerId:
           type: string
           format: uuid
+        agreementId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - eserviceId
         - consumerId
+        - agreementId
         - state
     ClientAgreementDetailsSeed:
       type: object
@@ -996,11 +1008,15 @@ components:
         consumerId:
           type: string
           format: uuid
+        agreementId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - eserviceId
         - consumerId
+        - agreementId
         - state
     ClientPurposeDetails:
       type: object
@@ -1008,10 +1024,14 @@ components:
         purposeId:
           type: string
           format: uuid
+        versionId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - purposeId
+        - versionId
         - state
     ClientAgreementDetailsUpdate:
       type: object
@@ -1026,10 +1046,14 @@ components:
         purposeId:
           type: string
           format: uuid
+        versionId:
+          type: string
+          format: uuid
         state:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - purposeId
+        - versionId
         - state
     ClientComponentState:
       type: string
