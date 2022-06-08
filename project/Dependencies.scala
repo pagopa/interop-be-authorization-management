@@ -111,11 +111,6 @@ object Dependencies {
     lazy val kix       = namespace % "bcpkix-jdk15on" % bouncycastleVersion
   }
 
-  private[this] object nameOf {
-    lazy val namespace = "com.github.dwickern"
-    lazy val nameOf    = namespace %% "scala-nameof" % nameOfVersion
-  }
-
   object Jars {
     lazy val overrides: Seq[ModuleID] =
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
@@ -160,7 +155,6 @@ object Dependencies {
       scalaprotobuf.core          % Protobuf,
       akka.testkit                % Test,
       akka.httpTestkit            % Test,
-      nameOf.nameOf               % Test,
       scalatest.core              % Test,
       scalamock.core              % Test
     )

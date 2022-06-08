@@ -11,7 +11,6 @@ object Versions {
   lazy val kamonVersion           = "2.5.1"
   lazy val logbackVersion         = "1.2.11"
   lazy val mustacheVersion        = "0.9.10"
-  lazy val nameOfVersion          = "4.0.0"
   lazy val nimbusVersion          = "9.21"
   lazy val openapi4jVersion       = "1.0.7"
   lazy val postgresVersion        = "42.3.3"

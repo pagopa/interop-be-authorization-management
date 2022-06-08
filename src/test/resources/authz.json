@@ -116,7 +116,7 @@
     {
       "route": "getClientByPurposeId",
       "roles": [
-        "admin"
+        "admin", "security", "m2m"
       ],
       "verb": "GET"
     },

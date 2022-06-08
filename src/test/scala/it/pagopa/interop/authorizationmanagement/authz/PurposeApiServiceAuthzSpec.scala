@@ -2,11 +2,10 @@ package it.pagopa.interop.authorizationmanagement.authz
 
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.Entity
-import com.github.dwickern.macros.NameOf.nameOf
 import it.pagopa.interop.authorizationmanagement.api.impl.PurposeApiMarshallerImpl._
 import it.pagopa.interop.authorizationmanagement.api.impl.PurposeApiServiceImpl
-import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.model._
+import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.server.impl.Main.behaviorFactory
 import it.pagopa.interop.authorizationmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
 import it.pagopa.interop.commons.utils.USER_ROLES
@@ -14,7 +13,6 @@ import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
-import scala.annotation.nowarn
 
 class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestRouteTest {
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
@@ -32,9 +30,7 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
 
   "Purpose api operation authorization spec" should {
     "accept authorized roles for addClientPurpose" in {
-      @nowarn
-      val routeName = nameOf[PurposeApiServiceImpl](_.addClientPurpose(???, ???)(???, ???, ???))
-      val endpoint  = AuthorizedRoutes.endpoints(routeName)
+      val endpoint = AuthorizedRoutes.endpoints("addClientPurpose")
 
       val fakeSeed = PurposeSeed(
         purposeId = UUID.randomUUID(),
@@ -65,18 +61,19 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
       })
 
       // given a fake role, check that its invocation is forbidden
-      implicit val invalidCtx = endpoint.contextsWithInvalidRole
-      invalidRoleCheck(
-        invalidCtx.toMap.get(USER_ROLES).toString,
-        endpoint.asRequest,
-        service.addClientPurpose("fake", fakeSeed)
-      )
+
+      endpoint.invalidRoles.foreach(contexts => {
+        implicit val invalidCtx = contexts
+        invalidRoleCheck(
+          invalidCtx.toMap.get(USER_ROLES).toString,
+          endpoint.asRequest,
+          service.addClientPurpose("fake", fakeSeed)
+        )
+      })
     }
 
     "accept authorized roles for removeClientPurpose" in {
-      @nowarn
-      val routeName = nameOf[PurposeApiServiceImpl](_.removeClientPurpose(???, ???)(???, ???))
-      val endpoint  = AuthorizedRoutes.endpoints(routeName)
+      val endpoint = AuthorizedRoutes.endpoints("removeClientPurpose")
 
       // for each role of this route, it checks if it is properly authorized
       endpoint.rolesInContexts.foreach(contexts => {
@@ -89,18 +86,20 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
       })
 
       // given a fake role, check that its invocation is forbidden
-      implicit val invalidCtx = endpoint.contextsWithInvalidRole
-      invalidRoleCheck(
-        invalidCtx.toMap.get(USER_ROLES).toString,
-        endpoint.asRequest,
-        service.removeClientPurpose("fake", "fake")
-      )
+
+      endpoint.invalidRoles.foreach(contexts => {
+        implicit val invalidCtx = contexts
+        invalidRoleCheck(
+          invalidCtx.toMap.get(USER_ROLES).toString,
+          endpoint.asRequest,
+          service.removeClientPurpose("fake", "fake")
+        )
+      })
     }
 
     "accept authorized roles for updateEServiceState" in {
-      @nowarn
-      val routeName = nameOf[PurposeApiServiceImpl](_.updateEServiceState(???, ???)(???, ???))
-      val endpoint  = AuthorizedRoutes.endpoints(routeName)
+
+      val endpoint = AuthorizedRoutes.endpoints("updateEServiceState")
 
       val fakeUpdatePayload =
         ClientEServiceDetailsUpdate(state = ClientComponentState.ACTIVE, audience = Seq.empty, voucherLifespan = 1)
@@ -116,18 +115,20 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
       })
 
       // given a fake role, check that its invocation is forbidden
-      implicit val invalidCtx = endpoint.contextsWithInvalidRole
-      invalidRoleCheck(
-        invalidCtx.toMap.get(USER_ROLES).toString,
-        endpoint.asRequest,
-        service.updateEServiceState("fake", fakeUpdatePayload)
-      )
+
+      endpoint.invalidRoles.foreach(contexts => {
+        implicit val invalidCtx = contexts
+        invalidRoleCheck(
+          invalidCtx.toMap.get(USER_ROLES).toString,
+          endpoint.asRequest,
+          service.updateEServiceState("fake", fakeUpdatePayload)
+        )
+      })
     }
 
     "accept authorized roles for updateAgreementState" in {
-      @nowarn
-      val routeName = nameOf[PurposeApiServiceImpl](_.updateAgreementState(???, ???, ???)(???, ???))
-      val endpoint  = AuthorizedRoutes.endpoints(routeName)
+
+      val endpoint = AuthorizedRoutes.endpoints("updateAgreementState")
 
       val fakeUpdatePayload = ClientAgreementDetailsUpdate(state = ClientComponentState.ACTIVE)
 
@@ -142,18 +143,20 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
       })
 
       // given a fake role, check that its invocation is forbidden
-      implicit val invalidCtx = endpoint.contextsWithInvalidRole
-      invalidRoleCheck(
-        invalidCtx.toMap.get(USER_ROLES).toString,
-        endpoint.asRequest,
-        service.updateAgreementState("fake", "fake", fakeUpdatePayload)
-      )
+
+      endpoint.invalidRoles.foreach(contexts => {
+        implicit val invalidCtx = contexts
+        invalidRoleCheck(
+          invalidCtx.toMap.get(USER_ROLES).toString,
+          endpoint.asRequest,
+          service.updateAgreementState("fake", "fake", fakeUpdatePayload)
+        )
+      })
     }
 
     "accept authorized roles for updatePurposeState" in {
-      @nowarn
-      val routeName = nameOf[PurposeApiServiceImpl](_.updatePurposeState(???, ???)(???, ???))
-      val endpoint  = AuthorizedRoutes.endpoints(routeName)
+
+      val endpoint = AuthorizedRoutes.endpoints("updatePurposeState")
 
       val fakeUpdatePayload = ClientPurposeDetailsUpdate(state = ClientComponentState.ACTIVE)
 
@@ -168,12 +171,15 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
       })
 
       // given a fake role, check that its invocation is forbidden
-      implicit val invalidCtx = endpoint.contextsWithInvalidRole
-      invalidRoleCheck(
-        invalidCtx.toMap.get(USER_ROLES).toString,
-        endpoint.asRequest,
-        service.updatePurposeState("fake", fakeUpdatePayload)
-      )
+
+      endpoint.invalidRoles.foreach(contexts => {
+        implicit val invalidCtx = contexts
+        invalidRoleCheck(
+          invalidCtx.toMap.get(USER_ROLES).toString,
+          endpoint.asRequest,
+          service.updatePurposeState("fake", fakeUpdatePayload)
+        )
+      })
     }
   }
 }
