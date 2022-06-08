@@ -193,7 +193,7 @@ final case class PurposeApiServiceImpl(
       )
 
     for {
-      shardResults  <- commanders.traverse(_.ask[StatusReply[Unit]](event))
+      shardResults  <- Future.traverse(commanders)(_.ask[StatusReply[Unit]](event))
       summaryResult <- shardResults
         .collect {
           case shardResult if shardResult.isSuccess => Right(shardResult.getValue)
