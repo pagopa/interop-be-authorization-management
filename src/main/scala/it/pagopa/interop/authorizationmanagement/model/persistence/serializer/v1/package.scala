@@ -195,10 +195,8 @@ package object v1 {
       PurposeStateUpdatedV1.of(purposeId = event.purposeId, state = componentStateToProtobuf(event.state))
     )
 
-  private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] = {
-    val entries = keys.map(entry => keyToProtobuf(entry._2).map(key => PersistentKeyEntryV1(entry._1, key))).toSeq
-    entries.traverse[ErrorOr, PersistentKeyEntryV1](identity)
-  }
+  private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] =
+    keys.toList.traverse { case (kid, pkey) => keyToProtobuf(pkey).map(PersistentKeyEntryV1(kid, _)) }
 
   private def clientToStateEntry(client: PersistentClient): ErrorOr[StateClientsEntryV1] =
     clientToProtobuf(client).map(StateClientsEntryV1.of(client.id.toString, _))
@@ -266,10 +264,8 @@ package object v1 {
       case PersistentClientComponentState.Inactive => ClientComponentStateV1.INACTIVE
     }
 
-  private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] = {
-    val entries = keys.map(entry => protobufToKey(entry.value).map(key => (entry.keyId, key)))
-    entries.traverse[ErrorOr, (String, PersistentKey)](identity)
-  }
+  private def protoEntryToKey(keys: Seq[PersistentKeyEntryV1]): ErrorOr[Seq[(String, PersistentKey)]] =
+    keys.traverse(entry => protobufToKey(entry.value).map(key => (entry.keyId, key)))
 
   private def protoEntryToClient(client: StateClientsEntryV1): ErrorOr[(String, PersistentClient)] =
     protobufToClient(client.client).map(pc => client.clientId -> pc)
@@ -293,11 +289,7 @@ package object v1 {
 
   private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[PersistentClientPurposes] =
     purposes
-      .traverse(p =>
-        for {
-          state <- protobufToClientStatesChain(p.states)
-        } yield p.purposeId -> state
-      )
+      .traverse(p => protobufToClientStatesChain(p.states).map(state => p.purposeId -> state))
       .map(_.toMap)
 
   private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
