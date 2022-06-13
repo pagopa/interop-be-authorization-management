@@ -39,7 +39,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/keys/{keyId}/withClient':
+  '/clients/{clientId}/keys/{keyId}/bundle':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
@@ -49,7 +49,7 @@ paths:
         - tokenGeneration
       summary: Returns a key and its client by client and key identifier (kid).
       description: 'Given a client and key identifiers it returns the corresponding key and client, if any'
-      operationId: getClientAndKeyByKeyId
+      operationId: getKeyWithClientByKeyId
       parameters:
         - name: clientId
           in: path
@@ -760,20 +760,9 @@ components:
           $ref: '#/components/schemas/Key'
         client:
           $ref: '#/components/schemas/Client'
-        relationshipId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
       required:
         - key
         - client
-        - relationshipId
-        - name
-        - createdAt
     EncodedClientKey:
       type: object
       properties:

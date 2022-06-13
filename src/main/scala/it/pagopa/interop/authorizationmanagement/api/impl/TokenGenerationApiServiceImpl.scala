@@ -17,11 +17,10 @@ import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey.toAPI
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 
 final case class TokenGenerationApiServiceImpl(
   system: ActorSystem[_],
@@ -34,9 +33,7 @@ final case class TokenGenerationApiServiceImpl(
 
   private val settings: ClusterShardingSettings = shardingSettings(entity, system)
 
-  implicit val ec: ExecutionContextExecutor = system.executionContext
-
-  override def getClientAndKeyByKeyId(clientId: String, keyId: String)(implicit
+  override def getKeyWithClientByKeyId(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerKeyWithClient: ToEntityMarshaller[KeyWithClient],
     contexts: Seq[(String, String)]
@@ -50,22 +47,13 @@ final case class TokenGenerationApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        val (persistentClient, persistentKey) = statusReply.getValue
-        val result                            = for {
+        val (persistentClient, persistentKey)        = statusReply.getValue
+        val result: Either[Throwable, KeyWithClient] = for {
           apiClient <- persistentClient.toApi
-          apiKey    <- toAPI(persistentKey)
-        } yield KeyWithClient(
-          key = apiKey.key,
-          client = apiClient,
-          relationshipId = apiKey.relationshipId,
-          name = apiKey.name,
-          createdAt = apiKey.createdAt
-        )
+          apiKey    <- persistentKey.toApi
+        } yield KeyWithClient(key = apiKey.key, client = apiClient)
 
-        result match {
-          case Right(value) => getClientAndKeyByKeyId200(value)
-          case Left(err)    => complete(500, err)
-        }
+        result.fold(err => internalServerError("Key with Client retrieve", err.getMessage), getKeyWithClientByKeyId200)
 
       case statusReply =>
         logger.info(
@@ -74,7 +62,16 @@ final case class TokenGenerationApiServiceImpl(
           clientId,
           statusReply.getError
         )
-        getClientAndKeyByKeyId404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
+        getKeyWithClientByKeyId404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
     }
   }
+
+  def internalServerError(operation: String, reason: String)(implicit
+    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
+    contexts: Seq[(String, String)]
+  ): Route = {
+    logger.error(s"Error on $operation with reason $reason")
+    complete(StatusCodes.InternalServerError, problemOf(StatusCodes.InternalServerError, GenericError(reason)))
+  }
+
 }

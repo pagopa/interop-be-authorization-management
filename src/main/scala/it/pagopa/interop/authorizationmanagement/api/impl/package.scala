@@ -3,7 +3,7 @@ package it.pagopa.interop.authorizationmanagement.api
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCode
 import it.pagopa.interop.authorizationmanagement.model._
-import it.pagopa.interop.commons.utils.SprayCommonFormats.{uuidFormat, offsetDateTimeFormat}
+import it.pagopa.interop.commons.utils.SprayCommonFormats.{offsetDateTimeFormat, uuidFormat}
 import it.pagopa.interop.commons.utils.errors.ComponentError
 import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
@@ -48,7 +48,7 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat7(Client)
   implicit val relationshipSeedFormat: RootJsonFormat[PartyRelationshipSeed] = jsonFormat1(PartyRelationshipSeed)
 
-  implicit val keyWithClientFormat: RootJsonFormat[KeyWithClient] = jsonFormat5(KeyWithClient)
+  implicit val keyWithClientFormat: RootJsonFormat[KeyWithClient] = jsonFormat2(KeyWithClient)
 
   final val serviceErrorCodePrefix: String = "006"
   final val defaultProblemType: String     = "about:blank"
