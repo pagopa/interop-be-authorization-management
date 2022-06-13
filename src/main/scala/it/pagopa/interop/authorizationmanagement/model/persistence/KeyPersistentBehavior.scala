@@ -65,6 +65,20 @@ object KeyPersistentBehavior {
           case None => commandKeyNotFoundError(replyTo)
         }
 
+      case GetKeyWithClient(clientId, keyId, replyTo) =>
+        val clientAndKey = for {
+          client <- state.clients.get(clientId)
+          keys   <- state.keys.get(clientId)
+          key    <- keys.get(keyId)
+        } yield (client, key)
+
+        clientAndKey match {
+          case Some((client, key)) =>
+            replyTo ! StatusReply.Success((client, key))
+            Effect.none[Event, State]
+          case None                => commandKeyNotFoundError(replyTo)
+        }
+
       case GetEncodedKey(clientId, keyId, replyTo) =>
         state.getClientKeyById(clientId, keyId) match {
           case Some(key) =>

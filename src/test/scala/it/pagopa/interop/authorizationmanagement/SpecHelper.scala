@@ -19,7 +19,8 @@ import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
-import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
+import it.pagopa.interop.commons.utils.AkkaUtils.{Authenticator, PassThroughAuthenticator}
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 import spray.json._
@@ -28,7 +29,6 @@ import java.net.InetAddress
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
-import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 
 trait SpecHelper
     extends SpecConfiguration
@@ -49,8 +49,9 @@ trait SpecHelper
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
 
-  val clientApiMarshaller: ClientApiMarshaller   = ClientApiMarshallerImpl
-  val purposeApiMarshaller: PurposeApiMarshaller = PurposeApiMarshallerImpl
+  val clientApiMarshaller: ClientApiMarshaller                   = ClientApiMarshallerImpl
+  val purposeApiMarshaller: PurposeApiMarshaller                 = PurposeApiMarshallerImpl
+  val tokenGenerationApiMarshaller: TokenGenerationApiMarshaller = TokenGenerationApiMarshallerImpl
 
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
@@ -87,7 +88,13 @@ trait SpecHelper
       wrappingDirective
     )
 
-    controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi)(classicSystem))
+    val tokenGenerationApi = new TokenGenerationApi(
+      TokenGenerationApiServiceImpl(system, sharding, persistentEntity),
+      tokenGenerationApiMarshaller,
+      SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
+    )
+
+    controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi, tokenGenerationApi)(classicSystem))
 
     controller foreach { controller =>
       bindServer = Some(

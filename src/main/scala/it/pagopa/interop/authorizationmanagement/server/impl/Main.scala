@@ -62,6 +62,7 @@ object Main extends App with Dependencies {
           healthApi,
           keyApi(jwtValidator, sharding),
           purposeApi(jwtValidator, sharding),
+          tokenGenerationApi(sharding),
           validationExceptionToRoute.some
         )(actorSystem.classicSystem)
         binding <- Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)

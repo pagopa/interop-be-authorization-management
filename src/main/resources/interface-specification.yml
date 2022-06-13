@@ -18,6 +18,8 @@ tags:
     description: Operations on keys persistence
   - name: client
     description: Operations on clients persistence
+  - name: tokenGeneration
+    description: Operations about token generation
   - name: health
     description: Operations about service status
 security:
@@ -33,6 +35,44 @@ paths:
       responses:
         '200':
           description: successful operation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  '/clients/{clientId}/keys/{keyId}/withClient':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    get:
+      security: []
+      tags:
+        - tokenGeneration
+      summary: Returns a key and its client by client and key identifier (kid).
+      description: 'Given a client and key identifiers it returns the corresponding key and client, if any'
+      operationId: getClientAndKeyByKeyId
+      parameters:
+        - name: clientId
+          in: path
+          description: ID of the client to look up
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid) to lookup
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: returns the corresponding key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeyWithClient'
+        '404':
+          description: Key not found
           content:
             application/problem+json:
               schema:
@@ -710,6 +750,27 @@ components:
           format: date-time
       required:
         - key
+        - relationshipId
+        - name
+        - createdAt
+    KeyWithClient:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/Key'
+        client:
+          $ref: '#/components/schemas/Client'
+        relationshipId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - key
+        - client
         - relationshipId
         - name
         - createdAt

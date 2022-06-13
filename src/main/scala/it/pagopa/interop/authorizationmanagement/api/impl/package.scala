@@ -48,6 +48,8 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val clientFormat: RootJsonFormat[Client]                          = jsonFormat7(Client)
   implicit val relationshipSeedFormat: RootJsonFormat[PartyRelationshipSeed] = jsonFormat1(PartyRelationshipSeed)
 
+  implicit val keyWithClientFormat: RootJsonFormat[KeyWithClient] = jsonFormat5(KeyWithClient)
+
   final val serviceErrorCodePrefix: String = "006"
   final val defaultProblemType: String     = "about:blank"
 
