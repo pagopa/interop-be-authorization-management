@@ -36,6 +36,7 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
         states = ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = UUID.randomUUID(),
+            descriptorId = UUID.randomUUID(),
             state = ClientComponentState.ACTIVE,
             audience = Seq.empty,
             voucherLifespan = 1000
@@ -43,9 +44,14 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
           agreement = ClientAgreementDetailsSeed(
             eserviceId = UUID.randomUUID(),
             consumerId = UUID.randomUUID(),
+            agreementId = UUID.randomUUID(),
             state = ClientComponentState.ACTIVE
           ),
-          purpose = ClientPurposeDetailsSeed(purposeId = UUID.randomUUID(), state = ClientComponentState.ACTIVE)
+          purpose = ClientPurposeDetailsSeed(
+            purposeId = UUID.randomUUID(),
+            versionId = UUID.randomUUID(),
+            state = ClientComponentState.ACTIVE
+          )
         )
       )
 
@@ -66,7 +72,12 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
     "accept authorized roles for updateEServiceState" in {
       val endpoint          = AuthorizedRoutes.endpoints("updateEServiceState")
       val fakeUpdatePayload =
-        ClientEServiceDetailsUpdate(state = ClientComponentState.ACTIVE, audience = Seq.empty, voucherLifespan = 1)
+        ClientEServiceDetailsUpdate(
+          state = ClientComponentState.ACTIVE,
+          descriptorId = UUID.randomUUID(),
+          audience = Seq.empty,
+          voucherLifespan = 1
+        )
       validateAuthorization(
         endpoint,
         { implicit c: Seq[(String, String)] => service.updateEServiceState("fake", fakeUpdatePayload) }
@@ -75,7 +86,8 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
 
     "accept authorized roles for updateAgreementState" in {
       val endpoint          = AuthorizedRoutes.endpoints("updateAgreementState")
-      val fakeUpdatePayload = ClientAgreementDetailsUpdate(state = ClientComponentState.ACTIVE)
+      val fakeUpdatePayload =
+        ClientAgreementDetailsUpdate(agreementId = UUID.randomUUID(), state = ClientComponentState.ACTIVE)
       validateAuthorization(
         endpoint,
         { implicit c: Seq[(String, String)] => service.updateAgreementState("fake", "fake", fakeUpdatePayload) }
@@ -84,7 +96,8 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
 
     "accept authorized roles for updatePurposeState" in {
       val endpoint          = AuthorizedRoutes.endpoints("updatePurposeState")
-      val fakeUpdatePayload = ClientPurposeDetailsUpdate(state = ClientComponentState.ACTIVE)
+      val fakeUpdatePayload =
+        ClientPurposeDetailsUpdate(versionId = UUID.randomUUID(), state = ClientComponentState.ACTIVE)
       validateAuthorization(
         endpoint,
         { implicit c: Seq[(String, String)] => service.updatePurposeState("fake", fakeUpdatePayload) }

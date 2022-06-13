@@ -225,19 +225,19 @@ object KeyPersistentBehavior {
                 .thenRun((_: State) => replyTo ! StatusReply.Success(()))
           )
 
-      case UpdateEServiceState(eServiceId, state, audience, voucherLifespan, replyTo) =>
+      case UpdateEServiceState(eServiceId, descriptorId, state, audience, voucherLifespan, replyTo) =>
         Effect
-          .persist(EServiceStateUpdated(eServiceId, state, audience, voucherLifespan))
+          .persist(EServiceStateUpdated(eServiceId, descriptorId, state, audience, voucherLifespan))
           .thenRun((_: State) => replyTo ! StatusReply.Success(()))
 
-      case UpdateAgreementState(eServiceId, consumerId, state, replyTo) =>
+      case UpdateAgreementState(eServiceId, consumerId, agreementId, state, replyTo) =>
         Effect
-          .persist(AgreementStateUpdated(eServiceId, consumerId, state))
+          .persist(AgreementStateUpdated(eServiceId, consumerId, agreementId, state))
           .thenRun((_: State) => replyTo ! StatusReply.Success(()))
 
-      case UpdatePurposeState(purposeId, state, replyTo) =>
+      case UpdatePurposeState(purposeId, versionId, state, replyTo) =>
         Effect
-          .persist(PurposeStateUpdated(purposeId, state))
+          .persist(PurposeStateUpdated(purposeId, versionId, state))
           .thenRun((_: State) => replyTo ! StatusReply.Success(()))
 
       case Idle =>
@@ -309,12 +309,12 @@ object KeyPersistentBehavior {
         state.addClientPurpose(clientId, purposeId, statesChain)
       case ClientPurposeRemoved(clientId, purposeId)            =>
         state.removeClientPurpose(clientId, purposeId)
-      case EServiceStateUpdated(eServiceId, componentState, audience, voucherLifespan) =>
-        state.updateClientsByEService(eServiceId, componentState, audience, voucherLifespan)
-      case AgreementStateUpdated(eServiceId, consumerId, componentState)               =>
-        state.updateClientsByAgreement(eServiceId, consumerId, componentState)
-      case PurposeStateUpdated(purposeId, componentState)                              =>
-        state.updateClientsByPurpose(purposeId, componentState)
+      case EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan) =>
+        state.updateClientsByEService(eServiceId, descriptorId, componentState, audience, voucherLifespan)
+      case AgreementStateUpdated(eServiceId, consumerId, agreementId, componentState)                =>
+        state.updateClientsByAgreement(eServiceId, consumerId, agreementId, componentState)
+      case PurposeStateUpdated(purposeId, versionId, componentState)                                 =>
+        state.updateClientsByPurpose(purposeId, versionId, componentState)
     }
 
   val TypeKey: EntityTypeKey[Command] =

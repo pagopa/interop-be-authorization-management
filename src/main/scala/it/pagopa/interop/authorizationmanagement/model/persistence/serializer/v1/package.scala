@@ -149,9 +149,11 @@ package object v1 {
     : PersistEventDeserializer[EServiceStateUpdatedV1, EServiceStateUpdated] =
     event =>
       for {
-        state <- protobufToComponentState(event.state)
+        descriptorId <- event.descriptorId.toUUID.toEither
+        state        <- protobufToComponentState(event.state)
       } yield EServiceStateUpdated(
         eServiceId = event.eServiceId,
+        descriptorId = descriptorId,
         state = state,
         audience = event.audience,
         voucherLifespan = event.voucherLifespan
@@ -162,6 +164,7 @@ package object v1 {
     Right[Throwable, EServiceStateUpdatedV1](
       EServiceStateUpdatedV1.of(
         eServiceId = event.eServiceId,
+        descriptorId = event.descriptorId.toString,
         state = componentStateToProtobuf(event.state),
         audience = event.audience,
         voucherLifespan = event.voucherLifespan
@@ -172,27 +175,44 @@ package object v1 {
     : PersistEventDeserializer[AgreementStateUpdatedV1, AgreementStateUpdated] =
     event =>
       for {
-        state <- protobufToComponentState(event.state)
-      } yield AgreementStateUpdated(eServiceId = event.eServiceId, consumerId = event.consumerId, state = state)
+        agreementId <- event.agreementId.toUUID.toEither
+        state       <- protobufToComponentState(event.state)
+      } yield AgreementStateUpdated(
+        eServiceId = event.eServiceId,
+        consumerId = event.consumerId,
+        agreementId = agreementId,
+        state = state
+      )
 
   implicit def agreementStateUpdatedV1PersistEventSerializer
     : PersistEventSerializer[AgreementStateUpdated, AgreementStateUpdatedV1] = event =>
     Right[Throwable, AgreementStateUpdatedV1](
       AgreementStateUpdatedV1
-        .of(eServiceId = event.eServiceId, consumerId = event.consumerId, state = componentStateToProtobuf(event.state))
+        .of(
+          eServiceId = event.eServiceId,
+          consumerId = event.consumerId,
+          agreementId = event.agreementId.toString,
+          state = componentStateToProtobuf(event.state)
+        )
     )
 
   implicit def purposeStateUpdatedV1PersistEventDeserializer
     : PersistEventDeserializer[PurposeStateUpdatedV1, PurposeStateUpdated] =
     event =>
       for {
-        state <- protobufToComponentState(event.state)
-      } yield PurposeStateUpdated(purposeId = event.purposeId, state = state)
+        versionId <- event.versionId.toUUID.toEither
+        state     <- protobufToComponentState(event.state)
+      } yield PurposeStateUpdated(purposeId = event.purposeId, versionId = versionId, state = state)
 
   implicit def purposeStateUpdatedV1PersistEventSerializer
     : PersistEventSerializer[PurposeStateUpdated, PurposeStateUpdatedV1] = event =>
     Right[Throwable, PurposeStateUpdatedV1](
-      PurposeStateUpdatedV1.of(purposeId = event.purposeId, state = componentStateToProtobuf(event.state))
+      PurposeStateUpdatedV1
+        .of(
+          purposeId = event.purposeId,
+          versionId = event.versionId.toString,
+          state = componentStateToProtobuf(event.state)
+        )
     )
 
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] =
@@ -243,6 +263,7 @@ package object v1 {
   private def clientEServiceDetailsToProtobuf(details: PersistentClientEServiceDetails): ClientEServiceDetailsV1 =
     ClientEServiceDetailsV1.of(
       eServiceId = details.eServiceId.toString,
+      descriptorId = details.descriptorId.toString,
       state = componentStateToProtobuf(details.state),
       audience = details.audience,
       voucherLifespan = details.voucherLifespan
@@ -252,11 +273,16 @@ package object v1 {
     ClientAgreementDetailsV1.of(
       eServiceId = details.eServiceId.toString,
       consumerId = details.consumerId.toString,
+      agreementId = details.agreementId.toString,
       state = componentStateToProtobuf(details.state)
     )
 
   private def clientPurposeDetailsToProtobuf(details: PersistentClientPurposeDetails): ClientPurposeDetailsV1 =
-    ClientPurposeDetailsV1.of(purposeId = details.purposeId.toString, state = componentStateToProtobuf(details.state))
+    ClientPurposeDetailsV1.of(
+      purposeId = details.purposeId.toString,
+      versionId = details.versionId.toString,
+      state = componentStateToProtobuf(details.state)
+    )
 
   private def componentStateToProtobuf(state: PersistentClientComponentState): ClientComponentStateV1 =
     state match {
@@ -305,10 +331,12 @@ package object v1 {
     details: ClientEServiceDetailsV1
   ): ErrorOr[PersistentClientEServiceDetails] =
     for {
-      uuid  <- details.eServiceId.toUUID.toEither
-      state <- protobufToComponentState(details.state)
+      eServiceId   <- details.eServiceId.toUUID.toEither
+      descriptorId <- details.descriptorId.toUUID.toEither
+      state        <- protobufToComponentState(details.state)
     } yield PersistentClientEServiceDetails(
-      eServiceId = uuid,
+      eServiceId = eServiceId,
+      descriptorId = descriptorId,
       state = state,
       audience = details.audience,
       voucherLifespan = details.voucherLifespan
@@ -318,16 +346,23 @@ package object v1 {
     details: ClientAgreementDetailsV1
   ): ErrorOr[PersistentClientAgreementDetails] =
     for {
-      eServiceId <- details.eServiceId.toUUID.toEither
-      consumerId <- details.consumerId.toUUID.toEither
-      state      <- protobufToComponentState(details.state)
-    } yield PersistentClientAgreementDetails(eServiceId = eServiceId, consumerId = consumerId, state = state)
+      eServiceId  <- details.eServiceId.toUUID.toEither
+      consumerId  <- details.consumerId.toUUID.toEither
+      agreementId <- details.agreementId.toUUID.toEither
+      state       <- protobufToComponentState(details.state)
+    } yield PersistentClientAgreementDetails(
+      eServiceId = eServiceId,
+      consumerId = consumerId,
+      agreementId = agreementId,
+      state = state
+    )
 
   private def protobufToClientPurposeDetails(details: ClientPurposeDetailsV1): ErrorOr[PersistentClientPurposeDetails] =
     for {
-      uuid  <- details.purposeId.toUUID.toEither
-      state <- protobufToComponentState(details.state)
-    } yield PersistentClientPurposeDetails(purposeId = uuid, state = state)
+      purposeId <- details.purposeId.toUUID.toEither
+      versionId <- details.versionId.toUUID.toEither
+      state     <- protobufToComponentState(details.state)
+    } yield PersistentClientPurposeDetails(purposeId = purposeId, versionId = versionId, state = state)
 
   private def protobufToComponentState(state: ClientComponentStateV1): ErrorOr[PersistentClientComponentState] =
     state match {
