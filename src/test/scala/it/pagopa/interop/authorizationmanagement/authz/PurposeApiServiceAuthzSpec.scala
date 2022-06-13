@@ -8,7 +8,6 @@ import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.server.impl.Main.behaviorFactory
 import it.pagopa.interop.authorizationmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
-import it.pagopa.interop.commons.utils.USER_ROLES
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -50,136 +49,46 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
         )
       )
 
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.addClientPurpose("fake", fakeSeed)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.addClientPurpose("fake", fakeSeed)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.addClientPurpose("fake", fakeSeed) }
+      )
     }
 
     "accept authorized roles for removeClientPurpose" in {
       val endpoint = AuthorizedRoutes.endpoints("removeClientPurpose")
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.removeClientPurpose("fake", "fake")
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.removeClientPurpose("fake", "fake")
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.removeClientPurpose("fake", "fake") }
+      )
     }
 
     "accept authorized roles for updateEServiceState" in {
-
-      val endpoint = AuthorizedRoutes.endpoints("updateEServiceState")
-
+      val endpoint          = AuthorizedRoutes.endpoints("updateEServiceState")
       val fakeUpdatePayload =
         ClientEServiceDetailsUpdate(state = ClientComponentState.ACTIVE, audience = Seq.empty, voucherLifespan = 1)
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updateEServiceState("fake", fakeUpdatePayload)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updateEServiceState("fake", fakeUpdatePayload)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.updateEServiceState("fake", fakeUpdatePayload) }
+      )
     }
 
     "accept authorized roles for updateAgreementState" in {
-
-      val endpoint = AuthorizedRoutes.endpoints("updateAgreementState")
-
+      val endpoint          = AuthorizedRoutes.endpoints("updateAgreementState")
       val fakeUpdatePayload = ClientAgreementDetailsUpdate(state = ClientComponentState.ACTIVE)
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updateAgreementState("fake", "fake", fakeUpdatePayload)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updateAgreementState("fake", "fake", fakeUpdatePayload)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.updateAgreementState("fake", "fake", fakeUpdatePayload) }
+      )
     }
 
     "accept authorized roles for updatePurposeState" in {
-
-      val endpoint = AuthorizedRoutes.endpoints("updatePurposeState")
-
+      val endpoint          = AuthorizedRoutes.endpoints("updatePurposeState")
       val fakeUpdatePayload = ClientPurposeDetailsUpdate(state = ClientComponentState.ACTIVE)
-
-      // for each role of this route, it checks if it is properly authorized
-      endpoint.rolesInContexts.foreach(contexts => {
-        implicit val ctx = contexts
-        validRoleCheck(
-          contexts.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updatePurposeState("fake", fakeUpdatePayload)
-        )
-      })
-
-      // given a fake role, check that its invocation is forbidden
-
-      endpoint.invalidRoles.foreach(contexts => {
-        implicit val invalidCtx = contexts
-        invalidRoleCheck(
-          invalidCtx.toMap.get(USER_ROLES).toString,
-          endpoint.asRequest,
-          service.updatePurposeState("fake", fakeUpdatePayload)
-        )
-      })
+      validateAuthorization(
+        endpoint,
+        { implicit c: Seq[(String, String)] => service.updatePurposeState("fake", fakeUpdatePayload) }
+      )
     }
   }
 }
