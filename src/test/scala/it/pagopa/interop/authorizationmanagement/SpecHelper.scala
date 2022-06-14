@@ -19,7 +19,7 @@ import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
-import it.pagopa.interop.commons.utils.AkkaUtils.Authenticator
+import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 import spray.json._
@@ -28,7 +28,6 @@ import java.net.InetAddress
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
-import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 
 trait SpecHelper
     extends SpecConfiguration
@@ -56,7 +55,7 @@ trait SpecHelper
   var bindServer: Option[Future[Http.ServerBinding]] = None
 
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
-    SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
+    SecurityDirectives.authenticateOAuth2("SecurityRealm", AdminMockAuthenticator)
 
   val sharding: ClusterSharding = ClusterSharding(system)
 
