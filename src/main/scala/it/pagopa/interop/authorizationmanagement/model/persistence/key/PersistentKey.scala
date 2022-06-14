@@ -17,11 +17,16 @@ final case class PersistentKey(
   algorithm: String,
   use: PersistentKeyUse,
   creationTimestamp: OffsetDateTime
-) extends Persistent
+) extends Persistent {
+  def toApi: Either[Throwable, ClientKey] =
+    KeyProcessor
+      .fromBase64encodedPEMToAPIKey(kid, encodedPem, use, algorithm)
+      .map(ClientKey(_, relationshipId, name, creationTimestamp))
+}
 
 object PersistentKey {
 
-  def toPersistentKey(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] = {
+  def toPersistentKey(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] =
     for {
       kid <- KeyProcessor.calculateKid(validKey._2)
     } yield PersistentKey(
@@ -33,34 +38,12 @@ object PersistentKey {
       use = PersistentKeyUse.fromApi(validKey._1.use),
       creationTimestamp = OffsetDateTime.now()
     )
-  }
 
-  def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] = {
-    val processed = for {
-      key <- keys.map { case (_, persistentKey) =>
-        KeyProcessor
-          .fromBase64encodedPEMToAPIKey(
-            persistentKey.kid,
-            persistentKey.encodedPem,
-            persistentKey.use,
-            persistentKey.algorithm
-          )
-          .map(ClientKey(_, persistentKey.relationshipId, persistentKey.name, persistentKey.creationTimestamp))
-      }
-    } yield key
-
-    processed.toSeq.sequence.map(elem => KeysResponse(keys = elem))
-  }
-
-  def toAPI(persistentKey: PersistentKey): Either[Throwable, ClientKey] = {
-    KeyProcessor
-      .fromBase64encodedPEMToAPIKey(
-        persistentKey.kid,
-        persistentKey.encodedPem,
-        persistentKey.use,
-        persistentKey.algorithm
-      )
-      .map(ClientKey(_, persistentKey.relationshipId, persistentKey.name, persistentKey.creationTimestamp))
-  }
+  def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] =
+    keys
+      .map { case (_, persistentKey) => persistentKey.toApi }
+      .toSeq
+      .sequence
+      .map(KeysResponse)
 
 }

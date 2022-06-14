@@ -11,11 +11,7 @@ import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
 import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey.{
-  toAPI,
-  toAPIResponse,
-  toPersistentKey
-}
+import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey.{toAPIResponse, toPersistentKey}
 import it.pagopa.interop.authorizationmanagement.model.{EncodedClientKey, KeysResponse}
 import it.pagopa.interop.commons.utils.errors.ComponentError
 
@@ -54,7 +50,7 @@ object KeyPersistentBehavior {
       case GetKey(clientId, keyId, replyTo) =>
         state.getClientKeyById(clientId, keyId) match {
           case Some(key) =>
-            toAPI(key).fold(
+            key.toApi.fold(
               error => errorMessageReply(replyTo, s"Error while retrieving key: ${error.getLocalizedMessage}"),
               key => {
                 replyTo ! StatusReply.Success(key)
@@ -63,6 +59,20 @@ object KeyPersistentBehavior {
             )
 
           case None => commandKeyNotFoundError(replyTo)
+        }
+
+      case GetKeyWithClient(clientId, keyId, replyTo) =>
+        val clientAndKey = for {
+          client <- state.clients.get(clientId)
+          keys   <- state.keys.get(clientId)
+          key    <- keys.get(keyId)
+        } yield (client, key)
+
+        clientAndKey match {
+          case Some((client, key)) =>
+            replyTo ! StatusReply.Success((client, key))
+            Effect.none[Event, State]
+          case None                => commandKeyNotFoundError(replyTo)
         }
 
       case GetEncodedKey(clientId, keyId, replyTo) =>

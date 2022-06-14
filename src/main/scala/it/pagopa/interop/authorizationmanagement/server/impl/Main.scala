@@ -27,6 +27,8 @@ object Main extends App with Dependencies {
   val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[_]        = context.system
+      // It it okay to use this execution context because atm we
+      // are not doing blocking calls to other remote services
       implicit val executionContext: ExecutionContext = actorSystem.executionContext
 
       Kamon.init()
@@ -60,6 +62,7 @@ object Main extends App with Dependencies {
           healthApi,
           keyApi(jwtValidator, sharding),
           purposeApi(jwtValidator, sharding),
+          tokenGenerationApi(sharding),
           validationExceptionToRoute.some
         )(actorSystem.classicSystem)
         binding <- Http().newServerAt("0.0.0.0", ApplicationConfiguration.serverPort).bind(controller.routes)

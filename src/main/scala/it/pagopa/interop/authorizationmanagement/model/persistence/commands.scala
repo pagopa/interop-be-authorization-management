@@ -9,6 +9,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
   PersistentClientKind,
   PersistentClientPurpose
 }
+import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
 
 import java.util.UUID
@@ -19,6 +20,11 @@ final case class AddKeys(clientId: String, keys: Seq[ValidKey], replyTo: ActorRe
     extends Command
 final case class GetKeys(clientId: String, replyTo: ActorRef[StatusReply[KeysResponse]])            extends Command
 final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[ClientKey]]) extends Command
+final case class GetKeyWithClient(
+  clientId: String,
+  keyId: String,
+  replyTo: ActorRef[StatusReply[(PersistentClient, PersistentKey)]]
+) extends Command
 final case class GetEncodedKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[EncodedClientKey]])
     extends Command
 final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])   extends Command

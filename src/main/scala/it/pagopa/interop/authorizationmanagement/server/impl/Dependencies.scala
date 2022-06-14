@@ -5,9 +5,11 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityContext, ShardedDaemonProcess}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.complete
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import akka.persistence.typed.PersistenceId
 import akka.projection.ProjectionBehavior
+import com.atlassian.oai.validator.report.ValidationReport
 import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import it.pagopa.interop.authorizationmanagement.api._
@@ -20,6 +22,8 @@ import it.pagopa.interop.authorizationmanagement.api.impl.{
   KeyApiServiceImpl,
   PurposeApiMarshallerImpl,
   PurposeApiServiceImpl,
+  TokenGenerationApiMarshallerImpl,
+  TokenGenerationApiServiceImpl,
   problemOf
 }
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
@@ -32,22 +36,19 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.{
   KeyPersistentBehavior,
   KeyPersistentProjection
 }
+import it.pagopa.interop.commons.jwt.service.JWTReader
 import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.OpenapiUtils
+import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.commons.utils.service.impl.UUIDSupplierImpl
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.ExecutionContext
-import com.atlassian.oai.validator.report.ValidationReport
-import akka.http.scaladsl.server.Route
-import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.jwt.service.JWTReader
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Dependencies {
 
@@ -106,6 +107,13 @@ trait Dependencies {
     PurposeApiMarshallerImpl,
     jwtReader.OAuth2JWTValidatorAsContexts
   )
+
+  def tokenGenerationApi(sharding: ClusterSharding)(implicit actorSystem: ActorSystem[_]) =
+    new TokenGenerationApi(
+      TokenGenerationApiServiceImpl(actorSystem, sharding, keyPersistentEntity),
+      TokenGenerationApiMarshallerImpl,
+      SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
+    )
 
   val healthApi: HealthApi = new HealthApi(
     HealthServiceApiImpl,

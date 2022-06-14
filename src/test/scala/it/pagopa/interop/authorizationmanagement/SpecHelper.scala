@@ -20,6 +20,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, Key
 import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
+import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalamock.scalatest.MockFactory
 import spray.json._
@@ -48,8 +49,9 @@ trait SpecHelper
   val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
   val healthApiMock: HealthApi       = mock[HealthApi]
 
-  val clientApiMarshaller: ClientApiMarshaller   = ClientApiMarshallerImpl
-  val purposeApiMarshaller: PurposeApiMarshaller = PurposeApiMarshallerImpl
+  val clientApiMarshaller: ClientApiMarshaller                   = ClientApiMarshallerImpl
+  val purposeApiMarshaller: PurposeApiMarshaller                 = PurposeApiMarshallerImpl
+  val tokenGenerationApiMarshaller: TokenGenerationApiMarshaller = TokenGenerationApiMarshallerImpl
 
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
@@ -86,7 +88,13 @@ trait SpecHelper
       wrappingDirective
     )
 
-    controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi)(classicSystem))
+    val tokenGenerationApi = new TokenGenerationApi(
+      TokenGenerationApiServiceImpl(system, sharding, persistentEntity),
+      tokenGenerationApiMarshaller,
+      SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
+    )
+
+    controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi, tokenGenerationApi)(classicSystem))
 
     controller foreach { controller =>
       bindServer = Some(
