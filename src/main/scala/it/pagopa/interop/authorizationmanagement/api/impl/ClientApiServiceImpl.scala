@@ -18,6 +18,7 @@ import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.client.{PersistentClient, PersistentClientKind}
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
+import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE, SECURITY_ROLE}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
@@ -51,7 +52,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Creating client for Consumer {}", clientSeed.consumerId)
 
     val clientId = uuidSupplier.get
@@ -86,7 +87,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
     logger.info("Retrieving Client {}", clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
@@ -131,7 +132,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
     logger.info(
       "Listing clients for relationship {} and consumer {}, purpose {} and kind {}",
       relationshipId,
@@ -196,7 +197,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Adding relationship {} to client {}", relationshipSeed.relationshipId, clientId)
 
     val commander: EntityRef[Command] =
@@ -236,27 +237,28 @@ final case class ClientApiServiceImpl(
     */
   override def deleteClient(
     clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
-    logger.info("Deleting client {}", clientId)
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
+    authorize(ADMIN_ROLE) {
+      logger.info("Deleting client {}", clientId)
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+      val commander: EntityRef[Command] =
+        sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
 
-    val result: Future[StatusReply[Done]] =
-      commander.ask(ref => DeleteClient(clientId, ref))
+      val result: Future[StatusReply[Done]] =
+        commander.ask(ref => DeleteClient(clientId, ref))
 
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => deleteClient204
-      case statusReply                          =>
-        logger.error(s"Error while deleting client ${clientId}", statusReply.getError)
-        statusReply.getError match {
-          case ex: ClientNotFoundError =>
-            deleteClient404(problemOf(StatusCodes.NotFound, ex))
-          case _                       =>
-            internalServerError(problemOf(StatusCodes.InternalServerError, DeleteClientError(clientId)))
-        }
+      onSuccess(result) {
+        case statusReply if statusReply.isSuccess => deleteClient204
+        case statusReply                          =>
+          logger.error(s"Error while deleting client ${clientId}", statusReply.getError)
+          statusReply.getError match {
+            case ex: ClientNotFoundError =>
+              deleteClient404(problemOf(StatusCodes.NotFound, ex))
+            case _                       =>
+              internalServerError(problemOf(StatusCodes.InternalServerError, DeleteClientError(clientId)))
+          }
+      }
     }
-  }
 
   /** Code: 204, Message: Party Relationship removed
     * Code: 404, Message: Client or Party Relationship not found, DataType: Problem
@@ -265,7 +267,7 @@ final case class ClientApiServiceImpl(
   override def removeClientRelationship(clientId: String, relationshipId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE) {
     logger.info("Removing relationship {} from client {}", relationshipId, clientId)
 
     val commander: EntityRef[Command] =
@@ -301,7 +303,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = {
+  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
     logger.info("Retrieving Client {}", clientId)
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))

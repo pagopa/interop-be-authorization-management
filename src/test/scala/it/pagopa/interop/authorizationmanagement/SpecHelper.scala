@@ -57,7 +57,7 @@ trait SpecHelper
   var bindServer: Option[Future[Http.ServerBinding]] = None
 
   val wrappingDirective: AuthenticationDirective[Seq[(String, String)]] =
-    SecurityDirectives.authenticateOAuth2("SecurityRealm", Authenticator)
+    SecurityDirectives.authenticateOAuth2("SecurityRealm", AdminMockAuthenticator)
 
   val sharding: ClusterSharding = ClusterSharding(system)
 

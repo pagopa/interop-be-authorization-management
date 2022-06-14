@@ -31,6 +31,7 @@ object Dependencies {
     lazy val clusterHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion
     lazy val slf4j       = namespace                       %% "akka-slf4j"                   % akkaVersion
     lazy val testkit     = namespace                       %% "akka-actor-testkit-typed"     % akkaVersion
+    lazy val httpTestkit = namespace                       %% "akka-http-testkit"            % akkaHttpVersion
     lazy val management  = "com.lightbend.akka.management" %% "akka-management"              % akkaManagementVersion
     lazy val managementLogLevels =
       "com.lightbend.akka.management" %% "akka-management-loglevels-logback" % akkaManagementVersion
@@ -153,6 +154,7 @@ object Dependencies {
       postgres.jdbc               % Compile,
       scalaprotobuf.core          % Protobuf,
       akka.testkit                % Test,
+      akka.httpTestkit            % Test,
       scalatest.core              % Test,
       scalamock.core              % Test
     )
