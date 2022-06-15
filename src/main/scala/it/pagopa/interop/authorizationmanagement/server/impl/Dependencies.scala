@@ -118,7 +118,8 @@ trait Dependencies {
   val healthApi: HealthApi = new HealthApi(
     HealthServiceApiImpl,
     HealthApiMarshallerImpl,
-    SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
+    SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator),
+    loggingEnabled = false
   )
 
   def getJwtValidator()(implicit ec: ExecutionContext): Future[JWTReader] = JWTConfiguration.jwtReader
