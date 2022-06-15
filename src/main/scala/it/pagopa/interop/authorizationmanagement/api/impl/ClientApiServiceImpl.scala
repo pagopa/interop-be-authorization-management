@@ -132,7 +132,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
     logger.info(
       "Listing clients for relationship {} and consumer {}, purpose {} and kind {}",
       relationshipId,

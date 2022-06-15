@@ -55,6 +55,7 @@
       "route": "listClients",
       "roles": [
         "admin",
+        "security",
         "m2m"
       ],
       "verb": "GET"
