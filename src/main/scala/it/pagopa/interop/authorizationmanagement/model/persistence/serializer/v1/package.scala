@@ -1,10 +1,12 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 
 import cats.implicits._
+import it.pagopa.interop.authorizationmanagement.model
+import it.pagopa.interop.authorizationmanagement.model.client.PersistentClientPurposes.PersistentClientPurposes
+import it.pagopa.interop.authorizationmanagement.model.client._
+import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClientPurposes.PersistentClientPurposes
-import it.pagopa.interop.authorizationmanagement.model.persistence.client._
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.client._
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.key.{
@@ -303,7 +305,7 @@ package object v1 {
       purposes      <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
       kind          <- clientKindFromProtobufV1(client.kind)
-    } yield PersistentClient(
+    } yield model.client.PersistentClient(
       id = clientId,
       consumerId = consumerId,
       name = client.name,
@@ -324,7 +326,12 @@ package object v1 {
       eService  <- protobufToClientEServiceDetails(statesChain.eService)
       agreement <- protobufToClientAgreementDetails(statesChain.agreement)
       purpose   <- protobufToClientPurposeDetails(statesChain.purpose)
-    } yield PersistentClientStatesChain(id = uuid, eService = eService, agreement = agreement, purpose = purpose)
+    } yield model.client.PersistentClientStatesChain(
+      id = uuid,
+      eService = eService,
+      agreement = agreement,
+      purpose = purpose
+    )
   }
 
   private def protobufToClientEServiceDetails(
@@ -350,7 +357,7 @@ package object v1 {
       consumerId  <- details.consumerId.toUUID.toEither
       agreementId <- details.agreementId.toUUID.toEither
       state       <- protobufToComponentState(details.state)
-    } yield PersistentClientAgreementDetails(
+    } yield model.client.PersistentClientAgreementDetails(
       eServiceId = eServiceId,
       consumerId = consumerId,
       agreementId = agreementId,
@@ -376,7 +383,7 @@ package object v1 {
     for {
       relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
       use            <- persistentKeyUseFromProtobuf(key.use)
-    } yield PersistentKey(
+    } yield model.key.PersistentKey(
       kid = key.kid,
       name = key.name,
       relationshipId = relationshipId,

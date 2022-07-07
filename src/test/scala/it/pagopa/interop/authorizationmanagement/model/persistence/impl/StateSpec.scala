@@ -1,8 +1,9 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
+import it.pagopa.interop.authorizationmanagement.model.{client, key}
+import it.pagopa.interop.authorizationmanagement.model.client.{Consumer, PersistentClient}
+import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, Sig}
 import it.pagopa.interop.authorizationmanagement.model.persistence.State
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{Consumer, PersistentClient}
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.{PersistentKey, Sig}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -17,7 +18,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       // given
       val relationshipId = UUID.randomUUID()
       val fooBarKeys     = Map(
-        "1" -> PersistentKey(
+        "1" -> key.PersistentKey(
           kid = "1",
           relationshipId = relationshipId,
           name = "Random Key",
@@ -35,7 +36,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         ),
-        "3" -> PersistentKey(
+        "3" -> key.PersistentKey(
           kid = "3",
           relationshipId = relationshipId,
           name = "Random Key",
@@ -44,7 +45,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           algorithm = "sha",
           creationTimestamp = OffsetDateTime.now()
         ),
-        "4" -> PersistentKey(
+        "4" -> key.PersistentKey(
           kid = "4",
           relationshipId = relationshipId,
           name = "Random Key",
@@ -80,7 +81,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
       // given
       val client1Keys = Map(
-        "kid1" -> PersistentKey(
+        "kid1" -> key.PersistentKey(
           kid = "kid1",
           relationshipId = relationshipId,
           name = "Random Key",
@@ -91,7 +92,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val client2Keys = Map(
-        "kid2" -> PersistentKey(
+        "kid2" -> key.PersistentKey(
           kid = "kid2",
           relationshipId = relationshipId,
           name = "Random Key",
@@ -102,7 +103,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val client3Keys = Map(
-        "kid3" -> PersistentKey(
+        "kid3" -> key.PersistentKey(
           kid = "kid3",
           relationshipId = relationshipId,
           name = "Random Key",
@@ -113,7 +114,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         )
       )
       val client1     =
-        PersistentClient(
+        client.PersistentClient(
           id = clientUuid1,
           consumerId = consumerUuid,
           name = "client 1",
@@ -123,7 +124,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           kind = Consumer
         )
       val client2     =
-        PersistentClient(
+        client.PersistentClient(
           id = clientUuid2,
           consumerId = consumerUuid,
           name = "client 2",

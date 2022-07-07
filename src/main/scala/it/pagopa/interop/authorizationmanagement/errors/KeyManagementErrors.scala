@@ -1,6 +1,6 @@
 package it.pagopa.interop.authorizationmanagement.errors
 
-import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientId, RelationshipId}
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.{ClientId, RelationshipId}
 import it.pagopa.interop.commons.utils.errors.ComponentError
 
 object KeyManagementErrors {

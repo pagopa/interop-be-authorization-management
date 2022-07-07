@@ -5,11 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
-  PersistentClientAgreementDetails,
-  PersistentClientEServiceDetails,
-  PersistentClientPurposeDetails
-}
+import it.pagopa.interop.authorizationmanagement.model.client.PersistentClientPurposeDetails
 import it.pagopa.interop.authorizationmanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 import spray.json.enrichAny

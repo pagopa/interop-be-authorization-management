@@ -3,7 +3,8 @@ package it.pagopa.interop.authorizationmanagement.service.impl
 import com.nimbusds.jose.jwk._
 import com.nimbusds.jose.util.X509CertUtils
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.ThumbprintCalculationError
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKeyUse
+import it.pagopa.interop.authorizationmanagement.model.key.PersistentKeyUse
+import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.{Key, OtherPrimeInfo}
 
 import scala.annotation.nowarn

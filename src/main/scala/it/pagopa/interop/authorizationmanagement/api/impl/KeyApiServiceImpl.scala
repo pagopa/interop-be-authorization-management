@@ -16,6 +16,7 @@ import it.pagopa.interop.authorizationmanagement.api.KeyApiService
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE, SECURITY_ROLE}
@@ -65,7 +66,7 @@ final case class KeyApiServiceImpl(
 
       case Invalid(errors) =>
         val errorsStr = errors.toList.mkString(", ")
-        logger.error(s"Error while creating keys for client ${clientId} - ${errorsStr}")
+        logger.error(s"Error while creating keys for client $clientId - $errorsStr")
         createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysInvalid(clientId)))
     }
   }
