@@ -79,7 +79,7 @@ trait Dependencies {
     val cqrsProjection = ClientCqrsProjection.projection(dbConfig, mongoDbConfig)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "purpose-cqrs-projections",
+      name = "client-cqrs-projections",
       numberOfInstances = numberOfProjectionTags,
       behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
