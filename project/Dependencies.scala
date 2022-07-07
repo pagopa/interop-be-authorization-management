@@ -82,7 +82,7 @@ object Dependencies {
 
     lazy val commonsUtils = namespace %% "interop-commons-utils" % commonsVersion
     lazy val commonsJWT   = namespace %% "interop-commons-jwt"   % commonsVersion
-
+    lazy val commonsCqrs  = namespace %% "interop-commons-cqrs"  % commonsVersion
   }
 
   private[this] object postgres {
@@ -155,6 +155,7 @@ object Dependencies {
       nimbus.joseJwt              % Compile,
       pagopa.commonsUtils         % Compile,
       pagopa.commonsJWT           % Compile,
+      pagopa.commonsCqrs          % Compile,
       postgres.jdbc               % Compile,
       scalaprotobuf.core          % Protobuf,
       akka.testkit                % Test,
