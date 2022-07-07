@@ -31,11 +31,8 @@ import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfig
   numberOfProjectionTags,
   projectionTag
 }
-import it.pagopa.interop.authorizationmanagement.model.persistence.{
-  Command,
-  KeyPersistentBehavior,
-  KeyPersistentProjection
-}
+import it.pagopa.interop.authorizationmanagement.model.persistence.projection.ClientCqrsProjection
+import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
 import it.pagopa.interop.commons.jwt.service.JWTReader
 import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
@@ -73,16 +70,18 @@ trait Dependencies {
     complete(error.status, error)(keyApiMarshaller.toEntityMarshallerProblem)
   }
 
-  def initProjections()(implicit actorSystem: ActorSystem[_]) = {
+  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     val dbConfig: DatabaseConfig[JdbcProfile] =
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
-    val keyPersistentProjection = new KeyPersistentProjection(actorSystem, dbConfig)
+    val mongoDbConfig = ApplicationConfiguration.mongoDb
+
+    val cqrsProjection = ClientCqrsProjection.projection(dbConfig, mongoDbConfig)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = "keys-projections",
+      name = "purpose-cqrs-projections",
       numberOfInstances = numberOfProjectionTags,
-      behaviorFactory = (i: Int) => ProjectionBehavior(keyPersistentProjection.projection(projectionTag(i))),
+      behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }

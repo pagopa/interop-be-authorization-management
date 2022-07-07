@@ -1,9 +1,7 @@
 package it.pagopa.interop.authorizationmanagement.server.impl
 
-import cats.syntax.all._
-import buildinfo.BuildInfo
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.ClusterEvent
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.typed.{Cluster, Subscribe}
@@ -11,18 +9,20 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
+import buildinfo.BuildInfo
+import cats.syntax.all._
+import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.commons.logging.renderBuildInfo
 import kamon.Kamon
-import scala.concurrent.ExecutionContext
-import com.typesafe.scalalogging.Logger
-import scala.concurrent.Future
-import scala.util.{Success, Failure}
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object Main extends App with Dependencies {
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger = Logger(this.getClass)
 
   val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
@@ -70,7 +70,7 @@ object Main extends App with Dependencies {
 
       serverBinding.onComplete {
         case Success(b) =>
-          logger.info(s"Started server at ${b.localAddress.getHostString()}:${b.localAddress.getPort()}")
+          logger.info(s"Started server at ${b.localAddress.getHostString}:${b.localAddress.getPort}")
         case Failure(e) =>
           actorSystem.terminate()
           logger.error("Startup error: ", e)
@@ -81,6 +81,6 @@ object Main extends App with Dependencies {
     BuildInfo.name
   )
 
-  actorSystem.whenTerminated.onComplete { case _ => Kamon.stop() }(scala.concurrent.ExecutionContext.global)
+  actorSystem.whenTerminated.onComplete(_ => Kamon.stop())(scala.concurrent.ExecutionContext.global)
 
 }
