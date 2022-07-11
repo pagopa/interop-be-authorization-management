@@ -19,6 +19,8 @@ import scala.concurrent.ExecutionContext
 import com.typesafe.scalalogging.Logger
 import scala.concurrent.Future
 import scala.util.{Success, Failure}
+import akka.actor.typed.DispatcherSelector
+import scala.concurrent.ExecutionContextExecutor
 
 object Main extends App with Dependencies {
 
@@ -27,9 +29,10 @@ object Main extends App with Dependencies {
   val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[_]        = context.system
-      // It it okay to use this execution context because atm we
-      // are not doing blocking calls to other remote services
       implicit val executionContext: ExecutionContext = actorSystem.executionContext
+      // Let's keep it here in the case we'll need to call any external service
+      val selector: DispatcherSelector                = DispatcherSelector.fromConfig("futures-dispatcher")
+      val _: ExecutionContextExecutor                 = actorSystem.dispatchers.lookup(selector)
 
       Kamon.init()
       AkkaManagement.get(actorSystem).start()
