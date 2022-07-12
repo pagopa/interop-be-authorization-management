@@ -9,9 +9,9 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClient
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey.{toAPIResponse, toPersistentKey}
+import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
+import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.{EncodedClientKey, KeysResponse}
 import it.pagopa.interop.commons.utils.errors.ComponentError
 
@@ -37,7 +37,7 @@ object KeyPersistentBehavior {
             val persistentKeys: Either[Throwable, Seq[PersistentKey]] = for {
               _              <- validateRelationships(client, validKeys)
               persistentKeys <- validKeys
-                .map(toPersistentKey)
+                .map(PersistentKey.toPersistentKey)
                 .sequence
             } yield persistentKeys
 
@@ -95,13 +95,15 @@ object KeyPersistentBehavior {
       case GetKeys(clientId, replyTo) =>
         state.keys.get(clientId) match {
           case Some(keys) =>
-            toAPIResponse(keys).fold(
-              error => errorMessageReply(replyTo, s"Error while retrieving keys: ${error.getLocalizedMessage}"),
-              keys => {
-                replyTo ! StatusReply.Success(keys)
-                Effect.none[Event, State]
-              }
-            )
+            PersistentKey
+              .toAPIResponse(keys)
+              .fold(
+                error => errorMessageReply(replyTo, s"Error while retrieving keys: ${error.getLocalizedMessage}"),
+                keys => {
+                  replyTo ! StatusReply.Success(keys)
+                  Effect.none[Event, State]
+                }
+              )
 
           case None => commandKeyNotFoundError(replyTo)
         }
@@ -284,16 +286,18 @@ object KeyPersistentBehavior {
   ): Effect[Event, State] = {
     val mapKeys = keys.map(k => k.kid -> k).toMap
 
-    toAPIResponse(mapKeys).fold[Effect[Event, State]](
-      t => {
-        replyTo ! StatusReply.Error[KeysResponse](s"Error while building response object ${t.getLocalizedMessage}")
-        Effect.none[KeysAdded, State]
-      },
-      response =>
-        Effect
-          .persist(KeysAdded(clientId, mapKeys))
-          .thenRun(_ => replyTo ! StatusReply.Success(response))
-    )
+    PersistentKey
+      .toAPIResponse(mapKeys)
+      .fold[Effect[Event, State]](
+        t => {
+          replyTo ! StatusReply.Error[KeysResponse](s"Error while building response object ${t.getLocalizedMessage}")
+          Effect.none[KeysAdded, State]
+        },
+        response =>
+          Effect
+            .persist(KeysAdded(clientId, mapKeys))
+            .thenRun(_ => replyTo ! StatusReply.Success(response))
+      )
 
   }
 

@@ -1,8 +1,8 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
+import it.pagopa.interop.authorizationmanagement.model.client.{Consumer, PersistentClient}
+import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, Sig}
 import it.pagopa.interop.authorizationmanagement.model.persistence.State
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{Consumer, PersistentClient}
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.{PersistentKey, Sig}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 

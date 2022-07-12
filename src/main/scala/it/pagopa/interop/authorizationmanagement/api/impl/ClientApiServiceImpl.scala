@@ -15,13 +15,14 @@ import it.pagopa.interop.authorizationmanagement.api.ClientApiService
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
+import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient, PersistentClientKind}
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{PersistentClient, PersistentClientKind}
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE, SECURITY_ROLE}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration

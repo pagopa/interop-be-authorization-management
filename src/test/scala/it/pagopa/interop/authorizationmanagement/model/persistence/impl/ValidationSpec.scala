@@ -2,7 +2,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import cats.data.Validated.{Invalid, Valid}
 import com.nimbusds.jose.util.StandardCharset
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.Enc
+import it.pagopa.interop.authorizationmanagement.model.key.Enc
 import it.pagopa.interop.authorizationmanagement.model.{KeySeed, KeyUse}
 import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
 import org.scalatest.EitherValues

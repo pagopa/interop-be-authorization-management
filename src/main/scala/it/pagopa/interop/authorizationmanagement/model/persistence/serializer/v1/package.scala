@@ -1,10 +1,11 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 
 import cats.implicits._
+import it.pagopa.interop.authorizationmanagement.model.client.PersistentClientPurposes.PersistentClientPurposes
+import it.pagopa.interop.authorizationmanagement.model.client._
+import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.PersistentClientPurposes.PersistentClientPurposes
-import it.pagopa.interop.authorizationmanagement.model.persistence.client._
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.client._
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.events._
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.key.{

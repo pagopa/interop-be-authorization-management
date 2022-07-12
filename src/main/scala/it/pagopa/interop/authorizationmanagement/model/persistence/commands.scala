@@ -3,13 +3,14 @@ package it.pagopa.interop.authorizationmanagement.model.persistence
 import akka.Done
 import akka.actor.typed.ActorRef
 import akka.pattern.StatusReply
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
+import it.pagopa.interop.authorizationmanagement.model.client.{
   PersistentClient,
   PersistentClientComponentState,
   PersistentClientKind,
   PersistentClientPurpose
 }
-import it.pagopa.interop.authorizationmanagement.model.persistence.key.PersistentKey
+import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Kid
 import it.pagopa.interop.authorizationmanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
 
 import java.util.UUID

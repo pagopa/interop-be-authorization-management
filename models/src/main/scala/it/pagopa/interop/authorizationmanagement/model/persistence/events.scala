@@ -1,10 +1,11 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence
 
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
+import it.pagopa.interop.authorizationmanagement.model.client.{
   PersistentClient,
   PersistentClientComponentState,
   PersistentClientStatesChain
 }
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
 
 import java.time.OffsetDateTime
 import java.util.UUID

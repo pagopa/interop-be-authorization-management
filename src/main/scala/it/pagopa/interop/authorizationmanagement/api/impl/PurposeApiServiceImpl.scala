@@ -14,11 +14,9 @@ import it.pagopa.interop.authorizationmanagement.api.PurposeApiService
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
+import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClientComponentState, PersistentClientPurpose}
+import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.model.persistence.client.{
-  PersistentClientComponentState,
-  PersistentClientPurpose
-}
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.jwt.ADMIN_ROLE
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}

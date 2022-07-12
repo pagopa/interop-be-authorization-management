@@ -80,8 +80,8 @@ object Dependencies {
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
-    lazy val commons    = namespace %% "interop-commons-utils" % commonsVersion
-    lazy val commonsJWT = namespace %% "interop-commons-jwt"   % commonsVersion
+    lazy val commonsUtils = namespace %% "interop-commons-utils" % commonsVersion
+    lazy val commonsJWT   = namespace %% "interop-commons-jwt"   % commonsVersion
 
   }
 
@@ -98,6 +98,10 @@ object Dependencies {
   private[this] object scalamock {
     lazy val namespace = "org.scalamock"
     lazy val core      = namespace %% "scalamock" % scalaMockVersion
+  }
+
+  private[this] object spray {
+    lazy val core = "io.spray" %% "spray-json" % sprayVersion
   }
 
   private[this] object nimbus {
@@ -149,7 +153,7 @@ object Dependencies {
       logback.classic             % Compile,
       mustache.mustache           % Compile,
       nimbus.joseJwt              % Compile,
-      pagopa.commons              % Compile,
+      pagopa.commonsUtils         % Compile,
       pagopa.commonsJWT           % Compile,
       postgres.jdbc               % Compile,
       scalaprotobuf.core          % Protobuf,
@@ -158,8 +162,11 @@ object Dependencies {
       scalatest.core              % Test,
       scalamock.core              % Test
     )
-    lazy val client: Seq[ModuleID]    =
-      Seq(akka.stream, akka.http, akka.httpJson4s, akka.slf4j, json4s.jackson, json4s.ext, pagopa.commons).map(
+
+    val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commonsUtils).map(_ % Compile)
+
+    lazy val client: Seq[ModuleID] =
+      Seq(akka.stream, akka.http, akka.httpJson4s, akka.slf4j, json4s.jackson, json4s.ext, pagopa.commonsUtils).map(
         _ % Compile
       )
   }
