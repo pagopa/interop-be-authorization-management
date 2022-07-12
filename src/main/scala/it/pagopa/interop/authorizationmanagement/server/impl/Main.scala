@@ -1,7 +1,9 @@
 package it.pagopa.interop.authorizationmanagement.server.impl
 
-import akka.actor.typed.ActorSystem
+import cats.syntax.all._
+import buildinfo.BuildInfo
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.ActorSystem
 import akka.cluster.ClusterEvent
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.typed.{Cluster, Subscribe}
@@ -9,16 +11,16 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import buildinfo.BuildInfo
-import cats.syntax.all._
-import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.commons.logging.renderBuildInfo
 import kamon.Kamon
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
+import com.typesafe.scalalogging.Logger
+import scala.concurrent.Future
+import scala.util.{Success, Failure}
+import akka.actor.typed.DispatcherSelector
+import scala.concurrent.ExecutionContextExecutor
 
 object Main extends App with Dependencies {
 
@@ -27,9 +29,10 @@ object Main extends App with Dependencies {
   val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[_]        = context.system
-      // It it okay to use this execution context because atm we
-      // are not doing blocking calls to other remote services
       implicit val executionContext: ExecutionContext = actorSystem.executionContext
+      // Let's keep it here in the case we'll need to call any external service
+      val selector: DispatcherSelector                = DispatcherSelector.fromConfig("futures-dispatcher")
+      val _: ExecutionContextExecutor                 = actorSystem.dispatchers.lookup(selector)
 
       Kamon.init()
       AkkaManagement.get(actorSystem).start()
