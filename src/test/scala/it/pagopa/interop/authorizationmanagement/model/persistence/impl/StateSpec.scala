@@ -117,7 +117,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           id = clientUuid1,
           consumerId = consumerUuid,
           name = "client 1",
-          purposes = Map.empty,
+          purposes = Seq.empty,
           description = Some("client 1 desc"),
           relationships = Set.empty,
           kind = Consumer
@@ -127,7 +127,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           id = clientUuid2,
           consumerId = consumerUuid,
           name = "client 2",
-          purposes = Map.empty,
+          purposes = Seq.empty,
           description = Some("client 2 desc"),
           relationships = Set.empty,
           kind = Consumer
@@ -137,7 +137,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           id = clientUuid3,
           consumerId = consumerUuid,
           name = "client 3",
-          purposes = Map.empty,
+          purposes = Seq.empty,
           description = Some("client 3 desc"),
           relationships = Set.empty,
           kind = Consumer

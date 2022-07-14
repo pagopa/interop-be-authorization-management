@@ -101,9 +101,8 @@ class ClientManagementSpec
 
       (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
-      val payload1 = PurposeSeed(
-        purposeId = purposeId1,
-        states = ClientStatesChainSeed(
+      val payload1 = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             descriptorId = descriptorId,
@@ -125,9 +124,8 @@ class ClientManagementSpec
         )
       )
 
-      val payload2 = PurposeSeed(
-        purposeId = purposeId2,
-        states = ClientStatesChainSeed(
+      val payload2 = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             descriptorId = descriptorId,
@@ -174,9 +172,8 @@ class ClientManagementSpec
           description = Some(s"New Client ${clientId.toString} description"),
           kind = ClientKind.CONSUMER,
           purposes = Seq(
-            Purpose(
-              purposeId = purposeId1,
-              states = ClientStatesChain(
+            Purpose(states =
+              ClientStatesChain(
                 id = statesChainId,
                 eservice = ClientEServiceDetails(
                   eserviceId = eServiceId,
@@ -225,9 +222,8 @@ class ClientManagementSpec
 
       (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
-      val payload = PurposeSeed(
-        purposeId = purposeId,
-        states = ClientStatesChainSeed(
+      val payload = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             descriptorId = descriptorId,
@@ -356,30 +352,43 @@ class ClientManagementSpec
       createClient(clientId2, consumerId)
       createClient(clientId3, consumerId)
 
-      val purposeSeed1 = PurposeSeed(
+      val eServiceDetailsSeed = ClientEServiceDetailsSeed(
+        eserviceId = UUID.randomUUID(),
+        descriptorId = UUID.randomUUID(),
+        state = ACTIVE,
+        audience = Seq("some.audience"),
+        voucherLifespan = 10
+      )
+
+      val agreementDetailsSeed = ClientAgreementDetailsSeed(
+        eserviceId = UUID.randomUUID(),
+        consumerId = UUID.randomUUID(),
+        agreementId = UUID.randomUUID(),
+        state = INACTIVE
+      )
+
+      val purposeDetailsSeed1 = ClientPurposeDetailsSeed(
         purposeId = purposeId1,
-        states = ClientStatesChainSeed(
-          eservice = ClientEServiceDetailsSeed(
-            eserviceId = UUID.randomUUID(),
-            descriptorId = UUID.randomUUID(),
-            state = ACTIVE,
-            audience = Seq("some.audience"),
-            voucherLifespan = 10
-          ),
-          agreement = ClientAgreementDetailsSeed(
-            eserviceId = UUID.randomUUID(),
-            consumerId = UUID.randomUUID(),
-            agreementId = UUID.randomUUID(),
-            state = INACTIVE
-          ),
-          purpose = ClientPurposeDetailsSeed(
-            purposeId = purposeId1,
-            versionId = purposeVersionId1,
-            state = ClientComponentState.ACTIVE
-          )
+        versionId = purposeVersionId1,
+        state = ClientComponentState.ACTIVE
+      )
+
+      val purposeSeed1 = PurposeSeed(states =
+        ClientStatesChainSeed(
+          eservice = eServiceDetailsSeed,
+          agreement = agreementDetailsSeed,
+          purpose = purposeDetailsSeed1.copy(purposeId = purposeId1)
         )
       )
-      val purposeSeed2 = purposeSeed1.copy(purposeId = purposeId2)
+
+      val purposeSeed2 =
+        PurposeSeed(states =
+          ClientStatesChainSeed(
+            eservice = eServiceDetailsSeed,
+            agreement = agreementDetailsSeed,
+            purpose = purposeDetailsSeed1.copy(purposeId = purposeId2)
+          )
+        )
 
       addPurposeState(clientId1, purposeSeed1, UUID.randomUUID())
       addPurposeState(clientId2, purposeSeed1, UUID.randomUUID())

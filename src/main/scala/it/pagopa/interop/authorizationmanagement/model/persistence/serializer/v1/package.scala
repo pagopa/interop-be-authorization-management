@@ -1,7 +1,6 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 
 import cats.implicits._
-import it.pagopa.interop.authorizationmanagement.model.client.PersistentClientPurposes.PersistentClientPurposes
 import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
@@ -124,18 +123,13 @@ package object v1 {
   implicit def clientPurposeAddedV1PersistEventDeserializer
     : PersistEventDeserializer[ClientPurposeAddedV1, ClientPurposeAdded] =
     event =>
-      for {
-        states <- protobufToClientStatesChain(event.statesChain)
-      } yield ClientPurposeAdded(clientId = event.clientId, purposeId = event.purposeId, statesChain = states)
+      protobufToClientStatesChain(event.statesChain)
+        .map(statesChain => ClientPurposeAdded(clientId = event.clientId, statesChain = statesChain))
 
   implicit def clientPurposeAddedV1PersistEventSerializer
     : PersistEventSerializer[ClientPurposeAdded, ClientPurposeAddedV1] = event =>
     Right[Throwable, ClientPurposeAddedV1](
-      ClientPurposeAddedV1(
-        clientId = event.clientId,
-        purposeId = event.purposeId,
-        statesChain = clientStatesChainToProtobuf(event.statesChain)
-      )
+      ClientPurposeAddedV1(clientId = event.clientId, statesChain = clientStatesChainToProtobuf(event.statesChain))
     )
 
   implicit def clientPurposeRemovedV1PersistEventDeserializer
@@ -241,17 +235,12 @@ package object v1 {
         id = client.id.toString,
         consumerId = client.consumerId.toString,
         name = client.name,
-        purposes = purposeToProtobuf(client.purposes),
+        purposes = client.purposes.map(p => ClientPurposesEntryV1.of(clientStatesChainToProtobuf(p))),
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq,
         kind = clientKindToProtobufV1(client.kind)
       )
     )
-
-  private def purposeToProtobuf(purposes: PersistentClientPurposes): Seq[ClientPurposesEntryV1] =
-    purposes.map { case (purposeId, statesChain) =>
-      ClientPurposesEntryV1.of(purposeId, clientStatesChainToProtobuf(statesChain))
-    }.toSeq
 
   private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
     ClientStatesChainV1.of(
@@ -314,10 +303,8 @@ package object v1 {
       kind = kind
     )
 
-  private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[PersistentClientPurposes] =
-    purposes
-      .traverse(p => protobufToClientStatesChain(p.states).map(state => p.purposeId -> state))
-      .map(_.toMap)
+  private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[Seq[PersistentClientStatesChain]] =
+    purposes.traverse(p => protobufToClientStatesChain(p.states))
 
   private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
     for {

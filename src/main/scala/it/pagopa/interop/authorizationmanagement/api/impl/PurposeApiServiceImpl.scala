@@ -66,13 +66,19 @@ final case class PurposeApiServiceImpl(
           case err                      =>
             logger.error(s"Error adding Purpose for Client $clientId", err)
             val problem =
-              problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
+              problemOf(
+                StatusCodes.InternalServerError,
+                ClientPurposeAdditionError(clientId, seed.states.purpose.purposeId.toString)
+              )
             complete(problem.status, problem)
         }
       case Failure(ex)                                   =>
         logger.error(s"Error adding Purpose for Client $clientId", ex)
         val problem =
-          problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, seed.purposeId.toString))
+          problemOf(
+            StatusCodes.InternalServerError,
+            ClientPurposeAdditionError(clientId, seed.states.purpose.purposeId.toString)
+          )
         complete(problem.status, problem)
     }
   }

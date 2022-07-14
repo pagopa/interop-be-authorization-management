@@ -917,24 +917,16 @@ components:
     Purpose:
       type: object
       properties:
-        purposeId:
-          type: string
-          format: uuid
         states:
           $ref: '#/components/schemas/ClientStatesChain'
       required:
-        - purposeId
         - states
     PurposeSeed:
       type: object
       properties:
-        purposeId:
-          type: string
-          format: uuid
         states:
           $ref: '#/components/schemas/ClientStatesChainSeed'
       required:
-        - purposeId
         - states
     ClientStatesChain:
       type: object

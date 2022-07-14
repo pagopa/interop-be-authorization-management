@@ -31,9 +31,8 @@ class PurposeApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatest
     "accept authorized roles for addClientPurpose" in {
       val endpoint = AuthorizedRoutes.endpoints("addClientPurpose")
 
-      val fakeSeed = PurposeSeed(
-        purposeId = UUID.randomUUID(),
-        states = ClientStatesChainSeed(
+      val fakeSeed = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = UUID.randomUUID(),
             descriptorId = UUID.randomUUID(),
