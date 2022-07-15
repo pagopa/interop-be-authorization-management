@@ -20,7 +20,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.util.Try
 
@@ -374,11 +374,9 @@ package object v1 {
       creationTimestamp = toTime(key.creationTimestamp)
     )
 
-  private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
+  private val formatter                           = DateTimeFormatter.ISO_OFFSET_DATE_TIME
   def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
-  def toTime(timestamp: String): OffsetDateTime   =
-    OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
+  def toTime(timestamp: String): OffsetDateTime   = OffsetDateTime.parse(timestamp, formatter)
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
     case Sig => KeyUseV1.SIG

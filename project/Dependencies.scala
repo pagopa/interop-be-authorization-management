@@ -114,7 +114,7 @@ object Dependencies {
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
     lazy val `server`: Seq[ModuleID]  = Seq(
       // For making Java 12 happy
-      "javax.annotation"          % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"          % "javax.annotation-api" % "1.3.2"  % "compile",
       //
       akka.actorTyped             % Compile,
       akka.clusterBootstrap       % Compile,
@@ -152,7 +152,8 @@ object Dependencies {
       akka.testkit                % Test,
       akka.httpTestkit            % Test,
       scalatest.core              % Test,
-      scalamock.core              % Test
+      scalamock.core              % Test,
+      "org.scalacheck"           %% "scalacheck"           % "1.14.1" % Test
     )
 
     val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commonsUtils).map(_ % Compile)
