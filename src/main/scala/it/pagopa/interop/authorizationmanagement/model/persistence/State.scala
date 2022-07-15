@@ -52,10 +52,10 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
 
-  def addClientPurpose(clientId: String, purposeId: String, statesChain: PersistentClientStatesChain): State = {
+  def addClientPurpose(clientId: String, statesChain: PersistentClientStatesChain): State = {
     clients.get(clientId) match {
       case Some(client) =>
-        val purposes      = client.purposes + (purposeId -> statesChain)
+        val purposes      = client.purposes :+ statesChain
         val updatedClient = client.copy(purposes = purposes)
         copy(clients = clients + (clientId -> updatedClient))
       case None         => this
@@ -65,7 +65,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def removeClientPurpose(clientId: String, purposeId: String): State = {
     clients.get(clientId) match {
       case Some(client) =>
-        val purposes      = client.purposes - purposeId
+        val purposes      = client.purposes.filter(_.purpose.purposeId.toString != purposeId)
         val updatedClient = client.copy(purposes = purposes)
         copy(clients = clients + (clientId -> updatedClient))
       case None         => this
@@ -111,15 +111,13 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     updateStates: PersistentClientStatesChain => PersistentClientStatesChain
   ): State = {
     val toUpdateClients = clients.filter { case (_, client) =>
-      client.purposes.exists { case (_, statesChain) => idComparison(statesChain) }
+      client.purposes.exists(idComparison)
     }
 
     def updateClient(client: PersistentClient): PersistentClient =
       client.copy(purposes = client.purposes.map {
-        case (purposeId, statesChain) if idComparison(statesChain) =>
-          purposeId -> updateStates(statesChain)
-        case (purposeId, statesChain)                              =>
-          purposeId -> statesChain
+        case statesChain if idComparison(statesChain) => updateStates(statesChain)
+        case statesChain                              => statesChain
       })
 
     val updatedClients = toUpdateClients.map { case (clientId, client) => clientId -> updateClient(client) }

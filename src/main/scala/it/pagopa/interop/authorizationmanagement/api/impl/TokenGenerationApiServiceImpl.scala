@@ -49,11 +49,10 @@ final case class TokenGenerationApiServiceImpl(
 
     onSuccess(result) {
       case statusReply if statusReply.isSuccess =>
-        val (persistentClient, persistentKey)        = statusReply.getValue
-        val result: Either[Throwable, KeyWithClient] = for {
-          apiClient <- persistentClient.toApi
-          apiKey    <- persistentKey.toApi
-        } yield KeyWithClient(key = apiKey.key, client = apiClient)
+        val (persistentClient, persistentKey) = statusReply.getValue
+
+        val result: Either[Throwable, KeyWithClient] =
+          persistentKey.toApi.map(apiKey => KeyWithClient(key = apiKey.key, client = persistentClient.toApi))
 
         result.fold(err => internalServerError("Key with Client retrieve", err.getMessage), getKeyWithClientByKeyId200)
 

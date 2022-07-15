@@ -49,9 +49,8 @@ class PurposeManagementSpec
 
       (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
-      val expected = Purpose(
-        purposeId = purposeId,
-        states = ClientStatesChain(
+      val expected = Purpose(states =
+        ClientStatesChain(
           id = statesChainId,
           eservice = ClientEServiceDetails(
             eserviceId = eServiceId,
@@ -74,9 +73,8 @@ class PurposeManagementSpec
         )
       )
 
-      val payload = PurposeSeed(
-        purposeId = purposeId,
-        states = ClientStatesChainSeed(
+      val payload = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             descriptorId = descriptorId,
@@ -124,9 +122,8 @@ class PurposeManagementSpec
 
       (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
-      val payload = PurposeSeed(
-        purposeId = purposeId,
-        states = ClientStatesChainSeed(
+      val payload = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             descriptorId = descriptorId,
@@ -175,9 +172,8 @@ class PurposeManagementSpec
       val purposeVersionId = UUID.randomUUID()
 
       val statesChainId = UUID.randomUUID()
-      val payload       = PurposeSeed(
-        purposeId = purposeId,
-        states = ClientStatesChainSeed(
+      val payload       = PurposeSeed(states =
+        ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
             eserviceId = eServiceId,
             descriptorId = descriptorId,
@@ -248,38 +244,39 @@ class PurposeManagementSpec
       val statesChainId4 = UUID.randomUUID()
 
       // Seed
-      val eService1Seed = ClientEServiceDetailsSeed(
+      val eService1Seed                = ClientEServiceDetailsSeed(
         eserviceId = eServiceId1,
         descriptorId = descriptorId1,
         state = ClientComponentState.ACTIVE,
         audience = Seq("some.audience"),
         voucherLifespan = 10
       )
-      val eService2Seed = eService1Seed.copy(eserviceId = eServiceId2, descriptorId = descriptorId2)
-      val agreementSeed = ClientAgreementDetailsSeed(
+      val eService2Seed                = eService1Seed.copy(eserviceId = eServiceId2, descriptorId = descriptorId2)
+      val agreementSeed                = ClientAgreementDetailsSeed(
         eserviceId = eServiceId1,
         consumerId = consumerId,
         agreementId = agreementId1,
         state = ClientComponentState.ACTIVE
       )
-      val purposeSeed   = ClientPurposeDetailsSeed(
-        purposeId = purposeId1,
+      def purposeSeed(purposeId: UUID) = ClientPurposeDetailsSeed(
+        purposeId = purposeId,
         versionId = purposeVersionId1,
         state = ClientComponentState.ACTIVE
       )
 
-      val purpose1EService1Seed = PurposeSeed(
-        purposeId = purposeId1,
-        states = ClientStatesChainSeed(eservice = eService1Seed, agreement = agreementSeed, purpose = purposeSeed)
+      val purposeSeed1 = purposeSeed(purposeId1)
+      val purposeSeed2 = purposeSeed(purposeId2)
+      val purposeSeed3 = purposeSeed(purposeId3)
+
+      val purpose1EService1Seed = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eService1Seed, agreement = agreementSeed, purpose = purposeSeed1)
       )
-      val purpose2EService1Seed = PurposeSeed(
-        purposeId = purposeId2,
-        states = ClientStatesChainSeed(eservice = eService1Seed, agreement = agreementSeed, purpose = purposeSeed)
+      val purpose2EService1Seed = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eService1Seed, agreement = agreementSeed, purpose = purposeSeed2)
       )
 
-      val purpose3EService2Seed = PurposeSeed(
-        purposeId = purposeId3,
-        states = ClientStatesChainSeed(eservice = eService2Seed, agreement = agreementSeed, purpose = purposeSeed)
+      val purpose3EService2Seed = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eService2Seed, agreement = agreementSeed, purpose = purposeSeed3)
       )
       // Seed
 
@@ -299,7 +296,9 @@ class PurposeManagementSpec
       )
 
       val agreementDetails = PersistentClientAgreementDetails.fromSeed(agreementSeed).toApi
-      val purposeDetails   = PersistentClientPurposeDetails.fromSeed(purposeSeed).toApi
+      val purposeDetails1  = PersistentClientPurposeDetails.fromSeed(purposeSeed1).toApi
+      val purposeDetails2  = PersistentClientPurposeDetails.fromSeed(purposeSeed2).toApi
+      val purposeDetails3  = PersistentClientPurposeDetails.fromSeed(purposeSeed3).toApi
 
       val expectedEService1State = ClientEServiceDetails(
         eserviceId = eServiceId1,
@@ -310,43 +309,39 @@ class PurposeManagementSpec
       )
 
       val expectedClient1Purposes: Seq[Purpose] = Seq(
-        Purpose(
-          purposeId = purposeId1,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId1,
             eservice = expectedEService1State,
             agreement = agreementDetails,
-            purpose = purposeDetails
+            purpose = purposeDetails1
           )
         ),
-        Purpose(
-          purposeId = purpose3EService2Seed.purposeId,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId2,
             eservice = PersistentClientEServiceDetails.fromSeed(purpose3EService2Seed.states.eservice).toApi,
             agreement = agreementDetails,
-            purpose = purposeDetails
+            purpose = purposeDetails3
           )
         )
       )
 
       val expectedClient2Purposes: Seq[Purpose] = Seq(
-        Purpose(
-          purposeId = purposeId1,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId3,
             eservice = expectedEService1State,
             agreement = agreementDetails,
-            purpose = purposeDetails
+            purpose = purposeDetails1
           )
         ),
-        Purpose(
-          purposeId = purpose2EService1Seed.purposeId,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId4,
             eservice = expectedEService1State,
             agreement = agreementDetails,
-            purpose = purposeDetails
+            purpose = purposeDetails2
           )
         )
       )
@@ -389,18 +384,22 @@ class PurposeManagementSpec
       val statesChainId4 = UUID.randomUUID()
 
       // Seed
-      val eServiceSeed = ClientEServiceDetailsSeed(
+      val eServiceSeed                 = ClientEServiceDetailsSeed(
         eserviceId = eServiceId1,
         descriptorId = descriptorId1,
         state = ClientComponentState.ACTIVE,
         audience = Seq("some.audience"),
         voucherLifespan = 10
       )
-      val purposeSeed  = ClientPurposeDetailsSeed(
-        purposeId = purposeId1,
+      def purposeSeed(purposeId: UUID) = ClientPurposeDetailsSeed(
+        purposeId = purposeId,
         versionId = purposeVersionId1,
         state = ClientComponentState.ACTIVE
       )
+
+      val purposeSeed1 = purposeSeed(purposeId1)
+      val purposeSeed2 = purposeSeed(purposeId2)
+      val purposeSeed3 = purposeSeed(purposeId3)
 
       val agreementSeed1 = ClientAgreementDetailsSeed(
         eserviceId = eServiceId1,
@@ -415,18 +414,15 @@ class PurposeManagementSpec
         state = ClientComponentState.ACTIVE
       )
 
-      val purpose1Agreement1Seed = PurposeSeed(
-        purposeId = purposeId1,
-        states = ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed1, purpose = purposeSeed)
+      val purpose1Agreement1Seed = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed1, purpose = purposeSeed1)
       )
-      val purpose2Agreement1Seed = PurposeSeed(
-        purposeId = purposeId2,
-        states = ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed1, purpose = purposeSeed)
+      val purpose2Agreement1Seed = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed1, purpose = purposeSeed2)
       )
 
-      val purpose3Agreement2Seed = PurposeSeed(
-        purposeId = purposeId3,
-        states = ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed2, purpose = purposeSeed)
+      val purpose3Agreement2Seed = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed2, purpose = purposeSeed3)
       )
       // Seed
 
@@ -442,7 +438,9 @@ class PurposeManagementSpec
         ClientAgreementDetailsUpdate(agreementId = UUID.randomUUID(), state = ClientComponentState.INACTIVE)
 
       val eServiceDetails = PersistentClientEServiceDetails.fromSeed(eServiceSeed).toApi
-      val purposeDetails  = PersistentClientPurposeDetails.fromSeed(purposeSeed).toApi
+      val purposeDetails1 = PersistentClientPurposeDetails.fromSeed(purposeSeed1).toApi
+      val purposeDetails2 = PersistentClientPurposeDetails.fromSeed(purposeSeed2).toApi
+      val purposeDetails3 = PersistentClientPurposeDetails.fromSeed(purposeSeed3).toApi
 
       val expectedAgreement1State =
         ClientAgreementDetails(
@@ -453,43 +451,39 @@ class PurposeManagementSpec
         )
 
       val expectedClient1Purposes: Seq[Purpose] = Seq(
-        Purpose(
-          purposeId = purposeId1,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId1,
             eservice = eServiceDetails,
             agreement = expectedAgreement1State,
-            purpose = purposeDetails
+            purpose = purposeDetails1
           )
         ),
-        Purpose(
-          purposeId = purpose3Agreement2Seed.purposeId,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId2,
             eservice = eServiceDetails,
             agreement = PersistentClientAgreementDetails.fromSeed(purpose3Agreement2Seed.states.agreement).toApi,
-            purpose = purposeDetails
+            purpose = purposeDetails3
           )
         )
       )
 
       val expectedClient2Purposes: Seq[Purpose] = Seq(
-        Purpose(
-          purposeId = purposeId1,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId3,
             eservice = eServiceDetails,
             agreement = expectedAgreement1State,
-            purpose = purposeDetails
+            purpose = purposeDetails1
           )
         ),
-        Purpose(
-          purposeId = purpose2Agreement1Seed.purposeId,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId4,
             eservice = eServiceDetails,
             agreement = expectedAgreement1State,
-            purpose = purposeDetails
+            purpose = purposeDetails2
           )
         )
       )
@@ -555,15 +549,11 @@ class PurposeManagementSpec
         state = ClientComponentState.ACTIVE
       )
 
-      val purposeSeed1 = PurposeSeed(
-        purposeId = purposeId1,
-        states =
-          ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed1)
+      val purposeSeed1 = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed1)
       )
-      val purposeSeed2 = PurposeSeed(
-        purposeId = purposeId2,
-        states =
-          ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed2)
+      val purposeSeed2 = PurposeSeed(states =
+        ClientStatesChainSeed(eservice = eServiceSeed, agreement = agreementSeed, purpose = purposeDetailsSeed2)
       )
       // Seed
 
@@ -585,18 +575,16 @@ class PurposeManagementSpec
         ClientPurposeDetails(purposeId = purposeId1, versionId = updatePayload.versionId, state = updatePayload.state)
 
       val expectedClient1Purposes: Seq[Purpose] = Seq(
-        Purpose(
-          purposeId = purposeId1,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId1,
             eservice = eServiceDetails,
             agreement = agreementDetails,
             purpose = expectedPurpose1State
           )
         ),
-        Purpose(
-          purposeId = purposeId2,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId2,
             eservice = eServiceDetails,
             agreement = agreementDetails,
@@ -606,18 +594,16 @@ class PurposeManagementSpec
       )
 
       val expectedClient2Purposes: Seq[Purpose] = Seq(
-        Purpose(
-          purposeId = purposeId1,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId3,
             eservice = eServiceDetails,
             agreement = agreementDetails,
             purpose = expectedPurpose1State
           )
         ),
-        Purpose(
-          purposeId = purposeId2,
-          states = ClientStatesChain(
+        Purpose(states =
+          ClientStatesChain(
             id = statesChainId4,
             eservice = eServiceDetails,
             agreement = agreementDetails,

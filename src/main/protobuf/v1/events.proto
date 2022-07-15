@@ -40,8 +40,7 @@ message RelationshipRemovedV1 {
 
 message ClientPurposeAddedV1 {
   required string clientId = 1;
-  required string purposeId = 2;
-  required ClientStatesChainV1 statesChain = 3;
+  required ClientStatesChainV1 statesChain = 2;
 }
 
 message ClientPurposeRemovedV1 {
