@@ -1,7 +1,6 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 
 import cats.implicits._
-import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen
 import it.pagopa.interop.authorizationmanagement.model.client._
@@ -18,35 +17,41 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.state.StateClientsEntryV1
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1._
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer._
+import munit.ScalaCheckSuite
+import cats.kernel.Eq
+import PersistentSerializationSpec._
 
-class PersistentSerializationSpec extends Properties("PersistenceSerializer") {
+class PersistentSerializationSpec extends ScalaCheckSuite {
 
-  property("tofromTime is identity") = forAll(PersistentSerializationSpec.offsetDatetimeGen) { case (time, _) =>
-    toTime(fromTime(time)) == time
+  property("to -> fromTime is identity") {
+    forAll(offsetDatetimeGen) { case (time, _) => toTime(fromTime(time)) == time }
   }
 
-  property("fromtoTime is identity") = forAll(PersistentSerializationSpec.offsetDatetimeGen) { case (_, timeString) =>
-    fromTime(toTime(timeString)) == timeString
+  property("from -> toTime is identity") {
+    forAll(offsetDatetimeGen) { case (_, timeString) => fromTime(toTime(timeString)) == timeString }
   }
 
-  property("toTime deserializes correctly") = forAll(PersistentSerializationSpec.offsetDatetimeGen) {
-    case (time, timeString) =>
-      toTime(timeString) == time
+  property("toTime deserializes correctly") {
+    forAll(offsetDatetimeGen) { case (time, timeString) => toTime(timeString) == time }
   }
 
-  property("fromTime serialized correctly") = forAll(PersistentSerializationSpec.offsetDatetimeGen) {
-    case (time, timeString) =>
-      fromTime(time) == timeString
+  property("fromTime serialized correctly") {
+    forAll(offsetDatetimeGen) { case (time, timeString) => fromTime(time) == timeString }
   }
 
-  property("State is correctly deserialized") = forAll(PersistentSerializationSpec.stateGenerator) {
-    case (state, stateV1) => PersistEventDeserializer.from[StateV1, State](stateV1) == Right(state)
+  property("State is correctly deserialized") {
+    forAll(stateGenerator) { case (state, stateV1) =>
+      PersistEventDeserializer.from[StateV1, State](stateV1) == Right(state)
+    }
   }
 
-  // property("State is correctly serialized") = forAll(PersistentSerializationSpec.stateGenerator) {
-  //   case (state, stateV1) =>
-  //     PersistEventSerializer.to[State, StateV1](state) == Right(stateV1)
-  // }
+  // * Equality has been customized to do not get affected
+  // * by different collection kind and order
+  property("State is correctly serialized") {
+    forAll(stateGenerator) { case (state, stateV1) =>
+      PersistEventSerializer.to[State, StateV1](state) === Right(stateV1)
+    }
+  }
 
 }
 
@@ -222,4 +227,29 @@ object PersistentSerializationSpec {
         )
       }
   } yield (State(keys, clientsMap), StateV1(keysv1, clientsV1Map))
+
+  implicit val persistenClientEq: Eq[PersistentClientV1] = Eq.instance { case (result, expected) =>
+    result.consumerId === expected.consumerId &&
+    result.description === expected.description &&
+    result.id === expected.id &&
+    result.kind == expected.kind &&
+    result.name === expected.name &&
+    result.purposes.toList.sortBy(_.purposeId) == expected.purposes.toList.sortBy(_.purposeId) &&
+    result.relationships.toList.sorted === expected.relationships.toList.sorted
+  }
+
+  implicit val stateV1Equality: Eq[StateV1] = Eq.instance { case (result, expected) =>
+    val keysEquality: Boolean =
+      result.keys.toList.sortBy(_.clientId) == expected.keys.toList.sortBy(_.clientId)
+
+    val clientsEquality: Boolean =
+      result.clients.toList.sortBy(_.clientId).zip(expected.clients.toList.sortBy(_.clientId)).forall { case (a, b) =>
+        a.clientId == b.clientId && a.client === b.client
+      }
+
+    keysEquality && clientsEquality
+  }
+
+  implicit val throwableEq: Eq[Throwable] = Eq.fromUniversalEquals
+
 }

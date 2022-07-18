@@ -153,7 +153,7 @@ object Dependencies {
       akka.httpTestkit            % Test,
       scalatest.core              % Test,
       scalamock.core              % Test,
-      "org.scalacheck"           %% "scalacheck"           % "1.14.1" % Test
+      "org.scalameta"            %% "munit-scalacheck"     % "0.7.29" % Test
     )
 
     val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commonsUtils).map(_ % Compile)
