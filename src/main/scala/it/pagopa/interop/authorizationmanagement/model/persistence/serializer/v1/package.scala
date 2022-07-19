@@ -19,8 +19,6 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 }
 import it.pagopa.interop.commons.utils.TypeConversions._
 
-import java.time.format.DateTimeFormatter
-import java.time.OffsetDateTime
 import java.util.UUID
 import scala.util.Try
 
@@ -65,21 +63,13 @@ package object v1 {
   }
 
   implicit def keyDeletedV1PersistEventDeserializer: PersistEventDeserializer[KeyDeletedV1, KeyDeleted] = event =>
-    Right[Throwable, KeyDeleted](
-      KeyDeleted(
-        clientId = event.clientId,
-        keyId = event.keyId,
-        deactivationTimestamp = toTime(event.deactivationTimestamp)
-      )
+    event.deactivationTimestamp.toOffsetDateTime.toEither.map(deactivationTimestamp =>
+      KeyDeleted(clientId = event.clientId, keyId = event.keyId, deactivationTimestamp = deactivationTimestamp)
     )
 
   implicit def keyDeletedV1PersistEventSerializer: PersistEventSerializer[KeyDeleted, KeyDeletedV1] = event =>
-    Right[Throwable, KeyDeletedV1](
-      KeyDeletedV1(
-        clientId = event.clientId,
-        keyId = event.keyId,
-        deactivationTimestamp = fromTime(event.deactivationTimestamp)
-      )
+    event.deactivationTimestamp.asFormattedString.toEither.map(deactivationTimestamp =>
+      KeyDeletedV1(clientId = event.clientId, keyId = event.keyId, deactivationTimestamp = deactivationTimestamp)
     )
 
   implicit def clientAddedV1PersistEventDeserializer: PersistEventDeserializer[ClientAddedV1, ClientAdded] = event =>
@@ -217,7 +207,7 @@ package object v1 {
     clientToProtobuf(client).map(StateClientsEntryV1.of(client.id.toString, _))
 
   private def keyToProtobuf(key: PersistentKey): ErrorOr[PersistentKeyV1] =
-    Right(
+    key.creationTimestamp.asFormattedString.toEither.map(creationTimestampString =>
       PersistentKeyV1(
         kid = key.kid,
         name = key.name,
@@ -225,7 +215,7 @@ package object v1 {
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
         use = persistentKeyUseToProtobuf(key.use),
-        creationTimestamp = fromTime(key.creationTimestamp)
+        creationTimestamp = creationTimestampString
       )
     )
 
@@ -362,8 +352,9 @@ package object v1 {
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
-      use            <- persistentKeyUseFromProtobuf(key.use)
+      relationshipId    <- Try(UUID.fromString(key.relationshipId)).toEither
+      use               <- persistentKeyUseFromProtobuf(key.use)
+      creationTimestamp <- key.creationTimestamp.toOffsetDateTime.toEither
     } yield PersistentKey(
       kid = key.kid,
       name = key.name,
@@ -371,12 +362,8 @@ package object v1 {
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = use,
-      creationTimestamp = toTime(key.creationTimestamp)
+      creationTimestamp = creationTimestamp
     )
-
-  private val formatter                           = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-  def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
-  def toTime(timestamp: String): OffsetDateTime   = OffsetDateTime.parse(timestamp, formatter)
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
     case Sig => KeyUseV1.SIG

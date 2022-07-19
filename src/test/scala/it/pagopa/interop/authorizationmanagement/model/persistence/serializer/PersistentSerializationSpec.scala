@@ -23,22 +23,6 @@ import PersistentSerializationSpec._
 
 class PersistentSerializationSpec extends ScalaCheckSuite {
 
-  property("to -> fromTime is identity") {
-    forAll(offsetDatetimeGen) { case (time, _) => toTime(fromTime(time)) == time }
-  }
-
-  property("from -> toTime is identity") {
-    forAll(offsetDatetimeGen) { case (_, timeString) => fromTime(toTime(timeString)) == timeString }
-  }
-
-  property("toTime deserializes correctly") {
-    forAll(offsetDatetimeGen) { case (time, timeString) => toTime(timeString) == time }
-  }
-
-  property("fromTime serialized correctly") {
-    forAll(offsetDatetimeGen) { case (time, timeString) => fromTime(time) == timeString }
-  }
-
   property("State is correctly deserialized") {
     forAll(stateGenerator) { case (state, stateV1) =>
       PersistEventDeserializer.from[StateV1, State](stateV1) == Right(state)
