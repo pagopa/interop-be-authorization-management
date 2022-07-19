@@ -156,7 +156,7 @@ object Dependencies {
       pagopa.commonsUtils         % Compile,
       pagopa.commonsJWT           % Compile,
       postgres.jdbc               % Compile,
-      scalaprotobuf.core          % Protobuf,
+      scalaprotobuf.core          % "protobuf,compile",
       akka.testkit                % Test,
       akka.httpTestkit            % Test,
       scalatest.core              % Test,
