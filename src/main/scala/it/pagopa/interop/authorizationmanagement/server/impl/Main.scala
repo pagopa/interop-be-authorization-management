@@ -14,7 +14,6 @@ import akka.management.scaladsl.AkkaManagement
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.commons.logging.renderBuildInfo
-import kamon.Kamon
 import scala.concurrent.ExecutionContext
 import com.typesafe.scalalogging.Logger
 import scala.concurrent.Future
@@ -24,11 +23,7 @@ import scala.concurrent.ExecutionContextExecutor
 
 object Main extends App with Dependencies {
 
-  Kamon.init()
-
   val logger: Logger = Logger(this.getClass())
-
-  System.setProperty("kanela.show-banner", "false")
 
   val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
@@ -86,7 +81,5 @@ object Main extends App with Dependencies {
     },
     BuildInfo.name
   )
-
-  actorSystem.whenTerminated.onComplete { case _ => Kamon.stop() }(scala.concurrent.ExecutionContext.global)
 
 }
