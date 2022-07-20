@@ -137,20 +137,12 @@ object PersistentSerializationSpec {
   )
 
   val persistentClientPurposeGen: Gen[(PersistentClientPurpose, ClientPurposesEntryV1)] = persistentClientStatesChainGen
-    .map { case (pstates, statesV1) =>
-      (
-        PersistentClientPurpose(pstates.purpose.purposeId, pstates),
-        ClientPurposesEntryV1(statesV1.purpose.purposeId, statesV1)
-      )
-    }
+    .map { case (pstates, statesV1) => (PersistentClientPurpose(pstates), ClientPurposesEntryV1(statesV1)) }
 
-  val persistentClientPurposesGen
-    : Gen[(PersistentClientPurposes.PersistentClientPurposes, Seq[ClientPurposesEntryV1])] =
+  val persistentClientPurposesGen: Gen[(Seq[PersistentClientStatesChain], Seq[ClientPurposesEntryV1])] =
     Gen.nonEmptyListOf(persistentClientPurposeGen).flatMap { list =>
-      val (pClients, clientsV1)                                       = list.separate
-      val purposes: PersistentClientPurposes.PersistentClientPurposes =
-        pClients.map(cp => (cp.statesChain.purpose.purposeId.toString(), cp.statesChain)).toMap
-      (purposes, clientsV1)
+      val (pClients, clientsV1) = list.separate
+      (pClients.map(_.statesChain), clientsV1)
     }
 
   val persistentClientKindGen: Gen[(PersistentClientKind, ClientKindV1)] =
@@ -218,7 +210,9 @@ object PersistentSerializationSpec {
     result.id === expected.id &&
     result.kind == expected.kind &&
     result.name === expected.name &&
-    result.purposes.toList.sortBy(_.purposeId) == expected.purposes.toList.sortBy(_.purposeId) &&
+    result.purposes.toList.sortBy(_.states.purpose.purposeId) == expected.purposes.toList.sortBy(
+      _.states.purpose.purposeId
+    ) &&
     result.relationships.toList.sorted === expected.relationships.toList.sorted
   }
 
