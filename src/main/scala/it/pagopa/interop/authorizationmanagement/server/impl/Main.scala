@@ -25,7 +25,7 @@ object Main extends App with Dependencies {
 
   val logger: Logger = Logger(this.getClass())
 
-  val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
+  ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[_]        = context.system
       implicit val executionContext: ExecutionContext = actorSystem.executionContext
@@ -81,5 +81,4 @@ object Main extends App with Dependencies {
     },
     BuildInfo.name
   )
-
 }
