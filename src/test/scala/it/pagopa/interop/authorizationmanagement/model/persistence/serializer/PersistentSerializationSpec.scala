@@ -3,144 +3,78 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 import cats.implicits._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen
-import it.pagopa.interop.authorizationmanagement.model.client._
-import it.pagopa.interop.authorizationmanagement.model.key._
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.client._
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.key._
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import scala.jdk.CollectionConverters._
-import it.pagopa.interop.authorizationmanagement.model.persistence.State
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.state.StateV1
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.state.StateKeysEntryV1
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.state.StateClientsEntryV1
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1._
-import it.pagopa.interop.authorizationmanagement.model.persistence.serializer._
 import munit.ScalaCheckSuite
-import cats.kernel.Eq
 import PersistentSerializationSpec._
-import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
+import scala.jdk.CollectionConverters._
+import it.pagopa.interop.authorizationmanagement.model.key._
+import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
+import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
+import it.pagopa.interop.authorizationmanagement.model.persistence.serializer._
+import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1._
+import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.key._
+import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.state._
+import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.client._
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1.events._
+import com.softwaremill.diffx.munit.DiffxAssertions
+import com.softwaremill.diffx.generic.auto._
+import com.softwaremill.diffx.Diff
+import scala.reflect.runtime.universe.{typeOf, TypeTag}
 
-class PersistentSerializationSpec extends ScalaCheckSuite {
+class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
 
-  property("State is correctly deserialized") {
-    forAll(stateGenerator) { case (state, stateV1) =>
-      PersistEventDeserializer.from[StateV1, State](stateV1) == Right(state)
-    }
-  }
+  serdeCheck[State, StateV1](stateGen, _.sorted)
+  serdeCheck[KeysAdded, KeysAddedV1](keysAddedGen, _.sorted)
+  serdeCheck[KeyDeleted, KeyDeletedV1](keyDeletedGen)
+  serdeCheck[ClientAdded, ClientAddedV1](clientAddedGen)
+  serdeCheck[ClientDeleted, ClientDeletedV1](clientDeletedGen)
+  serdeCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGen)
+  serdeCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
+  serdeCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
+  serdeCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
+  serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
+  serdeCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
+  serdeCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
 
-  property("KeysAdded is correctly deserialized") {
-    forAll(keysAddedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[KeysAddedV1, KeysAdded](stateV1) == Right(state)
-    }
-  }
-  property("KeyDeleted is correctly deserialized") {
-    forAll(keyDeletedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[KeyDeletedV1, KeyDeleted](stateV1) == Right(state)
-    }
-  }
-  property("ClientAdded is correctly deserialized") {
-    forAll(clientAddedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[ClientAddedV1, ClientAdded](stateV1) == Right(state)
-    }
-  }
-  property("ClientDeleted is correctly deserialized") {
-    forAll(clientDeletedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[ClientDeletedV1, ClientDeleted](stateV1) == Right(state)
-    }
-  }
-  property("RelationshipAdded is correctly deserialized") {
-    forAll(relationshipAddedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[RelationshipAddedV1, RelationshipAdded](stateV1) == Right(state)
-    }
-  }
-  property("RelationshipRemoved is correctly deserialized") {
-    forAll(relationshipRemovedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[RelationshipRemovedV1, RelationshipRemoved](stateV1) == Right(state)
-    }
-  }
-  property("ClientPurposeAdded is correctly deserialized") {
-    forAll(clientPurposeAddedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[ClientPurposeAddedV1, ClientPurposeAdded](stateV1) == Right(state)
-    }
-  }
-  property("EServiceStateUpdated is correctly deserialized") {
-    forAll(eServiceStateUpdatedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[EServiceStateUpdatedV1, EServiceStateUpdated](stateV1) == Right(state)
-    }
-  }
-  property("AgreementStateUpdated is correctly deserialized") {
-    forAll(agreementStateUpdatedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[AgreementStateUpdatedV1, AgreementStateUpdated](stateV1) == Right(state)
-    }
-  }
-  property("PurposeStateUpdated is correctly deserialized") {
-    forAll(purposeStateUpdatedGen) { case (state, stateV1) =>
-      PersistEventDeserializer.from[PurposeStateUpdatedV1, PurposeStateUpdated](stateV1) == Right(state)
+  deserCheck[State, StateV1](stateGen)
+  deserCheck[KeysAdded, KeysAddedV1](keysAddedGen)
+  deserCheck[KeyDeleted, KeyDeletedV1](keyDeletedGen)
+  deserCheck[ClientAdded, ClientAddedV1](clientAddedGen)
+  deserCheck[ClientDeleted, ClientDeletedV1](clientDeletedGen)
+  deserCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGen)
+  deserCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
+  deserCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
+  deserCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
+  deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
+  deserCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
+  deserCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
+
+  // TODO move me in commons
+  def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit
+    e: PersistEventSerializer[A, B],
+    loc: munit.Location,
+    d: => Diff[Either[Throwable, B]]
+  ): Unit = property(s"${typeOf[A].typeSymbol.name.toString} is correctly serialized") {
+    forAll(gen) { case (state, stateV1) =>
+      implicit val diffX: Diff[Either[Throwable, B]] = d
+      assertEqual(PersistEventSerializer.to[A, B](state).map(adapter), Right(stateV1).map(adapter))
     }
   }
 
-  // * Equality has been customized to do not get affected
-  // * by different collection kind and order
-  property("State is correctly serialized") {
-    forAll(stateGenerator) { case (state, stateV1) =>
-      PersistEventSerializer.to[State, StateV1](state) === Right(stateV1)
+  // TODO move me in commons
+  def deserCheck[A, B: TypeTag](
+    gen: Gen[(A, B)]
+  )(implicit e: PersistEventDeserializer[B, A], loc: munit.Location, d: => Diff[Either[Throwable, A]]): Unit =
+    property(s"${typeOf[B].typeSymbol.name.toString} is correctly deserialized") {
+      forAll(gen) { case (state, stateV1) =>
+        // * This is declared lazy in the signature to avoid a MethodTooBigException
+        implicit val diffX: Diff[Either[Throwable, A]] = d
+        assertEqual(PersistEventDeserializer.from[B, A](stateV1), Right(state))
+      }
     }
-  }
-
-  property("KeysAdded is correctly serialized") {
-    forAll(keysAddedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[KeysAdded, KeysAddedV1](state) === Right(stateV1)
-    }
-  }
-  property("KeyDeleted is correctly serialized") {
-    forAll(keyDeletedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[KeyDeleted, KeyDeletedV1](state) == Right(stateV1)
-    }
-  }
-  property("ClientAdded is correctly serialized") {
-    forAll(clientAddedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[ClientAdded, ClientAddedV1](state) == Right(stateV1)
-    }
-  }
-  property("ClientDeleted is correctly serialized") {
-    forAll(clientDeletedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[ClientDeleted, ClientDeletedV1](state) == Right(stateV1)
-    }
-  }
-  property("RelationshipAdded is correctly serialized") {
-    forAll(relationshipAddedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[RelationshipAdded, RelationshipAddedV1](state) == Right(stateV1)
-    }
-  }
-  property("RelationshipRemoved is correctly serialized") {
-    forAll(relationshipRemovedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[RelationshipRemoved, RelationshipRemovedV1](state) == Right(stateV1)
-    }
-  }
-  property("ClientPurposeAdded is correctly serialized") {
-    forAll(clientPurposeAddedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[ClientPurposeAdded, ClientPurposeAddedV1](state) == Right(stateV1)
-    }
-  }
-  property("EServiceStateUpdated is correctly serialized") {
-    forAll(eServiceStateUpdatedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[EServiceStateUpdated, EServiceStateUpdatedV1](state) == Right(stateV1)
-    }
-  }
-  property("AgreementStateUpdated is correctly serialized") {
-    forAll(agreementStateUpdatedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[AgreementStateUpdated, AgreementStateUpdatedV1](state) == Right(stateV1)
-    }
-  }
-  property("PurposeStateUpdated is correctly serialized") {
-    forAll(purposeStateUpdatedGen) { case (state, stateV1) =>
-      PersistEventSerializer.to[PurposeStateUpdated, PurposeStateUpdatedV1](state) == Right(stateV1)
-    }
-  }
 
 }
 
@@ -296,7 +230,7 @@ object PersistentSerializationSpec {
         case ((map, list), (keys, keysV1)) => (map + keys, StateKeysEntryV1(keysV1._1, keysV1._2) :: list)
       })
 
-  val stateGenerator: Gen[(State, StateV1)] = for {
+  val stateGen: Gen[(State, StateV1)] = for {
     cardinality                <- Gen.chooseNum(1, 10)
     mapCardinality             <- Gen.chooseNum(1, 2)
     (clientsMap, clientsV1Map) <- sizedClientsGenerator(cardinality)
@@ -336,6 +270,11 @@ object PersistentSerializationSpec {
     clientId         <- stringGen
     (chain, chainV1) <- persistentClientStatesChainGen
   } yield (ClientPurposeAdded(clientId, chain), ClientPurposeAddedV1(clientId, chainV1))
+
+  val clientPurposeRemovedGen: Gen[(ClientPurposeRemoved, ClientPurposeRemovedV1)] = for {
+    clientId  <- stringGen
+    purposeId <- stringGen
+  } yield (ClientPurposeRemoved(clientId, purposeId), ClientPurposeRemovedV1(clientId, purposeId))
 
   val eServiceStateUpdatedGen: Gen[(EServiceStateUpdated, EServiceStateUpdatedV1)] = for {
     eServiceId       <- stringGen
@@ -384,40 +323,27 @@ object PersistentSerializationSpec {
     PurposeStateUpdatedV1(purposeId = purposeId, versionId = versionId.toString, state = stateV1)
   )
 
-  implicit val persistenClientEq: Eq[PersistentClientV1] = Eq.instance { case (result, expected) =>
-    result.consumerId === expected.consumerId &&
-    result.description === expected.description &&
-    result.id === expected.id &&
-    result.kind == expected.kind &&
-    result.name === expected.name &&
-    result.purposes.toList.sortBy(_.states.purpose.purposeId) == expected.purposes.toList.sortBy(
-      _.states.purpose.purposeId
-    ) &&
-    result.relationships.toList.sorted === expected.relationships.toList.sorted
+  implicit class PimpedPersistentClientV1(val client: PersistentClientV1) extends AnyVal {
+    def sorted: PersistentClientV1 = {
+      val purposes: List[ClientPurposesEntryV1] = client.purposes.toList.sortBy(_.states.purpose.purposeId)
+      val relationships: List[String]           = client.relationships.toList.sorted
+      client.copy(purposes = purposes, relationships = relationships)
+    }
   }
 
-  implicit val stateV1Equality: Eq[StateV1] = Eq.instance { case (result, expected) =>
-    val keysEquality: Boolean =
-      result.keys
+  implicit class PimpedStateV1(val stateV1: StateV1) extends AnyVal {
+    def sorted: StateV1 = {
+      val keys: List[StateKeysEntryV1]       = stateV1.keys.toList
         .map(s => StateKeysEntryV1(s.clientId, s.keyEntries.sortBy(_.keyId)))
-        .toList
-        .sortBy(_.clientId) == expected.keys
-        .map(s => StateKeysEntryV1(s.clientId, s.keyEntries.sortBy(_.keyId)))
-        .toList
         .sortBy(_.clientId)
-
-    val clientsEquality: Boolean =
-      result.clients.toList.sortBy(_.clientId).zip(expected.clients.toList.sortBy(_.clientId)).forall { case (a, b) =>
-        a.clientId == b.clientId && a.client === b.client
-      }
-
-    keysEquality && clientsEquality
+      val clients: List[StateClientsEntryV1] =
+        stateV1.clients.map(sce => sce.copy(client = sce.client.sorted)).toList.sortBy(_.clientId)
+      stateV1.copy(keys, clients)
+    }
   }
 
-  implicit val keysAddedV1Eq: Eq[KeysAddedV1] = Eq.instance { case (a, b) =>
-    a.clientId == b.clientId && a.keys.sortBy(_.keyId) == b.keys.sortBy(_.keyId)
+  implicit class PimpedKeysAddedV1(val keysAdded: KeysAddedV1) extends AnyVal {
+    def sorted: KeysAddedV1 = keysAdded.copy(keys = keysAdded.keys.sortBy(_.keyId))
   }
-
-  implicit val throwableEq: Eq[Throwable] = Eq.fromUniversalEquals
 
 }
