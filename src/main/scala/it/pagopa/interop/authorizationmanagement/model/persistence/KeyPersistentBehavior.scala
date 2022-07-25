@@ -14,8 +14,8 @@ import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.{EncodedClientKey, KeysResponse}
 import it.pagopa.interop.commons.utils.errors.ComponentError
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
-import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
@@ -26,7 +26,8 @@ object KeyPersistentBehavior {
 
   def commandHandler(
     shard: ActorRef[ClusterSharding.ShardCommand],
-    context: ActorContext[Command]
+    context: ActorContext[Command],
+    dateTimeSupplier: OffsetDateTimeSupplier
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
     val idleTimeout = context.system.settings.config.getDuration("key-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
@@ -37,7 +38,7 @@ object KeyPersistentBehavior {
             val persistentKeys: Either[Throwable, Seq[PersistentKey]] = for {
               _              <- validateRelationships(client, validKeys)
               persistentKeys <- validKeys
-                .map(PersistentKey.toPersistentKey)
+                .map(PersistentKey.toPersistentKey(dateTimeSupplier))
                 .sequence
             } yield persistentKeys
 
@@ -87,7 +88,7 @@ object KeyPersistentBehavior {
         state.getClientKeyById(clientId, keyId) match {
           case Some(_) =>
             Effect
-              .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
+              .persist(KeyDeleted(clientId, keyId, dateTimeSupplier.get))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           case None    => commandKeyNotFoundError(replyTo)
         }
@@ -363,6 +364,7 @@ object KeyPersistentBehavior {
   def apply(
     shard: ActorRef[ClusterSharding.ShardCommand],
     persistenceId: PersistenceId,
+    dateTimeSupplier: OffsetDateTimeSupplier,
     projectionTag: String
   ): Behavior[Command] = {
     Behaviors.setup { context =>
@@ -372,7 +374,7 @@ object KeyPersistentBehavior {
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,
-        commandHandler = commandHandler(shard, context),
+        commandHandler = commandHandler(shard, context, dateTimeSupplier),
         eventHandler = eventHandler
       ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
         .withTagger(_ => Set(projectionTag))
