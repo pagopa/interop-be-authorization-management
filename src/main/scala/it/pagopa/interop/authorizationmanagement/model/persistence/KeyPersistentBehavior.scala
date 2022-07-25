@@ -9,7 +9,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
-import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient, PersistentClientStatesChain}
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.{EncodedClientKey, KeysResponse}
@@ -240,20 +240,29 @@ object KeyPersistentBehavior {
                 .thenRun((_: State) => replyTo ! StatusReply.Success(()))
           )
 
-      case UpdateEServiceState(eServiceId, descriptorId, state, audience, voucherLifespan, replyTo) =>
-        Effect
-          .persist(EServiceStateUpdated(eServiceId, descriptorId, state, audience, voucherLifespan))
-          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+      case UpdateEServiceState(eServiceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsEService(eServiceId),
+          EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan),
+          replyTo
+        )
 
-      case UpdateAgreementState(eServiceId, consumerId, agreementId, state, replyTo) =>
-        Effect
-          .persist(AgreementStateUpdated(eServiceId, consumerId, agreementId, state))
-          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+      case UpdateAgreementState(eServiceId, consumerId, agreementId, componentState, replyTo) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsAgreement(eServiceId, consumerId),
+          AgreementStateUpdated(eServiceId, consumerId, agreementId, componentState),
+          replyTo
+        )
 
-      case UpdatePurposeState(purposeId, versionId, state, replyTo) =>
-        Effect
-          .persist(PurposeStateUpdated(purposeId, versionId, state))
-          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+      case UpdatePurposeState(purposeId, versionId, componentState, replyTo) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsPurpose(purposeId),
+          PurposeStateUpdated(purposeId, versionId, componentState),
+          replyTo
+        )
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
@@ -303,6 +312,21 @@ object KeyPersistentBehavior {
       )
 
   }
+
+  private def conditionalClientsStateUpdate(
+    state: State,
+    condition: PersistentClientStatesChain => Boolean,
+    event: Event,
+    replyTo: ActorRef[StatusReply[Unit]]
+  ): Effect[Event, State] =
+    if (state.clients.exists { case (_, client) => client.purposes.exists(condition) })
+      Effect
+        .persist(event)
+        .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+    else {
+      replyTo ! StatusReply.Success(())
+      Effect.none
+    }
 
   private def commandKeyNotFoundError[T](replyTo: ActorRef[StatusReply[T]]): Effect[Event, State] = {
     replyTo ! StatusReply.Error[T](KeyNotFoundException)
