@@ -1,28 +1,24 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence
 
-import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.model._
-import it.pagopa.interop.authorizationmanagement.model.client.PersistentClientPurposes.PersistentClientPurposes
 import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.util.UUID
 
 object ClientAdapters {
 
   implicit class PersistentClientWrapper(private val p: PersistentClient) extends AnyVal {
-    def toApi: Either[Throwable, Client] = PersistentClientPurposes.toApi(p.purposes).map { purposes =>
+    def toApi: Client =
       Client(
         id = p.id,
         consumerId = p.consumerId,
         name = p.name,
-        purposes = purposes,
+        purposes = p.purposes.map(_.toApi).map(Purpose),
         description = p.description,
         relationships = p.relationships,
         kind = p.kind.toApi
       )
-    }
   }
 
   implicit class PersistentClientObjectWrapper(private val p: PersistentClient.type) extends AnyVal {
@@ -31,7 +27,7 @@ object ClientAdapters {
         id = clientId,
         consumerId = seed.consumerId,
         name = seed.name,
-        purposes = Map.empty,
+        purposes = Seq.empty,
         description = seed.description,
         relationships = Set.empty[UUID],
         kind = PersistentClientKind.fromApi(seed.kind)
@@ -61,14 +57,14 @@ object ClientAdapters {
   }
 
   implicit class PersistentClientPurposeWrapper(private val p: PersistentClientPurpose) extends AnyVal {
-    def toApi: Purpose = Purpose(purposeId = p.id, states = p.statesChain.toApi)
+    def toApi: Purpose = Purpose(states = p.statesChain.toApi)
   }
 
   implicit class PersistentClientPurposeObjectWrapper(private val p: PersistentClientPurpose.type) extends AnyVal {
-    def fromSeed(uuidSupplier: UUIDSupplier)(seed: PurposeSeed): PersistentClientPurpose = PersistentClientPurpose(
-      id = seed.purposeId,
-      statesChain = PersistentClientStatesChain.fromSeed(uuidSupplier: UUIDSupplier)(seed.states)
-    )
+    def fromSeed(uuidSupplier: UUIDSupplier)(seed: PurposeSeed): PersistentClientPurpose =
+      PersistentClientPurpose(statesChain =
+        PersistentClientStatesChain.fromSeed(uuidSupplier: UUIDSupplier)(seed.states)
+      )
   }
 
   implicit class PersistentClientAgreementDetailsWrapper(private val p: PersistentClientAgreementDetails)
@@ -129,13 +125,6 @@ object ClientAdapters {
         versionId = seed.versionId,
         state = PersistentClientComponentState.fromApi(seed.state)
       )
-  }
-
-  implicit class PersistentClientPurposesWrapper(private val p: PersistentClientPurposes.type) extends AnyVal {
-    def toApi(persistent: PersistentClientPurposes): Either[Throwable, Seq[Purpose]] =
-      persistent.toSeq.traverse { case (purposeId, statesChain) =>
-        purposeId.toUUID.toEither.map(uuid => Purpose(purposeId = uuid, states = statesChain.toApi))
-      }
   }
 
   implicit class PersistentClientKindWrapper(private val p: PersistentClientKind) extends AnyVal {

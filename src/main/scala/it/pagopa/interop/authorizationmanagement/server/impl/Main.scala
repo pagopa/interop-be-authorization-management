@@ -14,7 +14,6 @@ import akka.management.scaladsl.AkkaManagement
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.commons.logging.renderBuildInfo
-import kamon.Kamon
 import scala.concurrent.ExecutionContext
 import com.typesafe.scalalogging.Logger
 import scala.concurrent.Future
@@ -26,7 +25,7 @@ object Main extends App with Dependencies {
 
   val logger: Logger = Logger(this.getClass)
 
-  val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](
+  ActorSystem[Nothing](
     Behaviors.setup[Nothing] { context =>
       implicit val actorSystem: ActorSystem[_]        = context.system
       implicit val executionContext: ExecutionContext = actorSystem.executionContext
@@ -34,7 +33,6 @@ object Main extends App with Dependencies {
       val selector: DispatcherSelector                = DispatcherSelector.fromConfig("futures-dispatcher")
       val _: ExecutionContextExecutor                 = actorSystem.dispatchers.lookup(selector)
 
-      Kamon.init()
       AkkaManagement.get(actorSystem).start()
 
       val sharding: ClusterSharding = ClusterSharding(context.system)
@@ -83,7 +81,4 @@ object Main extends App with Dependencies {
     },
     BuildInfo.name
   )
-
-  actorSystem.whenTerminated.onComplete(_ => Kamon.stop())(scala.concurrent.ExecutionContext.global)
-
 }

@@ -21,9 +21,8 @@ final case class ClientDeleted(clientId: String)       extends Event
 final case class RelationshipAdded(client: PersistentClient, relationshipId: UUID) extends Event
 final case class RelationshipRemoved(clientId: String, relationshipId: String)     extends Event
 
-final case class ClientPurposeAdded(clientId: String, purposeId: String, statesChain: PersistentClientStatesChain)
-    extends Event
-final case class ClientPurposeRemoved(clientId: String, purposeId: String) extends Event
+final case class ClientPurposeAdded(clientId: String, statesChain: PersistentClientStatesChain) extends Event
+final case class ClientPurposeRemoved(clientId: String, purposeId: String)                      extends Event
 
 final case class EServiceStateUpdated(
   eServiceId: String,

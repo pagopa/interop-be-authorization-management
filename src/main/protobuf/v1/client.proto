@@ -18,7 +18,6 @@ message PersistentClientV1 {
 }
 
 message ClientPurposesEntryV1 {
-  required string purposeId = 1;
   required ClientStatesChainV1 states = 2;
 }
 

@@ -136,7 +136,9 @@ object KeyPersistentBehavior {
         }
 
       case GetClientByPurpose(clientId, purposeId, replyTo) =>
-        state.clients.get(clientId).find(client => client.purposes.contains(purposeId)) match {
+        state.clients
+          .get(clientId)
+          .find(client => client.purposes.exists(_.purpose.purposeId.toString == purposeId)) match {
           case Some(client) =>
             replyTo ! StatusReply.Success(client)
             Effect.none[Event, State]
@@ -151,7 +153,7 @@ object KeyPersistentBehavior {
         val filteredClients: Seq[PersistentClient] = clientsByKind.filter { client =>
           relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
           consumerId.forall(_ == client.consumerId.toString) &&
-          purposeId.forall(client.purposes.contains)
+          purposeId.forall(pId => client.purposes.exists(_.purpose.purposeId.toString == pId))
         }
 
         val paginatedClients: Seq[PersistentClient] = filteredClients.slice(from, to)
@@ -209,19 +211,20 @@ object KeyPersistentBehavior {
           )
 
       case AddClientPurpose(clientId, purpose, replyTo) =>
+        val purposeId                       = purpose.statesChain.purpose.purposeId
         val v: Either[ComponentError, Unit] = for {
           client <- state.clients.get(clientId).toRight(ClientNotFoundError(clientId))
           _      <- client.purposes
-            .get(purpose.id.toString)
+            .find(_.purpose.purposeId == purposeId)
             .toLeft(())
-            .leftMap(_ => PurposeAlreadyExists(clientId, purpose.id.toString))
+            .leftMap(_ => PurposeAlreadyExists(clientId, purposeId.toString))
         } yield ()
 
         v.fold(
           commandError(replyTo, _),
           _ =>
             Effect
-              .persist(ClientPurposeAdded(clientId, purpose.id.toString, purpose.statesChain))
+              .persist(ClientPurposeAdded(clientId, purpose.statesChain))
               .thenRun((_: State) => replyTo ! StatusReply.Success(purpose))
         )
 
@@ -313,15 +316,14 @@ object KeyPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case KeysAdded(clientId, keys)                            => state.addKeys(clientId, keys)
-      case KeyDeleted(clientId, keyId, _)                       => state.deleteKey(clientId, keyId)
-      case ClientAdded(client)                                  => state.addClient(client)
-      case ClientDeleted(clientId)                              => state.deleteClient(clientId)
-      case RelationshipAdded(client, relationshipId)            => state.addRelationship(client, relationshipId)
-      case RelationshipRemoved(clientId, relationshipId)        => state.removeRelationship(clientId, relationshipId)
-      case ClientPurposeAdded(clientId, purposeId, statesChain) =>
-        state.addClientPurpose(clientId, purposeId, statesChain)
-      case ClientPurposeRemoved(clientId, purposeId)            =>
+      case KeysAdded(clientId, keys)                     => state.addKeys(clientId, keys)
+      case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
+      case ClientAdded(client)                           => state.addClient(client)
+      case ClientDeleted(clientId)                       => state.deleteClient(clientId)
+      case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
+      case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
+      case ClientPurposeAdded(clientId, statesChain)     => state.addClientPurpose(clientId, statesChain)
+      case ClientPurposeRemoved(clientId, purposeId)     =>
         state.removeClientPurpose(clientId, purposeId)
       case EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan) =>
         state.updateClientsByEService(eServiceId, descriptorId, componentState, audience, voucherLifespan)

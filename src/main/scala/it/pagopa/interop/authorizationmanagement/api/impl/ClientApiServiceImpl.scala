@@ -9,20 +9,19 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, onComplete, onSuccess}
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.authorizationmanagement.api.ClientApiService
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient, PersistentClientKind}
+import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE, SECURITY_ROLE}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -66,11 +65,7 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => AddClient(persistentClient, ref))
 
     onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        statusReply.getValue.toApi.fold(
-          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
-          client => createClient201(client)
-        )
+      case Success(statusReply) if statusReply.isSuccess => createClient201(statusReply.getValue.toApi)
       case Success(statusReply)                          =>
         logger.error(s"Error while creating client for Consumer ${clientSeed.consumerId}", statusReply.getError)
         createClient409(problemOf(StatusCodes.Conflict, ClientAlreadyExisting))
@@ -96,11 +91,7 @@ final case class ClientApiServiceImpl(
     val result: Future[StatusReply[PersistentClient]] = commander.ask(ref => GetClient(clientId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess =>
-        statusReply.getValue.toApi.fold(
-          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
-          client => getClient200(client)
-        )
+      case statusReply if statusReply.isSuccess => getClient200(statusReply.getValue.toApi)
       case statusReply if statusReply.isError   =>
         statusReply.getError match {
           case ex: ClientNotFoundError =>
@@ -152,12 +143,9 @@ final case class ClientApiServiceImpl(
       )
     val persistentClient: Seq[PersistentClient] =
       commanders.flatMap(ref => slices(ref, sliceSize, relationshipId, consumerId, purposeId, kindEnum))
-    val clients: Either[Throwable, Seq[Client]] = persistentClient.traverse(client => client.toApi)
-    val paginatedClients                        = clients.map(_.sortBy(_.id).slice(offset, offset + limit))
-    paginatedClients.fold(
-      ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
-      clients => listClients200(clients)
-    )
+    val clients: Seq[Client]                    = persistentClient.map(_.toApi)
+    val paginatedClients                        = clients.sortBy(_.id).slice(offset, offset + limit)
+    listClients200(paginatedClients)
   }
 
   private def slices(
@@ -208,11 +196,7 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => AddRelationship(clientId, relationshipSeed.relationshipId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess =>
-        statusReply.getValue.toApi.fold(
-          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
-          client => addRelationship201(client)
-        )
+      case statusReply if statusReply.isSuccess => addRelationship201(statusReply.getValue.toApi)
       case statusReply                          =>
         logger.error(
           s"Error while adding relationship ${relationshipSeed.relationshipId} to client ${clientId}",
@@ -313,11 +297,7 @@ final case class ClientApiServiceImpl(
       commander.ask(ref => GetClientByPurpose(clientId, purposeId, ref))
 
     onSuccess(result) {
-      case statusReply if statusReply.isSuccess =>
-        statusReply.getValue.toApi.fold(
-          ex => internalServerError(problemOf(StatusCodes.InternalServerError, GenericError(ex.getMessage))),
-          client => getClientByPurposeId200(client)
-        )
+      case statusReply if statusReply.isSuccess => getClientByPurposeId200(statusReply.getValue.toApi)
       case statusReply if statusReply.isError   =>
         logger.info(s"Error while retrieving Client for client=$clientId/purpose=$purposeId", statusReply.getError)
         statusReply.getError match {

@@ -1,7 +1,6 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 
 import cats.implicits._
-import it.pagopa.interop.authorizationmanagement.model.client.PersistentClientPurposes.PersistentClientPurposes
 import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
@@ -20,8 +19,6 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 }
 import it.pagopa.interop.commons.utils.TypeConversions._
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.util.Try
 
@@ -66,21 +63,13 @@ package object v1 {
   }
 
   implicit def keyDeletedV1PersistEventDeserializer: PersistEventDeserializer[KeyDeletedV1, KeyDeleted] = event =>
-    Right[Throwable, KeyDeleted](
-      KeyDeleted(
-        clientId = event.clientId,
-        keyId = event.keyId,
-        deactivationTimestamp = toTime(event.deactivationTimestamp)
-      )
+    event.deactivationTimestamp.toOffsetDateTime.toEither.map(deactivationTimestamp =>
+      KeyDeleted(clientId = event.clientId, keyId = event.keyId, deactivationTimestamp = deactivationTimestamp)
     )
 
   implicit def keyDeletedV1PersistEventSerializer: PersistEventSerializer[KeyDeleted, KeyDeletedV1] = event =>
-    Right[Throwable, KeyDeletedV1](
-      KeyDeletedV1(
-        clientId = event.clientId,
-        keyId = event.keyId,
-        deactivationTimestamp = fromTime(event.deactivationTimestamp)
-      )
+    event.deactivationTimestamp.asFormattedString.toEither.map(deactivationTimestamp =>
+      KeyDeletedV1(clientId = event.clientId, keyId = event.keyId, deactivationTimestamp = deactivationTimestamp)
     )
 
   implicit def clientAddedV1PersistEventDeserializer: PersistEventDeserializer[ClientAddedV1, ClientAdded] = event =>
@@ -124,18 +113,13 @@ package object v1 {
   implicit def clientPurposeAddedV1PersistEventDeserializer
     : PersistEventDeserializer[ClientPurposeAddedV1, ClientPurposeAdded] =
     event =>
-      for {
-        states <- protobufToClientStatesChain(event.statesChain)
-      } yield ClientPurposeAdded(clientId = event.clientId, purposeId = event.purposeId, statesChain = states)
+      protobufToClientStatesChain(event.statesChain)
+        .map(statesChain => ClientPurposeAdded(clientId = event.clientId, statesChain = statesChain))
 
   implicit def clientPurposeAddedV1PersistEventSerializer
     : PersistEventSerializer[ClientPurposeAdded, ClientPurposeAddedV1] = event =>
     Right[Throwable, ClientPurposeAddedV1](
-      ClientPurposeAddedV1(
-        clientId = event.clientId,
-        purposeId = event.purposeId,
-        statesChain = clientStatesChainToProtobuf(event.statesChain)
-      )
+      ClientPurposeAddedV1(clientId = event.clientId, statesChain = clientStatesChainToProtobuf(event.statesChain))
     )
 
   implicit def clientPurposeRemovedV1PersistEventDeserializer
@@ -223,7 +207,7 @@ package object v1 {
     clientToProtobuf(client).map(StateClientsEntryV1.of(client.id.toString, _))
 
   private def keyToProtobuf(key: PersistentKey): ErrorOr[PersistentKeyV1] =
-    Right(
+    key.creationTimestamp.asFormattedString.toEither.map(creationTimestampString =>
       PersistentKeyV1(
         kid = key.kid,
         name = key.name,
@@ -231,7 +215,7 @@ package object v1 {
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
         use = persistentKeyUseToProtobuf(key.use),
-        creationTimestamp = fromTime(key.creationTimestamp)
+        creationTimestamp = creationTimestampString
       )
     )
 
@@ -241,17 +225,12 @@ package object v1 {
         id = client.id.toString,
         consumerId = client.consumerId.toString,
         name = client.name,
-        purposes = purposeToProtobuf(client.purposes),
+        purposes = client.purposes.map(p => ClientPurposesEntryV1.of(clientStatesChainToProtobuf(p))),
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq,
         kind = clientKindToProtobufV1(client.kind)
       )
     )
-
-  private def purposeToProtobuf(purposes: PersistentClientPurposes): Seq[ClientPurposesEntryV1] =
-    purposes.map { case (purposeId, statesChain) =>
-      ClientPurposesEntryV1.of(purposeId, clientStatesChainToProtobuf(statesChain))
-    }.toSeq
 
   private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
     ClientStatesChainV1.of(
@@ -314,10 +293,8 @@ package object v1 {
       kind = kind
     )
 
-  private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[PersistentClientPurposes] =
-    purposes
-      .traverse(p => protobufToClientStatesChain(p.states).map(state => p.purposeId -> state))
-      .map(_.toMap)
+  private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[Seq[PersistentClientStatesChain]] =
+    purposes.traverse(p => protobufToClientStatesChain(p.states))
 
   private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
     for {
@@ -375,8 +352,9 @@ package object v1 {
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
-      use            <- persistentKeyUseFromProtobuf(key.use)
+      relationshipId    <- Try(UUID.fromString(key.relationshipId)).toEither
+      use               <- persistentKeyUseFromProtobuf(key.use)
+      creationTimestamp <- key.creationTimestamp.toOffsetDateTime.toEither
     } yield PersistentKey(
       kid = key.kid,
       name = key.name,
@@ -384,14 +362,8 @@ package object v1 {
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = use,
-      creationTimestamp = toTime(key.creationTimestamp)
+      creationTimestamp = creationTimestamp
     )
-
-  private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
-  def fromTime(timestamp: OffsetDateTime): String = timestamp.format(formatter)
-  def toTime(timestamp: String): OffsetDateTime   =
-    OffsetDateTime.of(LocalDateTime.parse(timestamp, formatter), ZoneOffset.UTC)
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {
     case Sig => KeyUseV1.SIG
