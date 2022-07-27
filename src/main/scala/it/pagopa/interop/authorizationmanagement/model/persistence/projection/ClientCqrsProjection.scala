@@ -74,8 +74,39 @@ object ClientCqrsProjection {
           Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan)
         )
       )
-    // TODO delete me
-    case _ => throw new Exception("Not yet implemented")
+    case AgreementStateUpdated(eServiceId, consumerId, agreementId, state)                =>
+      // Updates all purposes states of all clients matching criteria
+      ActionWithBson(
+        collection.updateMany(
+          Filters.empty(),
+          _,
+          UpdateOptions().arrayFilters(
+            List(
+              Filters.and(
+                Filters.eq("elem.agreement.eServiceId", eServiceId),
+                Filters.eq("elem.agreement.consumerId", consumerId)
+              )
+            ).asJava
+          )
+        ),
+        Updates.combine(
+          Updates.set("data.purposes.$[elem].agreement.state", state.toString),
+          Updates.set("data.purposes.$[elem].agreement.agreementId", agreementId.toString)
+        )
+      )
+    case PurposeStateUpdated(purposeId, versionId, state)                                 =>
+      // Updates all purposes states of all clients matching criteria
+      ActionWithBson(
+        collection.updateMany(
+          Filters.empty(),
+          _,
+          UpdateOptions().arrayFilters(List(Filters.eq("elem.purpose.purposeId", purposeId)).asJava)
+        ),
+        Updates.combine(
+          Updates.set("data.purposes.$[elem].purpose.state", state.toString),
+          Updates.set("data.purposes.$[elem].purpose.versionId", versionId.toString)
+        )
+      )
   }
 
 }
