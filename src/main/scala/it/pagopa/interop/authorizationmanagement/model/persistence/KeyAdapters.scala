@@ -6,8 +6,7 @@ import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, 
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
 import it.pagopa.interop.authorizationmanagement.model.{ClientKey, KeyUse, KeysResponse}
 import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
-
-import java.time.OffsetDateTime
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 object KeyAdapters {
 
@@ -19,7 +18,9 @@ object KeyAdapters {
   }
 
   implicit class PersistentKeyObjectWrapper(private val p: PersistentKey.type) extends AnyVal {
-    def toPersistentKey(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] =
+    def toPersistentKey(
+      dateTimeSupplier: OffsetDateTimeSupplier
+    )(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] =
       for {
         kid <- KeyProcessor.calculateKid(validKey._2)
       } yield PersistentKey(
@@ -29,7 +30,7 @@ object KeyAdapters {
         encodedPem = validKey._1.key,
         algorithm = validKey._1.alg,
         use = PersistentKeyUse.fromApi(validKey._1.use),
-        creationTimestamp = OffsetDateTime.now()
+        creationTimestamp = dateTimeSupplier.get
       )
 
     def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] =

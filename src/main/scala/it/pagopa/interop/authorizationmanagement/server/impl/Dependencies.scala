@@ -40,8 +40,8 @@ import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
-import it.pagopa.interop.commons.utils.service.impl.UUIDSupplierImpl
+import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
+import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -49,14 +49,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait Dependencies {
 
-  val keyApiMarshaller: KeyApiMarshaller = KeyApiMarshallerImpl
-  val uuidSupplier: UUIDSupplier         = new UUIDSupplierImpl()
+  val keyApiMarshaller: KeyApiMarshaller       = KeyApiMarshallerImpl
+  val uuidSupplier: UUIDSupplier               = new UUIDSupplierImpl()
+  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
 
   val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
     val index = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
     KeyPersistentBehavior(
       entityContext.shard,
       PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+      dateTimeSupplier,
       projectionTag(index)
     )
   }
