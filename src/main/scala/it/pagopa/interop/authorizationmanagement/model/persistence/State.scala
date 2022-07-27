@@ -80,7 +80,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     voucherLifespan: Int
   ): State =
     updateClients(
-      _.eService.eServiceId.toString == eServiceId,
+      containsEService(eServiceId),
       states =>
         states.copy(eService =
           states.eService
@@ -95,14 +95,13 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     state: PersistentClientComponentState
   ): State =
     updateClients(
-      states =>
-        states.agreement.eServiceId.toString == eServiceId && states.agreement.consumerId.toString == consumerId,
+      containsAgreement(eServiceId, consumerId),
       states => states.copy(agreement = states.agreement.copy(agreementId = agreementId, state = state))
     )
 
   def updateClientsByPurpose(purposeId: String, versionId: UUID, state: PersistentClientComponentState): State =
     updateClients(
-      _.purpose.purposeId.toString == purposeId,
+      containsPurpose(purposeId),
       states => states.copy(purpose = states.purpose.copy(versionId = versionId, state = state))
     )
 
@@ -125,6 +124,14 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     copy(clients = clients ++ updatedClients)
   }
 
+  def containsEService(eServiceId: String)(statesChain: PersistentClientStatesChain): Boolean =
+    statesChain.eService.eServiceId.toString == eServiceId
+
+  def containsAgreement(eServiceId: String, consumerId: String)(statesChain: PersistentClientStatesChain): Boolean =
+    statesChain.agreement.eServiceId.toString == eServiceId && statesChain.agreement.consumerId.toString == consumerId
+
+  def containsPurpose(purposeId: String)(statesChain: PersistentClientStatesChain): Boolean =
+    statesChain.purpose.purposeId.toString == purposeId
 }
 
 object State {
