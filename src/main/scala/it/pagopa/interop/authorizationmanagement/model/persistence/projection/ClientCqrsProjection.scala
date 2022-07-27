@@ -13,6 +13,7 @@ import slick.jdbc.JdbcProfile
 import spray.json._
 
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 
 object ClientCqrsProjection {
   def projection(offsetDbConfig: DatabaseConfig[JdbcProfile], mongoDbConfig: MongoDbConfig, projectionId: String)(
@@ -23,54 +24,54 @@ object ClientCqrsProjection {
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId, eventHandler)
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
-    case ClientAdded(c)                       =>
-      val reformat: Document =
-//        Document(s"{ data: ${c.toJson.compactPrint} }") ++          Document("{ data: { purposes: [] } }")
-        Document(s"{ data: ${Document(c.toJson.compactPrint) ++ Document("{ purposes: [] }")} }")
-
-      ActionWithDocument(collection.insertOne, reformat)
-    case ClientDeleted(cId)                   => Action(collection.deleteOne(Filters.eq("data.id", cId)))
-    case KeysAdded(cId, keys)                 =>
-//      val updates = keys.map { case (kid, key) => Updates.set(s"data.keys.$kid", key.toDocument) }
-//      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.combine(updates.toList: _*))
-      val updates = keys.map { case (kid, key) => Updates.push(s"data.keys", MapEntryDocument(kid, key).toDocument) }
+    case ClientAdded(c)                  =>
+      ActionWithDocument(collection.insertOne, Document(s"{ data: ${c.toJson.compactPrint} }"))
+    case ClientDeleted(cId)              => Action(collection.deleteOne(Filters.eq("data.id", cId)))
+    case KeysAdded(cId, keys)            =>
+      val updates = keys.map { case (_, key) => Updates.push(s"data.keys", key.toDocument) }
       ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.combine(updates.toList: _*))
-    case KeyDeleted(cId, kId, _)              =>
-//      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.unset(s"data.keys.$kId"))
+    case KeyDeleted(cId, kId, _)         =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", cId), _),
         Updates.pull("data.keys", Document(s"{ kid : \"$kId\" }"))
       )
-    case RelationshipAdded(c, rId)            =>
+    case RelationshipAdded(c, rId)       =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", c.id.toString), _),
         Updates.push("data.relationships", rId.toString)
       )
-    case RelationshipRemoved(cId, rId)        =>
+    case RelationshipRemoved(cId, rId)   =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.relationships", rId))
-    case ClientPurposeAdded(cId, pId, states) =>
+    case ClientPurposeAdded(cId, states) =>
       // Added as array instead of map because it is not possible to update objects without knowing their key
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", cId), _),
-        Updates.push(s"data.purposes", MapEntryDocument(pId, states).toDocument)
+        Updates.push(s"data.purposes", states.toDocument)
       )
-    case ClientPurposeRemoved(cId, pId)       =>
-      // TODO test
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.unset(s"data.keys.$pId"))
+    case ClientPurposeRemoved(cId, pId)  =>
+      ActionWithBson(
+        collection.updateOne(Filters.eq("data.id", cId), _),
+        Updates.pull("data.purposes", Filters.eq("purpose.purposeId", pId))
+      )
     case EServiceStateUpdated(eServiceId, descriptorId, state, audience, voucherLifespan) =>
-      // TODO wrong
+      // Updates all purposes states of all clients matching criteria
       ActionWithBson(
         collection.updateMany(
-          Filters.and(
-            Filters.eq("data.purposes.eService.eServiceId", eServiceId),
-            Filters.eq("data.purposes.eService.descriptorId", descriptorId.toString)
-          ),
-          _
+          Filters.empty(),
+          _,
+          UpdateOptions().arrayFilters(
+            List(
+              Filters.and(
+                Filters.eq("elem.eService.eServiceId", eServiceId),
+                Filters.eq("elem.eService.descriptorId", descriptorId.toString)
+              )
+            ).asJava
+          )
         ),
         Updates.combine(
-          Updates.set(s"data.purposes.eService.state", state.toJson.compactPrint),
-          Updates.set(s"data.purposes.eService.audience", audience),
-          Updates.set(s"data.purposes.eService.voucherLifespan", voucherLifespan)
+          Updates.set("data.purposes.$[elem].eService.state", state.toString),
+          Updates.set("data.purposes.$[elem].eService.audience", audience),
+          Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan)
         )
       )
     // TODO delete me
