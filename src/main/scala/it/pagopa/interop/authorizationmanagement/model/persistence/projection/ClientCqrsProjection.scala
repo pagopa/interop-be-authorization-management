@@ -59,17 +59,11 @@ object ClientCqrsProjection {
         collection.updateMany(
           Filters.empty(),
           _,
-          UpdateOptions().arrayFilters(
-            List(
-              Filters.and(
-                Filters.eq("elem.eService.eServiceId", eServiceId),
-                Filters.eq("elem.eService.descriptorId", descriptorId.toString)
-              )
-            ).asJava
-          )
+          UpdateOptions().arrayFilters(List(Filters.and(Filters.eq("elem.eService.eServiceId", eServiceId))).asJava)
         ),
         Updates.combine(
           Updates.set("data.purposes.$[elem].eService.state", state.toString),
+          Updates.set("data.purposes.$[elem].eService.descriptorId", descriptorId.toString),
           Updates.set("data.purposes.$[elem].eService.audience", audience),
           Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan)
         )
