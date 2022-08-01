@@ -25,7 +25,6 @@ object ClientCqrsProjection {
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
     case ClientAdded(c)                  =>
-      println(s"------------------------ PROJECTION EVENT ARRIVED $event")
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${c.toJson.compactPrint} }"))
     case ClientDeleted(cId)              => Action(collection.deleteOne(Filters.eq("data.id", cId)))
     case KeysAdded(cId, keys)            =>

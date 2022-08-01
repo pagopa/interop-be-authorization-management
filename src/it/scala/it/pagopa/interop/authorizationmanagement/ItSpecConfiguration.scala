@@ -28,8 +28,10 @@ trait ItSpecConfiguration {
     """)
 
   val config: Config = ConfigFactory
-    .parseResourcesAnySyntax("application-it")
-    .withFallback(testData)
+    .load()
+//    .load("application-it")
+//    .parseResourcesAnySyntax("application-it")
+//    .withFallback(testData)
 
   def serviceURL: String =
     s"${config.getString("key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
