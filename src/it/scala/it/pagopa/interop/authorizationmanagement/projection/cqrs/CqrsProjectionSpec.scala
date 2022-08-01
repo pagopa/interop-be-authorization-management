@@ -150,6 +150,93 @@ class CqrsProjectionSpec extends ItCqrsSpec {
       persisted2 shouldBe expectedClient2
     }
 
+    "succeed for event AgreementStateUpdated" in {
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
+
+      val newAgreementId = UUID.randomUUID()
+      val updatedState   = ClientAgreementDetails(
+        eserviceId = eServiceId,
+        consumerId = consumerId,
+        agreementId = newAgreementId,
+        state = ClientComponentState.INACTIVE
+      )
+
+      val client1    = createClient(clientId1, consumerId)
+      val client2    = createClient(clientId2, consumerId)
+      val purpose1_1 =
+        addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId, consumerId = consumerId), UUID.randomUUID())
+      val purpose1_2 =
+        addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId, consumerId = consumerId), UUID.randomUUID())
+      val purpose1_3 = addPurposeState(clientId1, makePurposeSeed(), UUID.randomUUID())
+      val purpose2_1 = addPurposeState(clientId2, makePurposeSeed(), UUID.randomUUID())
+
+      val payload = ClientAgreementDetailsUpdate(
+        state = ClientComponentState.INACTIVE,
+        agreementId = newAgreementId
+      ).toJson.compactPrint
+
+      request(
+        uri = s"$serviceURL/bulk/agreements/eserviceId/$eServiceId/consumerId/$consumerId/state",
+        method = HttpMethods.POST,
+        data = Some(payload)
+      )
+
+      val expectedClient1 = client1
+        .copy(purposes =
+          Seq(
+            purpose1_1.copy(states = purpose1_1.states.copy(agreement = updatedState)),
+            purpose1_2.copy(states = purpose1_2.states.copy(agreement = updatedState)),
+            purpose1_3
+          )
+        )
+        .toPersistent
+
+      val expectedClient2 = client2.copy(purposes = Seq(purpose2_1)).toPersistent
+
+      val persisted1 = findOne[PersistentClient](clientId1.toString).futureValue
+      val persisted2 = findOne[PersistentClient](clientId2.toString).futureValue
+
+      persisted1 shouldBe expectedClient1
+      persisted2 shouldBe expectedClient2
+    }
+
+    "succeed for event PurposeStateUpdated" in {
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val purposeId  = UUID.randomUUID()
+
+      val newVersionId = UUID.randomUUID()
+      val updatedState =
+        ClientPurposeDetails(purposeId = purposeId, versionId = newVersionId, state = ClientComponentState.INACTIVE)
+
+      val client1    = createClient(clientId1, consumerId)
+      val client2    = createClient(clientId2, consumerId)
+      val purpose1_1 = addPurposeState(clientId1, makePurposeSeed(purposeId = purposeId), UUID.randomUUID())
+      val purpose1_2 = addPurposeState(clientId1, makePurposeSeed(), UUID.randomUUID())
+      val purpose2_1 = addPurposeState(clientId2, makePurposeSeed(), UUID.randomUUID())
+
+      val payload =
+        ClientPurposeDetailsUpdate(state = ClientComponentState.INACTIVE, versionId = newVersionId).toJson.compactPrint
+
+      request(uri = s"$serviceURL/bulk/purposes/$purposeId/state", method = HttpMethods.POST, data = Some(payload))
+
+      val expectedClient1 = client1
+        .copy(purposes = Seq(purpose1_1.copy(states = purpose1_1.states.copy(purpose = updatedState)), purpose1_2))
+        .toPersistent
+
+      val expectedClient2 = client2.copy(purposes = Seq(purpose2_1)).toPersistent
+
+      val persisted1 = findOne[PersistentClient](clientId1.toString).futureValue
+      val persisted2 = findOne[PersistentClient](clientId2.toString).futureValue
+
+      persisted1 shouldBe expectedClient1
+      persisted2 shouldBe expectedClient2
+    }
+
 //    "succeed for event ClientAdded" in {
 //
 //      val clientId       = UUID.randomUUID()
@@ -246,7 +333,7 @@ class CqrsProjectionSpec extends ItCqrsSpec {
         state = ClientComponentState.ACTIVE
       ),
       purpose =
-        ClientPurposeDetailsSeed(purposeId = purposeId, versionId = versionId, state = ClientComponentState.INACTIVE)
+        ClientPurposeDetailsSeed(purposeId = purposeId, versionId = versionId, state = ClientComponentState.ACTIVE)
     )
   )
 }
