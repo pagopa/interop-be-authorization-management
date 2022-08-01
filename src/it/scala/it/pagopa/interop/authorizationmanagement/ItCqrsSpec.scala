@@ -79,7 +79,7 @@ class ItCqrsSpec
 
   def find[T: JsonReader](id: String): Future[Seq[T]] = for {
     // Wait a reasonable amount of time to allow the event to be processed by the projection
-    _       <- Future.successful(Thread.sleep(2000))
+    _       <- Future.successful(Thread.sleep(2500))
     results <- mongodbClient
       .getDatabase(mongoDbConfig.dbName)
       .getCollection(mongoDbConfig.collectionName)

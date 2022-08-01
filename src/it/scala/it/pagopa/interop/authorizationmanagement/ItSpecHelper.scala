@@ -18,7 +18,7 @@ import it.pagopa.interop.authorizationmanagement.api._
 import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
-import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse, Purpose, PurposeSeed}
+import it.pagopa.interop.authorizationmanagement.model.{Client, KeySeed, KeysResponse, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
@@ -187,6 +187,18 @@ trait ItSpecHelper
          |  }
          |]
          |""".stripMargin
+
+    val response =
+      request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
+
+    response.status shouldBe StatusCodes.Created
+
+    Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
+  }
+
+  def createKey(clientId: UUID, keySeed: KeySeed): KeysResponse = {
+
+    val data = Seq(keySeed).toJson.compactPrint
 
     val response =
       request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))

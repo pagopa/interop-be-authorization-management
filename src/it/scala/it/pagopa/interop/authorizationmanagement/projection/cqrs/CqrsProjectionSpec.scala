@@ -4,7 +4,9 @@ import akka.http.scaladsl.model.HttpMethods
 import it.pagopa.interop.authorizationmanagement.ItCqrsSpec
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, PersistentKeyUse}
 import it.pagopa.interop.authorizationmanagement.model.persistence.JsonFormats._
+import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.utils.ClientAdapters.ClientWrapper
 import it.pagopa.interop.authorizationmanagement.utils.JsonFormats._
 import spray.json._
@@ -66,6 +68,67 @@ class CqrsProjectionSpec extends ItCqrsSpec {
       val persisted = findOne[PersistentClient](clientId.toString).futureValue
 
       persisted.relationships shouldBe empty
+    }
+
+    "succeed for event KeysAdded" in {
+      val clientId       = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      val keySeed = KeySeed(
+        relationshipId = relationshipId,
+        key = generateEncodedKey(),
+        use = KeyUse.SIG,
+        alg = "123",
+        name = "IT Key"
+      )
+
+      createClient(clientId, consumerId)
+      addRelationship(clientId, relationshipId)
+      val keysResponse = createKey(clientId, keySeed)
+
+      val persistedClient = findOne[JsObject](clientId.toString).futureValue
+
+      val persistedKeys = persistedClient.getFields("keys")
+      assert(persistedKeys.nonEmpty)
+
+      val persistentKey = persistedKeys.head.convertTo[Seq[PersistentKey]]
+
+      val expected = Seq(
+        PersistentKey(
+          relationshipId = relationshipId,
+          kid = keysResponse.keys.head.key.kid,
+          name = keySeed.name,
+          encodedPem = keySeed.key,
+          algorithm = keySeed.alg,
+          use = PersistentKeyUse.fromApi(keySeed.use),
+          creationTimestamp = persistentKey.head.creationTimestamp
+        )
+      )
+
+      expected shouldBe persistentKey
+    }
+
+    "succeed for event KeyDeleted" in {
+      val clientId       = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, consumerId)
+      addRelationship(clientId, relationshipId)
+      val keysResponse1 = createKey(clientId, relationshipId)
+      val keysResponse2 = createKey(clientId, relationshipId)
+      val kid1          = keysResponse1.keys.head.key.kid
+      val kid2          = keysResponse2.keys.head.key.kid
+
+      request(uri = s"$serviceURL/clients/$clientId/keys/$kid1", method = HttpMethods.DELETE)
+
+      val persistedClient = findOne[JsObject](clientId.toString).futureValue
+      val persistedKeys   = persistedClient.getFields("keys")
+
+      assert(persistedKeys.size == 1)
+
+      persistedKeys.flatMap(_.convertTo[Seq[PersistentKey]].map(_.kid)) shouldBe Seq(kid2)
     }
 
     "succeed for event ClientPurposeAdded" in {
@@ -237,77 +300,6 @@ class CqrsProjectionSpec extends ItCqrsSpec {
       persisted2 shouldBe expectedClient2
     }
 
-//    "succeed for event ClientAdded" in {
-//
-//      val clientId       = UUID.randomUUID()
-//      val consumerId     = UUID.randomUUID()
-//      val relationshipId = UUID.randomUUID()
-//      val purposeSeed    = PurposeSeed(
-//        ClientStatesChainSeed(
-//          eservice = ClientEServiceDetailsSeed(
-//            eserviceId = UUID.randomUUID(),
-//            descriptorId = UUID.randomUUID(),
-//            state = ClientComponentState.ACTIVE,
-//            audience = Seq("aud1"),
-//            voucherLifespan = 1000
-//          ),
-//          agreement = ClientAgreementDetailsSeed(
-//            eserviceId = UUID.randomUUID(),
-//            consumerId = UUID.randomUUID(),
-//            agreementId = UUID.randomUUID(),
-//            state = ClientComponentState.ACTIVE
-//          ),
-//          purpose = ClientPurposeDetailsSeed(
-//            purposeId = UUID.randomUUID(),
-//            versionId = UUID.randomUUID(),
-//            state = ClientComponentState.INACTIVE
-//          )
-//        )
-//      )
-//
-//      createClient(clientId, consumerId)
-//      val client  = addRelationship(clientId, relationshipId)
-//      val purpose = addPurposeState(clientId, purposeSeed, UUID.randomUUID())
-//
-//      //      println("-------------------------------------------------------")
-//      //      println(client)
-//      //      println("-------------------------------------------------------")
-//
-//      val expectedData = client.copy(purposes = Seq(purpose)).toPersistent
-//
-//      val persisted = find[PersistentClient](clientId.toString).futureValue
-//
-//      expectedData shouldBe persisted
-//
-//      //      val es = find[JsObject](clientId.toString).futureValue
-//      //      println("-------------------------------------------------------")
-//      //      println(es.prettyPrint)
-//      //      println("-------------------------------------------------------")
-//
-//      //      Thread.sleep(3000)
-//      //      val projectedEntity = mongodbClient
-//      //        .getDatabase(mongoDbConfig.dbName)
-//      //        .getCollection(mongoDbConfig.collectionName)
-//      //        .find(Filters.eq("data.id", clientId.toString))
-//      //
-//      //      println("-------------------------------------------------------")
-//      //      val fields =
-//      //        projectedEntity.toFuture().futureValue.head.toJson().parseJson.asJsObject.getFields("data", "metadata")
-//      //      fields match {
-//      //        case data :: metadata :: Nil =>
-//      //          val persistentClient = data.convertTo[PersistentClient]
-//      //          val cqrsMetadata     = metadata.convertTo[CqrsMetadata]
-//      //          println(persistentClient)
-//      //          println(cqrsMetadata)
-//      //
-//      //          expectedData shouldBe persistentClient
-//      //          assert(cqrsMetadata.sourceEvent.persistenceId.nonEmpty)
-//      //          assert(cqrsMetadata.sourceEvent.sequenceNr >= 0)
-//      //          assert(cqrsMetadata.sourceEvent.timestamp > 0)
-//      //        case _                       => fail(s"Unexpected number of fields ${fields.size}. Content: $fields")
-//      //      }
-//      //      println("-------------------------------------------------------")
-//    }
   }
 
   def makePurposeSeed(
