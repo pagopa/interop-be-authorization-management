@@ -33,6 +33,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 
 trait ItSpecHelper
     extends ItSpecConfiguration
+    with ItCqrsSpec
     with MockFactory
     with SprayJsonSupport
     with DefaultJsonProtocol
@@ -62,12 +63,12 @@ trait ItSpecHelper
 
   val sharding: ClusterSharding = ClusterSharding(system)
 
-  val httpSystem: ActorSystem[Any]                        =
+  val httpSystem: ActorSystem[Any]                                 =
     ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
-  implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
-  val classicSystem: actor.ActorSystem                    = httpSystem.classicSystem
+  override implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
+  val classicSystem: actor.ActorSystem                             = httpSystem.classicSystem
 
-  def startServer(): Unit = {
+  override def startServer(): Unit = {
     val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
       Entity(KeyPersistentBehavior.TypeKey)(behaviorFactory)
 
@@ -110,7 +111,7 @@ trait ItSpecHelper
     }
   }
 
-  def shutdownServer(): Unit = {
+  override def shutdownServer(): Unit = {
     bindServer.foreach(_.foreach(_.unbind()))
     ActorTestKit.shutdown(httpSystem, 5.seconds)
   }

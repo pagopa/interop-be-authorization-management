@@ -1,6 +1,5 @@
 package it.pagopa.interop.authorizationmanagement
 
-import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import com.dimafeng.testcontainers.DockerComposeContainer
 import com.dimafeng.testcontainers.DockerComposeContainer.ComposeFile
 import com.dimafeng.testcontainers.scalatest.TestContainersForAll
@@ -14,20 +13,20 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import spray.json._
 
 import java.io.File
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 // Testing only the projection is not possible (https://github.com/akka/akka-projection/issues/454)
 
-class ItCqrsSpec
-    extends ScalaTestWithActorTestKit(ItSpecConfiguration.config)
-    with ItSpecHelper
-    with AnyWordSpecLike
-    with TestContainersForAll {
+trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
 
   private var internalMongodbClient: Option[MongoClient] = None
   private val mongoDbConfig: MongoDbConfig               = ApplicationConfiguration.mongoDb
 
-//  implicit val mongodbOpTimeout: FiniteDuration = 5.seconds
+  def startServer(): Unit
+  def shutdownServer(): Unit
+  implicit val executionContext: ExecutionContext
+
+  //  implicit val mongodbOpTimeout: FiniteDuration = 5.seconds
 //  val mongodbOpWaitTime: FiniteDuration         = 100.millis
 
   override type Containers = DockerComposeContainer

@@ -1,7 +1,7 @@
 package it.pagopa.interop.authorizationmanagement.projection.cqrs
 
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model.HttpMethods
-import it.pagopa.interop.authorizationmanagement.ItCqrsSpec
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
 import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, PersistentKeyUse}
@@ -9,11 +9,12 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.utils.ClientAdapters.ClientWrapper
 import it.pagopa.interop.authorizationmanagement.utils.JsonFormats._
+import it.pagopa.interop.authorizationmanagement.{ItSpecConfiguration, ItSpecHelper}
 import spray.json._
 
 import java.util.UUID
 
-class CqrsProjectionSpec extends ItCqrsSpec {
+class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.config) with ItSpecHelper {
 
   "Projection" should {
     "succeed for event ClientAdded" in {
