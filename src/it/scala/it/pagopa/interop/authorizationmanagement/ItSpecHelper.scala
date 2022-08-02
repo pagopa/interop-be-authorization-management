@@ -138,11 +138,6 @@ trait ItSpecHelper
     Await.result(Unmarshal(response).to[Client], Duration.Inf)
   }
 
-  def retrieveClient(clientId: UUID): Client = {
-    val result = request(uri = s"$serviceURL/clients/$clientId", method = HttpMethods.GET)
-    Await.result(Unmarshal(result).to[Client], Duration.Inf)
-  }
-
   def addPurposeState(clientId: UUID, newState: PurposeSeed, statesChainId: UUID): Purpose = {
     (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
