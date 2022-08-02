@@ -28,6 +28,8 @@ trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
   override type Containers = DockerComposeContainer
 
   override def startContainers(): Containers =
+    // Not able to use prepared PostgreSQL and MongoDB containers because ports are randomly generated, but
+    //   akka testkit needs to load configuration at startup, so there is no time to override db configs
     DockerComposeContainer
       .Def(composeFiles = ComposeFile(Left(new File("src/it/resources/docker-compose-it.yaml"))))
       .start()
