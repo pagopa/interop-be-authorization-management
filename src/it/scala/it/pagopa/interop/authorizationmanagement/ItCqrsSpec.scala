@@ -26,19 +26,15 @@ trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
   def shutdownServer(): Unit
   implicit val executionContext: ExecutionContext
 
-  //  implicit val mongodbOpTimeout: FiniteDuration = 5.seconds
-//  val mongodbOpWaitTime: FiniteDuration         = 100.millis
-
   override type Containers = DockerComposeContainer
 
   override def startContainers(): Containers =
-    DockerComposeContainer.Def(ComposeFile(Left(new File("src/it/resources/docker-compose-it.yaml")))).start()
+    DockerComposeContainer
+      .Def(composeFiles = ComposeFile(Left(new File("src/it/resources/docker-compose-it.yaml"))))
+      .start()
 
   override def afterContainersStart(containers: Containers): Unit = {
     super.afterContainersStart(containers)
-
-    // TODO Implement better readiness wait
-    Thread.sleep(5000)
 
     internalMongodbClient = Some(
       MongoClient(
@@ -58,21 +54,6 @@ trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
     case Some(client) => client
     case None         => throw new Exception("MongoDB client not yet initialized")
   }
-
-  //  def find[T](id: String)(implicit timeout: FiniteDuration, jsonReader: JsonReader[T]): Future[T] = for {
-  //    results <- mongodbClient
-  //      .getDatabase(mongoDbConfig.dbName)
-  //      .getCollection(mongoDbConfig.collectionName)
-  //      .find(Filters.eq("data.id", id))
-  //      .toFuture()
-  //    value   <-
-  //      if (timeout - mongodbOpWaitTime <= 0.seconds)
-  //        fail(s"Timeout on mongodb find for id $id")
-  //      else if (results.isEmpty) {
-  //        Future.successful(Thread.sleep(mongodbOpWaitTime.toMillis))
-  //        find[T](id)(timeout - mongodbOpWaitTime, jsonReader)
-  //      } else Future.successful(extractData[T](results.head))
-  //  } yield value
 
   def findOne[T: JsonReader](id: String): Future[T] = find[T](id).map(_.head)
 
@@ -103,6 +84,7 @@ trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
 
   override def beforeContainersStop(containers: Containers): Unit = {
     shutdownServer()
+    internalMongodbClient.get.close()
     super.afterContainersStart(containers)
   }
 
