@@ -10,8 +10,7 @@ import it.pagopa.interop.commons.utils.{BEARER, USER_ROLES}
   */
 trait ItSpecConfiguration {
 
-  val config: Config = ConfigFactory
-    .load()
+  val config: Config = ConfigFactory.load()
 
   def serviceURL: String =
     s"${config.getString("key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
