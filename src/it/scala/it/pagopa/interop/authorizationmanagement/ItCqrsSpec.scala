@@ -24,7 +24,6 @@ trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
 
   def startServer(): Unit
   def shutdownServer(): Unit
-  implicit val executionContext: ExecutionContext
 
   override type Containers = DockerComposeContainer
 
@@ -55,9 +54,9 @@ trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
     case None         => throw new Exception("MongoDB client not yet initialized")
   }
 
-  def findOne[T: JsonReader](id: String): Future[T] = find[T](id).map(_.head)
+  def findOne[T: JsonReader](id: String)(implicit ec: ExecutionContext): Future[T] = find[T](id).map(_.head)
 
-  def find[T: JsonReader](id: String): Future[Seq[T]] = for {
+  def find[T: JsonReader](id: String)(implicit ec: ExecutionContext): Future[Seq[T]] = for {
     // Wait a reasonable amount of time to allow the event to be processed by the projection
     _       <- Future.successful(Thread.sleep(2500))
     results <- mongodbClient

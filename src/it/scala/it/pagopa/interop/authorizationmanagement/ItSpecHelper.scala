@@ -63,10 +63,10 @@ trait ItSpecHelper
 
   val sharding: ClusterSharding = ClusterSharding(system)
 
-  val httpSystem: ActorSystem[Any]                                 =
+  val httpSystem: ActorSystem[Any]                        =
     ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
-  override implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
-  val classicSystem: actor.ActorSystem                             = httpSystem.classicSystem
+  implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
+  val classicSystem: actor.ActorSystem                    = httpSystem.classicSystem
 
   override def startServer(): Unit = {
     val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
