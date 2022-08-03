@@ -59,7 +59,7 @@ object ClientCqrsProjection {
         collection.updateMany(
           Filters.empty(),
           _,
-          UpdateOptions().arrayFilters(List(Filters.and(Filters.eq("elem.eService.eServiceId", eServiceId))).asJava)
+          UpdateOptions().arrayFilters(List(Filters.eq("elem.eService.eServiceId", eServiceId)).asJava)
         ),
         Updates.combine(
           Updates.set("data.purposes.$[elem].eService.state", state.toString),
