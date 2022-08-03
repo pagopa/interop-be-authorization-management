@@ -76,7 +76,7 @@ object Dependencies {
 
     lazy val commonsUtils = namespace %% "interop-commons-utils" % commonsVersion
     lazy val commonsJWT   = namespace %% "interop-commons-jwt"   % commonsVersion
-
+    lazy val commonsCqrs  = namespace %% "interop-commons-cqrs"  % commonsVersion
   }
 
   private[this] object postgres {
@@ -114,7 +114,7 @@ object Dependencies {
       Seq(jackson.annotations % Compile, jackson.core % Compile, jackson.databind % Compile)
     lazy val `server`: Seq[ModuleID]  = Seq(
       // For making Java 12 happy
-      "javax.annotation"          % "javax.annotation-api" % "1.3.2"  % "compile",
+      "javax.annotation"          % "javax.annotation-api"            % "1.3.2"                    % "compile",
       //
       akka.actorTyped             % Compile,
       akka.clusterBootstrap       % Compile,
@@ -145,16 +145,18 @@ object Dependencies {
       logback.classic             % Compile,
       mustache.mustache           % Compile,
       nimbus.joseJwt              % Compile,
-      pagopa.commonsUtils         % Compile,
+      pagopa.commonsUtils         % "compile,it",
       pagopa.commonsJWT           % Compile,
-      postgres.jdbc               % Compile,
+      pagopa.commonsCqrs          % "compile,it",
+      postgres.jdbc               % "compile,it",
       scalaprotobuf.core          % "protobuf,compile",
-      akka.testkit                % Test,
-      akka.httpTestkit            % Test,
-      scalatest.core              % Test,
-      scalamock.core              % Test,
-      "org.scalameta"            %% "munit-scalacheck"     % "0.7.29" % Test,
-      "com.softwaremill.diffx"   %% "diffx-munit"          % "0.7.0"  % Test
+      akka.testkit                % "test,it",
+      akka.httpTestkit            % "test,it",
+      scalatest.core              % "test,it",
+      scalamock.core              % "test,it",
+      "org.scalameta"            %% "munit-scalacheck"                % "0.7.29"                   % "test,it",
+      "com.softwaremill.diffx"   %% "diffx-munit"                     % "0.7.0"                    % Test,
+      "com.dimafeng"             %% "testcontainers-scala-scalatest"  % testcontainersScalaVersion % IntegrationTest,
     )
 
     val models: Seq[ModuleID] = Seq(spray.core, cats.core, pagopa.commonsUtils).map(_ % Compile)
