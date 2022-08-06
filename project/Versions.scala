@@ -12,7 +12,7 @@ object Versions {
   lazy val mustacheVersion        = "0.9.10"
   lazy val nimbusVersion          = "9.23"
   lazy val openapi4jVersion       = "1.0.7"
-  lazy val postgresVersion        = "42.4.0"
+  lazy val postgresVersion        = "42.4.1"
   lazy val projectionVersion      = "1.2.2"
   lazy val s3Persistence          = "1.1.74"
   lazy val scalaMockVersion       = "5.2.0"
