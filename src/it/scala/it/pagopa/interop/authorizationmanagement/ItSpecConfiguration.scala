@@ -13,7 +13,7 @@ trait ItSpecConfiguration {
   val config: Config = ConfigFactory.load()
 
   def serviceURL: String =
-    s"${config.getString("key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
+    s"${config.getString("authorization-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
 
 }
 

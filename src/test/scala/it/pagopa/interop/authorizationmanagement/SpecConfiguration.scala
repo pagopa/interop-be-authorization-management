@@ -32,7 +32,7 @@ trait SpecConfiguration {
     .withFallback(testData)
 
   def serviceURL: String =
-    s"${config.getString("key-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
+    s"${config.getString("authorization-management.url")}${buildinfo.BuildInfo.interfaceVersion}"
 
 }
 

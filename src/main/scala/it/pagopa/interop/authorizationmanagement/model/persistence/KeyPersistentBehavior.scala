@@ -29,7 +29,7 @@ object KeyPersistentBehavior {
     context: ActorContext[Command],
     dateTimeSupplier: OffsetDateTimeSupplier
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
-    val idleTimeout = context.system.settings.config.getDuration("key-management.idle-timeout")
+    val idleTimeout = context.system.settings.config.getDuration("authorization-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddKeys(clientId, validKeys, replyTo) =>
@@ -370,7 +370,7 @@ object KeyPersistentBehavior {
     Behaviors.setup { context =>
       context.log.debug(s"Starting Key Shard ${persistenceId.id}")
       val numberOfEvents =
-        context.system.settings.config.getInt("key-management.number-of-events-before-snapshot")
+        context.system.settings.config.getInt("authorization-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,
