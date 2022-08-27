@@ -9,13 +9,13 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
 import cats.implicits._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
-import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
+import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient, PersistentClientStatesChain}
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.{EncodedClientKey, KeysResponse}
 import it.pagopa.interop.commons.utils.errors.ComponentError
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
-import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.language.postfixOps
@@ -26,9 +26,10 @@ object KeyPersistentBehavior {
 
   def commandHandler(
     shard: ActorRef[ClusterSharding.ShardCommand],
-    context: ActorContext[Command]
+    context: ActorContext[Command],
+    dateTimeSupplier: OffsetDateTimeSupplier
   ): (State, Command) => Effect[Event, State] = { (state, command) =>
-    val idleTimeout = context.system.settings.config.getDuration("key-management.idle-timeout")
+    val idleTimeout = context.system.settings.config.getDuration("authorization-management.idle-timeout")
     context.setReceiveTimeout(idleTimeout.get(ChronoUnit.SECONDS) seconds, Idle)
     command match {
       case AddKeys(clientId, validKeys, replyTo) =>
@@ -37,7 +38,7 @@ object KeyPersistentBehavior {
             val persistentKeys: Either[Throwable, Seq[PersistentKey]] = for {
               _              <- validateRelationships(client, validKeys)
               persistentKeys <- validKeys
-                .map(PersistentKey.toPersistentKey)
+                .map(PersistentKey.toPersistentKey(dateTimeSupplier))
                 .sequence
             } yield persistentKeys
 
@@ -87,7 +88,7 @@ object KeyPersistentBehavior {
         state.getClientKeyById(clientId, keyId) match {
           case Some(_) =>
             Effect
-              .persist(KeyDeleted(clientId, keyId, OffsetDateTime.now()))
+              .persist(KeyDeleted(clientId, keyId, dateTimeSupplier.get))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           case None    => commandKeyNotFoundError(replyTo)
         }
@@ -240,20 +241,29 @@ object KeyPersistentBehavior {
                 .thenRun((_: State) => replyTo ! StatusReply.Success(()))
           )
 
-      case UpdateEServiceState(eServiceId, descriptorId, state, audience, voucherLifespan, replyTo) =>
-        Effect
-          .persist(EServiceStateUpdated(eServiceId, descriptorId, state, audience, voucherLifespan))
-          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+      case UpdateEServiceState(eServiceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsEService(eServiceId),
+          EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan),
+          replyTo
+        )
 
-      case UpdateAgreementState(eServiceId, consumerId, agreementId, state, replyTo) =>
-        Effect
-          .persist(AgreementStateUpdated(eServiceId, consumerId, agreementId, state))
-          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+      case UpdateAgreementState(eServiceId, consumerId, agreementId, componentState, replyTo) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsAgreement(eServiceId, consumerId),
+          AgreementStateUpdated(eServiceId, consumerId, agreementId, componentState),
+          replyTo
+        )
 
-      case UpdatePurposeState(purposeId, versionId, state, replyTo) =>
-        Effect
-          .persist(PurposeStateUpdated(purposeId, versionId, state))
-          .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+      case UpdatePurposeState(purposeId, versionId, componentState, replyTo) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsPurpose(purposeId),
+          PurposeStateUpdated(purposeId, versionId, componentState),
+          replyTo
+        )
 
       case Idle =>
         shard ! ClusterSharding.Passivate(context.self)
@@ -304,6 +314,21 @@ object KeyPersistentBehavior {
 
   }
 
+  private def conditionalClientsStateUpdate(
+    state: State,
+    condition: PersistentClientStatesChain => Boolean,
+    event: Event,
+    replyTo: ActorRef[StatusReply[Unit]]
+  ): Effect[Event, State] =
+    if (state.clients.exists { case (_, client) => client.purposes.exists(condition) })
+      Effect
+        .persist(event)
+        .thenRun((_: State) => replyTo ! StatusReply.Success(()))
+    else {
+      replyTo ! StatusReply.Success(())
+      Effect.none
+    }
+
   private def commandKeyNotFoundError[T](replyTo: ActorRef[StatusReply[T]]): Effect[Event, State] = {
     replyTo ! StatusReply.Error[T](KeyNotFoundException)
     Effect.none[Event, State]
@@ -339,16 +364,17 @@ object KeyPersistentBehavior {
   def apply(
     shard: ActorRef[ClusterSharding.ShardCommand],
     persistenceId: PersistenceId,
+    dateTimeSupplier: OffsetDateTimeSupplier,
     projectionTag: String
   ): Behavior[Command] = {
     Behaviors.setup { context =>
       context.log.debug(s"Starting Key Shard ${persistenceId.id}")
       val numberOfEvents =
-        context.system.settings.config.getInt("key-management.number-of-events-before-snapshot")
+        context.system.settings.config.getInt("authorization-management.number-of-events-before-snapshot")
       EventSourcedBehavior[Command, Event, State](
         persistenceId = persistenceId,
         emptyState = State.empty,
-        commandHandler = commandHandler(shard, context),
+        commandHandler = commandHandler(shard, context, dateTimeSupplier),
         eventHandler = eventHandler
       ).withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = numberOfEvents, keepNSnapshots = 1))
         .withTagger(_ => Set(projectionTag))
