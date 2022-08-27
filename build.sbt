@@ -74,6 +74,8 @@ cleanFiles += baseDirectory.value / "client" / "target"
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val generated = project
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings: _*)
   .in(file("generated"))
   .settings(scalacOptions := Seq(), scalafmtOnCompile := true, libraryDependencies := Dependencies.Jars.`server`)
   .setupBuildInfo
@@ -109,9 +111,15 @@ lazy val client = project
   )
 
 lazy val root = (project in file("."))
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings: _*)
   .settings(
     name                        := "interop-be-authorization-management",
     Test / parallelExecution    := false,
+    Test / fork                 := true,
+    Test / javaOptions += "-Dconfig.file=src/test/resources/application-test.conf",
+    IntegrationTest / fork      := true,
+    IntegrationTest / javaOptions += "-Dconfig.file=src/it/resources/application-it.conf",
     scalafmtOnCompile           := true,
     dockerBuildOptions ++= Seq("--network=host"),
     dockerRepository            := Some(System.getenv("DOCKER_REPO")),
@@ -128,6 +136,3 @@ lazy val root = (project in file("."))
   .dependsOn(generated, models)
   .enablePlugins(JavaAppPackaging)
   .setupBuildInfo
-
-Test / fork := true
-Test / javaOptions += "-Dconfig.file=src/test/resources/application-test.conf"
