@@ -1,11 +1,13 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.projection
 
 import akka.actor.typed.ActorSystem
+import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
 import it.pagopa.interop.authorizationmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
 import it.pagopa.interop.commons.cqrs.service.DocumentConversions._
+import org.mongodb.scala.bson.BsonArray
 import org.mongodb.scala.model._
 import org.mongodb.scala.{MongoCollection, _}
 import slick.basic.DatabaseConfig
@@ -49,10 +51,18 @@ object ClientCqrsProjection {
         Updates.push(s"data.purposes", states.toDocument)
       )
     case ClientPurposeRemoved(cId, pId)  =>
-      ActionWithBson(
-        collection.updateOne(Filters.eq("data.id", cId), _),
-        Updates.pull("data.purposes", Filters.eq("purpose.purposeId", pId))
-      )
+      // Note: Due to DocumentDB limitations, it is not possible, in a single instruction, to pull
+      //   data from an array of objects filtering by a nested field of the object.
+      //   e.g: { bar: [ { id: 1, v: { vv: "foo" } } ] }
+      //   It is not possible to remove the element with id = 1 filtering by v.vv = "foo"
+
+      val command = for {
+        document <- collection.find(Filters.eq("data.id", cId))
+        client          = Utils.extractData[PersistentClient](document)
+        updatedPurposes = client.purposes.filter(_.purpose.purposeId.toString != pId)
+      } yield Updates.set("data.purposes", BsonArray.fromIterable(updatedPurposes.map(_.toDocument.toBsonDocument())))
+
+      ActionWithObservable(collection.updateOne(Filters.eq("data.id", cId), _), command)
     case EServiceStateUpdated(eServiceId, descriptorId, state, audience, voucherLifespan) =>
       // Updates all purposes states of all clients matching criteria
       ActionWithBson(
