@@ -12,7 +12,7 @@ object ClientApiMarshallerImpl extends ClientApiMarshaller with SprayJsonSupport
   override implicit def fromEntityUnmarshallerClientSeed: FromEntityUnmarshaller[ClientSeed] =
     sprayJsonUnmarshaller[ClientSeed]
 
-  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = sprayJsonMarshaller[Problem]
+  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = entityMarshallerProblem
 
   override implicit def toEntityMarshallerClient: ToEntityMarshaller[Client] = sprayJsonMarshaller[Client]
 

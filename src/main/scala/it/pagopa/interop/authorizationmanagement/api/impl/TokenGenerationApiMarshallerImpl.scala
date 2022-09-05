@@ -10,7 +10,7 @@ object TokenGenerationApiMarshallerImpl
     extends TokenGenerationApiMarshaller
     with SprayJsonSupport
     with DefaultJsonProtocol {
-  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = sprayJsonMarshaller[Problem]
+  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem]             = entityMarshallerProblem
   override implicit def toEntityMarshallerKeyWithClient: ToEntityMarshaller[KeyWithClient] =
     sprayJsonMarshaller[KeyWithClient]
 }

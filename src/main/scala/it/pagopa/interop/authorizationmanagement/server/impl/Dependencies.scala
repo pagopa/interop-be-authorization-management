@@ -24,6 +24,7 @@ import it.pagopa.interop.authorizationmanagement.api.impl.{
   PurposeApiServiceImpl,
   TokenGenerationApiMarshallerImpl,
   TokenGenerationApiServiceImpl,
+  entityMarshallerProblem,
   problemOf
 }
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
@@ -39,9 +40,8 @@ import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, S
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.ValidationRequestError
-import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import it.pagopa.interop.commons.utils.service.impl.{OffsetDateTimeSupplierImpl, UUIDSupplierImpl}
+import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
@@ -68,8 +68,8 @@ trait Dependencies {
 
   val validationExceptionToRoute: ValidationReport => Route = report => {
     val error =
-      problemOf(StatusCodes.BadRequest, ValidationRequestError(OpenapiUtils.errorFromRequestValidationReport(report)))
-    complete(error.status, error)(keyApiMarshaller.toEntityMarshallerProblem)
+      problemOf(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report))
+    complete(error.status, error)(entityMarshallerProblem)
   }
 
   def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {

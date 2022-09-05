@@ -12,7 +12,7 @@ object KeyApiMarshallerImpl extends KeyApiMarshaller with SprayJsonSupport with 
     sprayJsonUnmarshaller[Seq[KeySeed]]
   override implicit def toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse]        =
     sprayJsonMarshaller[KeysResponse]
-  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem]     = sprayJsonMarshaller[Problem]
+  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem]     = entityMarshallerProblem
   override implicit def toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey] = sprayJsonMarshaller[ClientKey]
   override implicit def toEntityMarshallerEncodedClientKey: ToEntityMarshaller[EncodedClientKey] =
     sprayJsonMarshaller[EncodedClientKey]
