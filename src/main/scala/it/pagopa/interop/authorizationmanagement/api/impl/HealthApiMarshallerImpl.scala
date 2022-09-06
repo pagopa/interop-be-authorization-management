@@ -6,5 +6,5 @@ import it.pagopa.interop.authorizationmanagement.model.Problem
 
 object HealthApiMarshallerImpl extends HealthApiMarshaller {
 
-  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = sprayJsonMarshaller[Problem]
+  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = entityMarshallerProblem
 }
