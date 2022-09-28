@@ -1141,12 +1141,21 @@ components:
         descriptorId:
           type: string
           format: uuid
+        audience:
+          type: array
+          items:
+            type: string
+        voucherLifespan:
+          type: integer
+          format: int32
         eserviceState:
           $ref: '#/components/schemas/ClientComponentState'
       required:
         - agreementId
         - agreementState
         - descriptorId
+        - audience
+        - voucherLifespan
         - eserviceState
     ClientPurposeDetailsSeed:
       type: object

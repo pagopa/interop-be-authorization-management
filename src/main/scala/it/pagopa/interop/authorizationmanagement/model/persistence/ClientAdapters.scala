@@ -71,7 +71,7 @@ object ClientAdapters {
       extends AnyVal {
     def toApi: ClientAgreementDetails =
       ClientAgreementDetails(
-        eserviceId = p.eServiceId,
+        eserviceId = p.eserviceId,
         consumerId = p.consumerId,
         agreementId = p.agreementId,
         state = p.state.toApi
@@ -82,7 +82,7 @@ object ClientAdapters {
       extends AnyVal {
     def fromSeed(seed: ClientAgreementDetailsSeed): PersistentClientAgreementDetails =
       client.PersistentClientAgreementDetails(
-        eServiceId = seed.eserviceId,
+        eserviceId = seed.eserviceId,
         consumerId = seed.consumerId,
         agreementId = seed.agreementId,
         state = PersistentClientComponentState.fromApi(seed.state)
@@ -92,7 +92,7 @@ object ClientAdapters {
   implicit class PersistentClientEServiceDetailsWrapper(private val p: PersistentClientEServiceDetails) extends AnyVal {
     def toApi: ClientEServiceDetails =
       ClientEServiceDetails(
-        eserviceId = p.eServiceId,
+        eserviceId = p.eserviceId,
         descriptorId = p.descriptorId,
         state = p.state.toApi,
         audience = p.audience,
@@ -104,7 +104,7 @@ object ClientAdapters {
       extends AnyVal {
     def fromSeed(seed: ClientEServiceDetailsSeed): PersistentClientEServiceDetails =
       PersistentClientEServiceDetails(
-        eServiceId = seed.eserviceId,
+        eserviceId = seed.eserviceId,
         descriptorId = seed.descriptorId,
         state = PersistentClientComponentState.fromApi(seed.state),
         audience = seed.audience,

@@ -241,41 +241,45 @@ object KeyPersistentBehavior {
                 .thenRun((_: State) => replyTo ! StatusReply.Success(()))
           )
 
-      case UpdateEServiceState(eServiceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
+      case UpdateEServiceState(eserviceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsEService(eServiceId),
-          EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan),
+          state.containsEService(eserviceId),
+          EServiceStateUpdated(eserviceId, descriptorId, componentState, audience, voucherLifespan),
           replyTo
         )
 
-      case UpdateAgreementState(eServiceId, consumerId, agreementId, componentState, replyTo) =>
+      case UpdateAgreementState(eserviceId, consumerId, agreementId, componentState, replyTo) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsAgreement(eServiceId, consumerId),
-          AgreementStateUpdated(eServiceId, consumerId, agreementId, componentState),
+          state.containsAgreement(eserviceId, consumerId),
+          AgreementStateUpdated(eserviceId, consumerId, agreementId, componentState),
           replyTo
         )
 
       case UpdateAgreementAndEServiceState(
-            eServiceId,
+            eserviceId,
             descriptorId,
             consumerId,
             agreementId,
             agreementState,
             eserviceState,
+            audience,
+            voucherLifespan,
             replyTo
           ) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsAgreement(eServiceId, consumerId),
+          state.containsAgreement(eserviceId, consumerId),
           AgreementAndEServiceStatesUpdated(
-            eServiceId = eServiceId,
+            eserviceId = eserviceId,
             descriptorId = descriptorId,
             consumerId = consumerId,
             agreementId = agreementId,
             agreementState = agreementState,
-            eserviceState = eserviceState
+            eserviceState = eserviceState,
+            audience = audience,
+            voucherLifespan = voucherLifespan
           ),
           replyTo
         )

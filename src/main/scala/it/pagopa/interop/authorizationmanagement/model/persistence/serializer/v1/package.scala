@@ -130,25 +130,25 @@ package object v1 {
     : PersistEventSerializer[ClientPurposeRemoved, ClientPurposeRemovedV1] = event =>
     Right(ClientPurposeRemovedV1(clientId = event.clientId, purposeId = event.purposeId))
 
-  implicit def eServiceStateUpdatedV1PersistEventDeserializer
+  implicit def eserviceStateUpdatedV1PersistEventDeserializer
     : PersistEventDeserializer[EServiceStateUpdatedV1, EServiceStateUpdated] =
     event =>
       for {
         descriptorId <- event.descriptorId.toUUID.toEither
         state        <- protobufToComponentState(event.state)
       } yield EServiceStateUpdated(
-        eServiceId = event.eServiceId,
+        eserviceId = event.eserviceId,
         descriptorId = descriptorId,
         state = state,
         audience = event.audience,
         voucherLifespan = event.voucherLifespan
       )
 
-  implicit def eServiceStateUpdatedV1PersistEventSerializer
+  implicit def eserviceStateUpdatedV1PersistEventSerializer
     : PersistEventSerializer[EServiceStateUpdated, EServiceStateUpdatedV1] = event =>
     Right[Throwable, EServiceStateUpdatedV1](
       EServiceStateUpdatedV1.of(
-        eServiceId = event.eServiceId,
+        eserviceId = event.eserviceId,
         descriptorId = event.descriptorId.toString,
         state = componentStateToProtobuf(event.state),
         audience = event.audience,
@@ -163,7 +163,7 @@ package object v1 {
         agreementId <- event.agreementId.toUUID.toEither
         state       <- protobufToComponentState(event.state)
       } yield AgreementStateUpdated(
-        eServiceId = event.eServiceId,
+        eserviceId = event.eserviceId,
         consumerId = event.consumerId,
         agreementId = agreementId,
         state = state
@@ -174,7 +174,7 @@ package object v1 {
     Right[Throwable, AgreementStateUpdatedV1](
       AgreementStateUpdatedV1
         .of(
-          eServiceId = event.eServiceId,
+          eserviceId = event.eserviceId,
           consumerId = event.consumerId,
           agreementId = event.agreementId.toString,
           state = componentStateToProtobuf(event.state)
@@ -242,7 +242,7 @@ package object v1 {
 
   private def clientEServiceDetailsToProtobuf(details: PersistentClientEServiceDetails): ClientEServiceDetailsV1 =
     ClientEServiceDetailsV1.of(
-      eServiceId = details.eServiceId.toString,
+      eserviceId = details.eserviceId.toString,
       descriptorId = details.descriptorId.toString,
       state = componentStateToProtobuf(details.state),
       audience = details.audience,
@@ -251,7 +251,7 @@ package object v1 {
 
   private def clientAgreementDetailsToProtobuf(details: PersistentClientAgreementDetails): ClientAgreementDetailsV1 =
     ClientAgreementDetailsV1.of(
-      eServiceId = details.eServiceId.toString,
+      eserviceId = details.eserviceId.toString,
       consumerId = details.consumerId.toString,
       agreementId = details.agreementId.toString,
       state = componentStateToProtobuf(details.state)
@@ -309,11 +309,11 @@ package object v1 {
     details: ClientEServiceDetailsV1
   ): ErrorOr[PersistentClientEServiceDetails] =
     for {
-      eServiceId   <- details.eServiceId.toUUID.toEither
+      eserviceId   <- details.eserviceId.toUUID.toEither
       descriptorId <- details.descriptorId.toUUID.toEither
       state        <- protobufToComponentState(details.state)
     } yield PersistentClientEServiceDetails(
-      eServiceId = eServiceId,
+      eserviceId = eserviceId,
       descriptorId = descriptorId,
       state = state,
       audience = details.audience,
@@ -324,12 +324,12 @@ package object v1 {
     details: ClientAgreementDetailsV1
   ): ErrorOr[PersistentClientAgreementDetails] =
     for {
-      eServiceId  <- details.eServiceId.toUUID.toEither
+      eserviceId  <- details.eserviceId.toUUID.toEither
       consumerId  <- details.consumerId.toUUID.toEither
       agreementId <- details.agreementId.toUUID.toEither
       state       <- protobufToComponentState(details.state)
     } yield PersistentClientAgreementDetails(
-      eServiceId = eServiceId,
+      eserviceId = eserviceId,
       consumerId = consumerId,
       agreementId = agreementId,
       state = state

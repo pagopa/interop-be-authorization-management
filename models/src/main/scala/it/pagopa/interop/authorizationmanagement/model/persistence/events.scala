@@ -25,7 +25,7 @@ final case class ClientPurposeAdded(clientId: String, statesChain: PersistentCli
 final case class ClientPurposeRemoved(clientId: String, purposeId: String)                      extends Event
 
 final case class EServiceStateUpdated(
-  eServiceId: String,
+  eserviceId: String,
   descriptorId: UUID,
   state: PersistentClientComponentState,
   audience: Seq[String],
@@ -33,19 +33,21 @@ final case class EServiceStateUpdated(
 ) extends Event
 
 final case class AgreementStateUpdated(
-  eServiceId: String,
+  eserviceId: String,
   consumerId: String,
   agreementId: UUID,
   state: PersistentClientComponentState
 ) extends Event
 
 final case class AgreementAndEServiceStatesUpdated(
-  eServiceId: String,
+  eserviceId: String,
   descriptorId: UUID,
   consumerId: String,
   agreementId: UUID,
   agreementState: PersistentClientComponentState,
-  eserviceState: PersistentClientComponentState
+  eserviceState: PersistentClientComponentState,
+  audience: Seq[String],
+  voucherLifespan: Int
 ) extends Event
 
 final case class PurposeStateUpdated(purposeId: String, versionId: UUID, state: PersistentClientComponentState)

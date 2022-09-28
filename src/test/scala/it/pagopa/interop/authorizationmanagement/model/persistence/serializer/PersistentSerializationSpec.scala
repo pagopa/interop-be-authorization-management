@@ -35,7 +35,7 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   serdeCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
   serdeCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
   serdeCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
-  serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
+  serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eserviceStateUpdatedGen)
   serdeCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
   serdeCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
 
@@ -48,7 +48,7 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
   deserCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
   deserCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
-  deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
+  deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eserviceStateUpdatedGen)
   deserCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
   deserCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
 
@@ -157,7 +157,7 @@ object PersistentSerializationSpec {
   } yield (
     PersistentClientEServiceDetails(eserviceId, descriptorId, pcompstate, audience, voucherLifespan),
     ClientEServiceDetailsV1(
-      eServiceId = eserviceId.toString(),
+      eserviceId = eserviceId.toString(),
       descriptorId = descriptorId.toString(),
       state = compstatev1,
       audience = audience,
@@ -276,22 +276,22 @@ object PersistentSerializationSpec {
     purposeId <- stringGen
   } yield (ClientPurposeRemoved(clientId, purposeId), ClientPurposeRemovedV1(clientId, purposeId))
 
-  val eServiceStateUpdatedGen: Gen[(EServiceStateUpdated, EServiceStateUpdatedV1)] = for {
-    eServiceId       <- stringGen
+  val eserviceStateUpdatedGen: Gen[(EServiceStateUpdated, EServiceStateUpdatedV1)] = for {
+    eserviceId       <- stringGen
     descriptorId     <- Gen.uuid
     (state, stateV1) <- persistentClientComponentStateGen
     audiences        <- Gen.listOf(stringGen)
     voucherLifespan  <- Gen.posNum[Int]
   } yield (
     EServiceStateUpdated(
-      eServiceId = eServiceId,
+      eserviceId = eserviceId,
       descriptorId = descriptorId,
       state = state,
       audience = audiences,
       voucherLifespan = voucherLifespan
     ),
     EServiceStateUpdatedV1(
-      eServiceId = eServiceId,
+      eserviceId = eserviceId,
       descriptorId = descriptorId.toString(),
       state = stateV1,
       audience = audiences,
@@ -300,14 +300,14 @@ object PersistentSerializationSpec {
   )
 
   val agreementStateUpdatedGen: Gen[(AgreementStateUpdated, AgreementStateUpdatedV1)] = for {
-    eServiceId       <- stringGen
+    eserviceId       <- stringGen
     consumerId       <- stringGen
     agreementId      <- Gen.uuid
     (state, stateV1) <- persistentClientComponentStateGen
   } yield (
-    AgreementStateUpdated(eServiceId = eServiceId, consumerId = consumerId, agreementId = agreementId, state = state),
+    AgreementStateUpdated(eserviceId = eserviceId, consumerId = consumerId, agreementId = agreementId, state = state),
     AgreementStateUpdatedV1(
-      eServiceId = eServiceId,
+      eserviceId = eserviceId,
       consumerId = consumerId,
       agreementId = agreementId.toString(),
       state = stateV1

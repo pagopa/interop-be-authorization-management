@@ -67,7 +67,7 @@ final case class RemoveClientPurpose(clientId: String, purposeId: String, replyT
     extends Command
 
 final case class UpdateEServiceState(
-  eServiceId: String,
+  eserviceId: String,
   descriptorId: UUID,
   state: PersistentClientComponentState,
   audience: Seq[String],
@@ -76,7 +76,7 @@ final case class UpdateEServiceState(
 ) extends Command
 
 final case class UpdateAgreementState(
-  eServiceId: String,
+  eserviceId: String,
   consumerId: String,
   agreementId: UUID,
   state: PersistentClientComponentState,
@@ -84,12 +84,14 @@ final case class UpdateAgreementState(
 ) extends Command
 
 final case class UpdateAgreementAndEServiceState(
-  eServiceId: String,
+  eserviceId: String,
   descriptorId: UUID,
   consumerId: String,
   agreementId: UUID,
   agreementState: PersistentClientComponentState,
-  descriptorState: PersistentClientComponentState,
+  eserviceState: PersistentClientComponentState,
+  audience: Seq[String],
+  voucherLifespan: Int,
   replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command
 

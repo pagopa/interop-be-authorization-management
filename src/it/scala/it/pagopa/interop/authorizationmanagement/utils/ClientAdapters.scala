@@ -32,7 +32,7 @@ object ClientAdapters {
   implicit class ClientEServiceDetailsWrapper(private val p: ClientEServiceDetails) extends AnyVal {
     def toPersistent: PersistentClientEServiceDetails =
       PersistentClientEServiceDetails(
-        eServiceId = p.eserviceId,
+        eserviceId = p.eserviceId,
         descriptorId = p.descriptorId,
         state = PersistentClientComponentState.fromApi(p.state),
         audience = p.audience,
@@ -43,7 +43,7 @@ object ClientAdapters {
   implicit class ClientAgreementDetailsWrapper(private val p: ClientAgreementDetails) extends AnyVal {
     def toPersistent: PersistentClientAgreementDetails =
       PersistentClientAgreementDetails(
-        eServiceId = p.eserviceId,
+        eserviceId = p.eserviceId,
         consumerId = p.consumerId,
         agreementId = p.agreementId,
         state = PersistentClientComponentState.fromApi(p.state)
