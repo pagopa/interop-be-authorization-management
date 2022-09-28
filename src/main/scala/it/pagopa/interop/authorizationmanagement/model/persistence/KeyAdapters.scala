@@ -30,7 +30,7 @@ object KeyAdapters {
         encodedPem = validKey._1.key,
         algorithm = validKey._1.alg,
         use = PersistentKeyUse.fromApi(validKey._1.use),
-        creationTimestamp = dateTimeSupplier.get
+        creationTimestamp = dateTimeSupplier.get()
       )
 
     def toAPIResponse(keys: Keys): Either[Throwable, KeysResponse] =
