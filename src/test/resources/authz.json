@@ -136,6 +136,13 @@
       "verb": "POST"
     },
     {
+      "route": "updateAgreementAndEServiceStates",
+      "roles": [
+        "admin"
+      ],
+      "verb": "POST"
+    },
+    {
       "route": "updatePurposeState",
       "roles": [
         "admin"

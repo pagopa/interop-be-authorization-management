@@ -267,6 +267,89 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       persisted2 shouldBe expectedClient2
     }
 
+    "succeed for event AgreementAndEServiceStatesUpdated" in {
+      val clientId1    = UUID.randomUUID()
+      val consumerId   = UUID.randomUUID()
+      val eServiceId   = UUID.randomUUID()
+      val agreementId  = UUID.randomUUID()
+      val descriptorId = UUID.randomUUID()
+
+      val newAgreementId  = UUID.randomUUID()
+      val newDescriptorId = UUID.randomUUID()
+
+      val updatedAgreementState = ClientAgreementDetails(
+        eserviceId = eServiceId,
+        consumerId = consumerId,
+        agreementId = newAgreementId,
+        state = ClientComponentState.INACTIVE
+      )
+
+      val updatedEServiceState = ClientEServiceDetails(
+        eserviceId = eServiceId,
+        descriptorId = newDescriptorId,
+        state = ClientComponentState.INACTIVE,
+        audience = Seq("aud1"),
+        voucherLifespan = 1000
+      )
+
+      val client1 = createClient(clientId1, consumerId)
+
+      val purpose1_1 =
+        addPurposeState(
+          clientId1,
+          makePurposeSeed(
+            eServiceId = eServiceId,
+            descriptorId = descriptorId,
+            agreementId = agreementId,
+            consumerId = consumerId
+          ),
+          UUID.randomUUID()
+        )
+      val purpose1_2 =
+        addPurposeState(
+          clientId1,
+          makePurposeSeed(
+            eServiceId = eServiceId,
+            descriptorId = descriptorId,
+            agreementId = agreementId,
+            consumerId = consumerId
+          ),
+          UUID.randomUUID()
+        )
+      val purpose1_3 = addPurposeState(clientId1, makePurposeSeed(), UUID.randomUUID())
+
+      val payload = ClientAgreementAndEServiceDetailsUpdate(
+        agreementId = newAgreementId,
+        agreementState = ClientComponentState.INACTIVE,
+        descriptorId = newDescriptorId,
+        eserviceState = ClientComponentState.INACTIVE
+      ).toJson.compactPrint
+
+      request(
+        uri = s"$serviceURL/bulk/agreements/eservices/eserviceId/$eServiceId/consumerId/$consumerId/state",
+        method = HttpMethods.POST,
+        data = Some(payload)
+      )
+
+      val expectedClient1 = client1
+        .copy(purposes =
+          Seq(
+            purpose1_1.copy(states =
+              purpose1_1.states.copy(agreement = updatedAgreementState, eservice = updatedEServiceState)
+            ),
+            purpose1_2.copy(states =
+              purpose1_2.states.copy(agreement = updatedAgreementState, eservice = updatedEServiceState)
+            ),
+            purpose1_3
+          )
+        )
+        .toPersistent
+
+      val persisted1 = findOne[PersistentClient](clientId1.toString).futureValue
+
+      persisted1 shouldBe expectedClient1
+    }
+
     "succeed for event PurposeStateUpdated" in {
       val clientId1  = UUID.randomUUID()
       val clientId2  = UUID.randomUUID()
