@@ -88,7 +88,7 @@ object KeyPersistentBehavior {
         state.getClientKeyById(clientId, keyId) match {
           case Some(_) =>
             Effect
-              .persist(KeyDeleted(clientId, keyId, dateTimeSupplier.get))
+              .persist(KeyDeleted(clientId, keyId, dateTimeSupplier.get()))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           case None    => commandKeyNotFoundError(replyTo)
         }
