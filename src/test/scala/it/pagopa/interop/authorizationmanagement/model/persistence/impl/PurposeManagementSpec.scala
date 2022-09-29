@@ -47,7 +47,7 @@ class PurposeManagementSpec
 
       createClient(clientId, consumerId)
 
-      (() => mockUUIDSupplier.get()).expects().returning(statesChainId).once()
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
       val expected = Purpose(states =
         ClientStatesChain(
@@ -120,7 +120,7 @@ class PurposeManagementSpec
 
       val statesChainId = UUID.randomUUID()
 
-      (() => mockUUIDSupplier.get()).expects().returning(statesChainId).once()
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
       val payload = PurposeSeed(states =
         ClientStatesChainSeed(

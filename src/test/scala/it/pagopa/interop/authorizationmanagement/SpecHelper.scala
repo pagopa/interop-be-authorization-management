@@ -113,7 +113,7 @@ trait SpecHelper
   }
 
   def createClient(id: UUID, consumerId: UUID): Client = {
-    (() => mockUUIDSupplier.get()).expects().returning(id).once()
+    (() => mockUUIDSupplier.get).expects().returning(id).once()
 
     val consumerUuid = consumerId
     val name         = s"New Client ${id.toString}"
@@ -140,7 +140,7 @@ trait SpecHelper
   }
 
   def addPurposeState(clientId: UUID, newState: PurposeSeed, statesChainId: UUID): Purpose = {
-    (() => mockUUIDSupplier.get()).expects().returning(statesChainId).once()
+    (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
     val response = request(
       uri = s"$serviceURL/clients/$clientId/purposes",

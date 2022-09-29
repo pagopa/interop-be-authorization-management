@@ -55,7 +55,7 @@ final case class ClientApiServiceImpl(
   ): Route = authorize(ADMIN_ROLE) {
     logger.info("Creating client for Consumer {}", clientSeed.consumerId)
 
-    val clientId = uuidSupplier.get()
+    val clientId = uuidSupplier.get
 
     val commander: EntityRef[Command] =
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId.toString, settings.numberOfShards))

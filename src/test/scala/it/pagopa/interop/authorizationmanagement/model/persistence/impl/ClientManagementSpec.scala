@@ -37,7 +37,7 @@ class ClientManagementSpec
 
     "be created successfully" in {
       val newClientUuid = UUID.randomUUID()
-      (() => mockUUIDSupplier.get()).expects().returning(newClientUuid).once()
+      (() => mockUUIDSupplier.get).expects().returning(newClientUuid).once()
 
       val consumerUuid = UUID.randomUUID()
       val name         = "New Client 1"
@@ -99,7 +99,7 @@ class ClientManagementSpec
 
       createClient(clientId, consumerId)
 
-      (() => mockUUIDSupplier.get()).expects().returning(statesChainId).once()
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
       val payload1 = PurposeSeed(states =
         ClientStatesChainSeed(
@@ -220,7 +220,7 @@ class ClientManagementSpec
 
       createClient(clientId, consumerId)
 
-      (() => mockUUIDSupplier.get()).expects().returning(statesChainId).once()
+      (() => mockUUIDSupplier.get).expects().returning(statesChainId).once()
 
       val payload = PurposeSeed(states =
         ClientStatesChainSeed(
