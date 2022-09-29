@@ -4,7 +4,7 @@ import java.util.UUID
 
 final case class PersistentClientStatesChain(
   id: UUID,
-  eservice: PersistentClientEServiceDetails,
+  eService: PersistentClientEServiceDetails,
   agreement: PersistentClientAgreementDetails,
   purpose: PersistentClientPurposeDetails
 )

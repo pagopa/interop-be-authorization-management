@@ -23,7 +23,7 @@ object ClientAdapters {
     def toPersistent: PersistentClientStatesChain =
       PersistentClientStatesChain(
         id = p.states.id,
-        eservice = p.states.eservice.toPersistent,
+        eService = p.states.eservice.toPersistent,
         agreement = p.states.agreement.toPersistent,
         purpose = p.states.purpose.toPersistent
       )
