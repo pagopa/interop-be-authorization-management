@@ -83,6 +83,18 @@ final case class UpdateAgreementState(
   replyTo: ActorRef[StatusReply[Unit]]
 ) extends Command
 
+final case class UpdateAgreementAndEServiceState(
+  eServiceId: String,
+  descriptorId: UUID,
+  consumerId: String,
+  agreementId: UUID,
+  agreementState: PersistentClientComponentState,
+  eServiceState: PersistentClientComponentState,
+  audience: Seq[String],
+  voucherLifespan: Int,
+  replyTo: ActorRef[StatusReply[Unit]]
+) extends Command
+
 final case class UpdatePurposeState(
   purposeId: String,
   versionId: UUID,

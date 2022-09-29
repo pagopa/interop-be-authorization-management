@@ -98,6 +98,38 @@ object ClientCqrsProjection {
           Updates.set("data.purposes.$[elem].agreement.agreementId", agreementId.toString)
         )
       )
+    case AgreementAndEServiceStatesUpdated(
+          eServiceId,
+          descriptorId,
+          consumerId,
+          agreementId,
+          agreementState,
+          eServiceState,
+          audience,
+          voucherLifespan
+        ) =>
+      ActionWithBson(
+        collection.updateMany(
+          Filters.empty(),
+          _,
+          UpdateOptions().arrayFilters(
+            List(
+              Filters.and(
+                Filters.eq("elem.agreement.eServiceId", eServiceId),
+                Filters.eq("elem.agreement.consumerId", consumerId)
+              )
+            ).asJava
+          )
+        ),
+        Updates.combine(
+          Updates.set("data.purposes.$[elem].agreement.state", agreementState.toString),
+          Updates.set("data.purposes.$[elem].agreement.agreementId", agreementId.toString),
+          Updates.set("data.purposes.$[elem].eService.descriptorId", descriptorId.toString),
+          Updates.set("data.purposes.$[elem].eService.audience", audience),
+          Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan),
+          Updates.set("data.purposes.$[elem].eService.state", eServiceState.toString)
+        )
+      )
     case PurposeStateUpdated(purposeId, versionId, state)                                 =>
       // Updates all purposes states of all clients matching criteria
       ActionWithBson(

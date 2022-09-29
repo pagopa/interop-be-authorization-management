@@ -97,4 +97,10 @@ object KeyManagementErrors {
   final case class ClientPurposeRemovalError(clientId: String, purposeId: String)
       extends ComponentError("0031", s"Error removing Purpose $purposeId from Client $clientId")
 
+  final case class ClientAgreementAndEServiceStatesUpdateError(eServiceId: String, consumerId: String)
+      extends ComponentError(
+        "0032",
+        s"Error updating Agreement and EService with EService $eServiceId and Consumer $consumerId state for all clients"
+      )
+
 }

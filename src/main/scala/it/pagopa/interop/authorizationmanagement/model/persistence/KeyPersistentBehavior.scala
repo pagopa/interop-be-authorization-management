@@ -257,6 +257,33 @@ object KeyPersistentBehavior {
           replyTo
         )
 
+      case UpdateAgreementAndEServiceState(
+            eServiceId,
+            descriptorId,
+            consumerId,
+            agreementId,
+            agreementState,
+            eServiceState,
+            audience,
+            voucherLifespan,
+            replyTo
+          ) =>
+        conditionalClientsStateUpdate(
+          state,
+          state.containsAgreement(eServiceId, consumerId),
+          AgreementAndEServiceStatesUpdated(
+            eServiceId = eServiceId,
+            descriptorId = descriptorId,
+            consumerId = consumerId,
+            agreementId = agreementId,
+            agreementState = agreementState,
+            eServiceState = eServiceState,
+            audience = audience,
+            voucherLifespan = voucherLifespan
+          ),
+          replyTo
+        )
+
       case UpdatePurposeState(purposeId, versionId, componentState, replyTo) =>
         conditionalClientsStateUpdate(
           state,
@@ -341,21 +368,18 @@ object KeyPersistentBehavior {
 
   val eventHandler: (State, Event) => State = (state, event) =>
     event match {
-      case KeysAdded(clientId, keys)                     => state.addKeys(clientId, keys)
-      case KeyDeleted(clientId, keyId, _)                => state.deleteKey(clientId, keyId)
-      case ClientAdded(client)                           => state.addClient(client)
-      case ClientDeleted(clientId)                       => state.deleteClient(clientId)
-      case RelationshipAdded(client, relationshipId)     => state.addRelationship(client, relationshipId)
-      case RelationshipRemoved(clientId, relationshipId) => state.removeRelationship(clientId, relationshipId)
-      case ClientPurposeAdded(clientId, statesChain)     => state.addClientPurpose(clientId, statesChain)
-      case ClientPurposeRemoved(clientId, purposeId)     =>
-        state.removeClientPurpose(clientId, purposeId)
-      case EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan) =>
-        state.updateClientsByEService(eServiceId, descriptorId, componentState, audience, voucherLifespan)
-      case AgreementStateUpdated(eServiceId, consumerId, agreementId, componentState)                =>
-        state.updateClientsByAgreement(eServiceId, consumerId, agreementId, componentState)
-      case PurposeStateUpdated(purposeId, versionId, componentState)                                 =>
-        state.updateClientsByPurpose(purposeId, versionId, componentState)
+      case e: KeysAdded                         => state.addKeys(e)
+      case e: KeyDeleted                        => state.deleteKey(e)
+      case e: ClientAdded                       => state.addClient(e)
+      case e: ClientDeleted                     => state.deleteClient(e)
+      case e: RelationshipAdded                 => state.addRelationship(e)
+      case e: RelationshipRemoved               => state.removeRelationship(e)
+      case e: ClientPurposeAdded                => state.addClientPurpose(e)
+      case e: ClientPurposeRemoved              => state.removeClientPurpose(e)
+      case e: EServiceStateUpdated              => state.updateClientsByEService(e)
+      case e: AgreementStateUpdated             => state.updateClientsByAgreement(e)
+      case e: AgreementAndEServiceStatesUpdated => state.updateClientsByAgreementAndEService(e)
+      case e: PurposeStateUpdated               => state.updateClientsByPurpose(e)
     }
 
   val TypeKey: EntityTypeKey[Command] =
