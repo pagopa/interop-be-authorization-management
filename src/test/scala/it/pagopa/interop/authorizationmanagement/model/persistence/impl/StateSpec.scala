@@ -2,7 +2,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import it.pagopa.interop.authorizationmanagement.model.client.{Consumer, PersistentClient}
 import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, Sig}
-import it.pagopa.interop.authorizationmanagement.model.persistence.State
+import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientDeleted, KeyDeleted, State}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -59,7 +59,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       state.keys("fooBarKeys").size shouldBe 4
 
       // when
-      val updatedState = state.deleteKey("fooBarKeys", "2")
+      val updatedState = state.deleteKey(KeyDeleted("fooBarKeys", "2", OffsetDateTime.now()))
 
       // then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe None
@@ -148,7 +148,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val state   = State(keys = keys, clients = clients)
 
       // when
-      val updatedState = state.deleteClient(clientId2)
+      val updatedState = state.deleteClient(ClientDeleted(clientId2))
 
       // then
       updatedState.keys.get(clientId2) shouldBe None

@@ -1,47 +1,41 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence
 
-import it.pagopa.interop.authorizationmanagement.model.client.{
-  PersistentClient,
-  PersistentClientComponentState,
-  PersistentClientStatesChain
-}
+import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient, PersistentClientStatesChain}
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.{ClientId, Keys}
 
-import java.util.UUID
-
 final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, PersistentClient]) extends Persistable {
-  def deleteKey(clientId: String, keyId: String): State = keys.get(clientId) match {
+  def deleteKey(event: KeyDeleted): State = keys.get(event.clientId) match {
     case Some(entries) =>
-      copy(keys = keys + (clientId -> (entries - keyId)))
+      copy(keys = keys + (event.clientId -> (entries - event.keyId)))
     case None          => this
   }
 
-  def addKeys(clientId: String, addedKeys: Keys): State = {
-    keys.get(clientId) match {
+  def addKeys(event: KeysAdded): State = {
+    keys.get(event.clientId) match {
       case Some(entries) =>
-        copy(keys = keys + (clientId -> (entries ++ addedKeys)))
-      case None          => copy(keys = keys + (clientId -> addedKeys))
+        copy(keys = keys + (event.clientId -> (entries ++ event.keys)))
+      case None          => copy(keys = keys + (event.clientId -> event.keys))
     }
   }
 
-  def addClient(client: PersistentClient): State = {
-    copy(clients = clients + (client.id.toString -> client))
+  def addClient(event: ClientAdded): State = {
+    copy(clients = clients + (event.client.id.toString -> event.client))
   }
 
-  def deleteClient(clientId: String): State =
-    copy(clients = clients - clientId, keys = keys - clientId)
+  def deleteClient(event: ClientDeleted): State =
+    copy(clients = clients - event.clientId, keys = keys - event.clientId)
 
-  def addRelationship(client: PersistentClient, relationshipId: UUID): State = {
-    val updatedClient = client.copy(relationships = client.relationships + relationshipId)
-    copy(clients = clients + (client.id.toString -> updatedClient))
+  def addRelationship(event: RelationshipAdded): State = {
+    val updatedClient = event.client.copy(relationships = event.client.relationships + event.relationshipId)
+    copy(clients = clients + (event.client.id.toString -> updatedClient))
   }
 
-  def removeRelationship(clientId: String, relationshipId: String): State = {
-    val updatedClients = clients.get(clientId) match {
+  def removeRelationship(event: RelationshipRemoved): State = {
+    val updatedClients = clients.get(event.clientId) match {
       case Some(client) =>
-        val updated = client.copy(relationships = client.relationships.filter(_.toString != relationshipId))
-        clients + (clientId -> updated)
+        val updated = client.copy(relationships = client.relationships.filter(_.toString != event.relationshipId))
+        clients + (event.clientId -> updated)
       case None         =>
         clients
     }
@@ -52,57 +46,62 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =
     keys.get(clientId).flatMap(_.get(keyId))
 
-  def addClientPurpose(clientId: String, statesChain: PersistentClientStatesChain): State = {
-    clients.get(clientId) match {
+  def addClientPurpose(event: ClientPurposeAdded): State = {
+    clients.get(event.clientId) match {
       case Some(client) =>
-        val purposes      = client.purposes :+ statesChain
+        val purposes      = client.purposes :+ event.statesChain
         val updatedClient = client.copy(purposes = purposes)
-        copy(clients = clients + (clientId -> updatedClient))
+        copy(clients = clients + (event.clientId -> updatedClient))
       case None         => this
     }
   }
 
-  def removeClientPurpose(clientId: String, purposeId: String): State = {
-    clients.get(clientId) match {
+  def removeClientPurpose(event: ClientPurposeRemoved): State = {
+    clients.get(event.clientId) match {
       case Some(client) =>
-        val purposes      = client.purposes.filter(_.purpose.purposeId.toString != purposeId)
+        val purposes      = client.purposes.filter(_.purpose.purposeId.toString != event.purposeId)
         val updatedClient = client.copy(purposes = purposes)
-        copy(clients = clients + (clientId -> updatedClient))
+        copy(clients = clients + (event.clientId -> updatedClient))
       case None         => this
     }
   }
 
-  def updateClientsByEService(
-    eServiceId: String,
-    descriptorId: UUID,
-    state: PersistentClientComponentState,
-    audience: Seq[String],
-    voucherLifespan: Int
-  ): State =
+  def updateClientsByEService(event: EServiceStateUpdated): State =
     updateClients(
-      containsEService(eServiceId),
+      containsEService(event.eServiceId),
       states =>
         states.copy(eService =
           states.eService
-            .copy(descriptorId = descriptorId, state = state, audience = audience, voucherLifespan = voucherLifespan)
+            .copy(
+              descriptorId = event.descriptorId,
+              state = event.state,
+              audience = event.audience,
+              voucherLifespan = event.voucherLifespan
+            )
         )
     )
 
-  def updateClientsByAgreement(
-    eServiceId: String,
-    consumerId: String,
-    agreementId: UUID,
-    state: PersistentClientComponentState
-  ): State =
+  def updateClientsByAgreement(event: AgreementStateUpdated): State =
     updateClients(
-      containsAgreement(eServiceId, consumerId),
-      states => states.copy(agreement = states.agreement.copy(agreementId = agreementId, state = state))
+      containsAgreement(event.eServiceId, event.consumerId),
+      states => states.copy(agreement = states.agreement.copy(agreementId = event.agreementId, state = event.state))
     )
 
-  def updateClientsByPurpose(purposeId: String, versionId: UUID, state: PersistentClientComponentState): State =
+  def updateClientsByAgreementAndEService(event: AgreementAndEServiceStatesUpdated): State = {
     updateClients(
-      containsPurpose(purposeId),
-      states => states.copy(purpose = states.purpose.copy(versionId = versionId, state = state))
+      containsAgreement(event.eServiceId, event.consumerId),
+      states =>
+        states.copy(
+          agreement = states.agreement.copy(agreementId = event.agreementId, state = event.agreementState),
+          eService = states.eService.copy(descriptorId = event.descriptorId, state = event.eServiceState)
+        )
+    )
+  }
+
+  def updateClientsByPurpose(event: PurposeStateUpdated): State =
+    updateClients(
+      containsPurpose(event.purposeId),
+      states => states.copy(purpose = states.purpose.copy(versionId = event.versionId, state = event.state))
     )
 
   private def updateClients(

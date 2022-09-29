@@ -650,6 +650,46 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  /bulk/agreements/eservices/eserviceId/{eserviceId}/consumerId/{consumerId}/state:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      tags:
+        - purpose
+      summary: Updates the Agreement state for all clients that contain it
+      description: 'Updates the Agreement state for all clients that contain it'
+      operationId: updateAgreementAndEServiceStates
+      parameters:
+        - name: eserviceId
+          in: path
+          description: ID of the EService
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: consumerId
+          in: path
+          description: ID of the Consumer
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientAgreementAndEServiceDetailsUpdate'
+      responses:
+        '204':
+          description: Clients updated
+        '400':
+          description: Client not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /bulk/purposes/{purposeId}/state:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -1090,6 +1130,33 @@ components:
       required:
         - agreementId
         - state
+    ClientAgreementAndEServiceDetailsUpdate:
+      type: object
+      properties:
+        agreementId:
+          type: string
+          format: uuid
+        agreementState:
+          $ref: '#/components/schemas/ClientComponentState'
+        descriptorId:
+          type: string
+          format: uuid
+        audience:
+          type: array
+          items:
+            type: string
+        voucherLifespan:
+          type: integer
+          format: int32
+        eserviceState:
+          $ref: '#/components/schemas/ClientComponentState'
+      required:
+        - agreementId
+        - agreementState
+        - descriptorId
+        - audience
+        - voucherLifespan
+        - eserviceState
     ClientPurposeDetailsSeed:
       type: object
       properties:
