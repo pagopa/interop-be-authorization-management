@@ -35,7 +35,7 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   serdeCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
   serdeCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
   serdeCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
-  serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eserviceStateUpdatedGen)
+  serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
   serdeCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
   serdeCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
 
@@ -48,7 +48,7 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
   deserCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
   deserCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
-  deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eserviceStateUpdatedGen)
+  deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
   deserCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
   deserCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
 
@@ -276,7 +276,7 @@ object PersistentSerializationSpec {
     purposeId <- stringGen
   } yield (ClientPurposeRemoved(clientId, purposeId), ClientPurposeRemovedV1(clientId, purposeId))
 
-  val eserviceStateUpdatedGen: Gen[(EServiceStateUpdated, EServiceStateUpdatedV1)] = for {
+  val eServiceStateUpdatedGen: Gen[(EServiceStateUpdated, EServiceStateUpdatedV1)] = for {
     eServiceId       <- stringGen
     descriptorId     <- Gen.uuid
     (state, stateV1) <- persistentClientComponentStateGen

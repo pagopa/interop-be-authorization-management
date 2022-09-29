@@ -130,7 +130,7 @@ package object v1 {
     : PersistEventSerializer[ClientPurposeRemoved, ClientPurposeRemovedV1] = event =>
     Right(ClientPurposeRemovedV1(clientId = event.clientId, purposeId = event.purposeId))
 
-  implicit def eserviceStateUpdatedV1PersistEventDeserializer
+  implicit def eServiceStateUpdatedV1PersistEventDeserializer
     : PersistEventDeserializer[EServiceStateUpdatedV1, EServiceStateUpdated] =
     event =>
       for {
@@ -144,7 +144,7 @@ package object v1 {
         voucherLifespan = event.voucherLifespan
       )
 
-  implicit def eserviceStateUpdatedV1PersistEventSerializer
+  implicit def eServiceStateUpdatedV1PersistEventSerializer
     : PersistEventSerializer[EServiceStateUpdated, EServiceStateUpdatedV1] = event =>
     Right[Throwable, EServiceStateUpdatedV1](
       EServiceStateUpdatedV1.of(
