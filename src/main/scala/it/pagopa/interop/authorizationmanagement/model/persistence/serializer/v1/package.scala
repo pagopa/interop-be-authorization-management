@@ -235,7 +235,7 @@ package object v1 {
   private def clientStatesChainToProtobuf(statesChain: PersistentClientStatesChain): ClientStatesChainV1 =
     ClientStatesChainV1.of(
       id = statesChain.id.toString,
-      eService = clientEServiceDetailsToProtobuf(statesChain.eService),
+      eservice = clientEServiceDetailsToProtobuf(statesChain.eservice),
       agreement = clientAgreementDetailsToProtobuf(statesChain.agreement),
       purpose = clientPurposeDetailsToProtobuf(statesChain.purpose)
     )
@@ -299,10 +299,10 @@ package object v1 {
   private def protobufToClientStatesChain(statesChain: ClientStatesChainV1): ErrorOr[PersistentClientStatesChain] = {
     for {
       uuid      <- statesChain.id.toUUID.toEither
-      eService  <- protobufToClientEServiceDetails(statesChain.eService)
+      eservice  <- protobufToClientEServiceDetails(statesChain.eservice)
       agreement <- protobufToClientAgreementDetails(statesChain.agreement)
       purpose   <- protobufToClientPurposeDetails(statesChain.purpose)
-    } yield PersistentClientStatesChain(id = uuid, eService = eService, agreement = agreement, purpose = purpose)
+    } yield PersistentClientStatesChain(id = uuid, eservice = eservice, agreement = agreement, purpose = purpose)
   }
 
   private def protobufToClientEServiceDetails(

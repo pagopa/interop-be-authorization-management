@@ -23,7 +23,7 @@ message ClientPurposesEntryV1 {
 
 message ClientStatesChainV1 {
   required string id = 1;
-  required ClientEServiceDetailsV1 eService = 2;
+  required ClientEServiceDetailsV1 eservice = 2;
   required ClientAgreementDetailsV1 agreement = 3;
   required ClientPurposeDetailsV1 purpose = 4;
 }

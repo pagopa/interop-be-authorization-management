@@ -38,7 +38,7 @@ object ClientAdapters {
     def toApi: ClientStatesChain =
       ClientStatesChain(
         id = p.id,
-        eservice = p.eService.toApi,
+        eservice = p.eservice.toApi,
         agreement = p.agreement.toApi,
         purpose = p.purpose.toApi
       )
@@ -50,7 +50,7 @@ object ClientAdapters {
     def fromSeed(uuidSupplier: UUIDSupplier)(seed: ClientStatesChainSeed): PersistentClientStatesChain =
       client.PersistentClientStatesChain(
         id = uuidSupplier.get,
-        eService = PersistentClientEServiceDetails.fromSeed(seed.eservice),
+        eservice = PersistentClientEServiceDetails.fromSeed(seed.eservice),
         agreement = PersistentClientAgreementDetails.fromSeed(seed.agreement),
         purpose = PersistentClientPurposeDetails.fromSeed(seed.purpose)
       )

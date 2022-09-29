@@ -69,13 +69,13 @@ object ClientCqrsProjection {
         collection.updateMany(
           Filters.empty(),
           _,
-          UpdateOptions().arrayFilters(List(Filters.eq("elem.eService.eserviceId", eserviceId)).asJava)
+          UpdateOptions().arrayFilters(List(Filters.eq("elem.eservice.eserviceId", eserviceId)).asJava)
         ),
         Updates.combine(
-          Updates.set("data.purposes.$[elem].eService.state", state.toString),
-          Updates.set("data.purposes.$[elem].eService.descriptorId", descriptorId.toString),
-          Updates.set("data.purposes.$[elem].eService.audience", audience),
-          Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan)
+          Updates.set("data.purposes.$[elem].eservice.state", state.toString),
+          Updates.set("data.purposes.$[elem].eservice.descriptorId", descriptorId.toString),
+          Updates.set("data.purposes.$[elem].eservice.audience", audience),
+          Updates.set("data.purposes.$[elem].eservice.voucherLifespan", voucherLifespan)
         )
       )
     case AgreementStateUpdated(eserviceId, consumerId, agreementId, state)                =>
@@ -124,10 +124,10 @@ object ClientCqrsProjection {
         Updates.combine(
           Updates.set("data.purposes.$[elem].agreement.state", agreementState.toString),
           Updates.set("data.purposes.$[elem].agreement.agreementId", agreementId.toString),
-          Updates.set("data.purposes.$[elem].eService.descriptorId", descriptorId.toString),
-          Updates.set("data.purposes.$[elem].eService.audience", audience),
-          Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan),
-          Updates.set("data.purposes.$[elem].eService.state", eserviceState.toString)
+          Updates.set("data.purposes.$[elem].eservice.descriptorId", descriptorId.toString),
+          Updates.set("data.purposes.$[elem].eservice.audience", audience),
+          Updates.set("data.purposes.$[elem].eservice.voucherLifespan", voucherLifespan),
+          Updates.set("data.purposes.$[elem].eservice.state", eserviceState.toString)
         )
       )
     case PurposeStateUpdated(purposeId, versionId, state)                                 =>
