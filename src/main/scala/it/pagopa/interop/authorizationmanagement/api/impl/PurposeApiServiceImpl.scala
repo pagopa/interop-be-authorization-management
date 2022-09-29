@@ -117,15 +117,15 @@ final case class PurposeApiServiceImpl(
     }
   }
 
-  override def updateEServiceState(eserviceId: String, payload: ClientEServiceDetailsUpdate)(implicit
+  override def updateEServiceState(eServiceId: String, payload: ClientEServiceDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    logger.info("Updating EService {} state for all clients", eserviceId)
+    logger.info("Updating EService {} state for all clients", eServiceId)
 
     val result: Future[Seq[Unit]] = updateStateOnClients(
       UpdateEServiceState(
-        eserviceId,
+        eServiceId,
         payload.descriptorId,
         PersistentClientComponentState.fromApi(payload.state),
         payload.audience,
@@ -138,23 +138,23 @@ final case class PurposeApiServiceImpl(
       case Success(_)  =>
         updateEServiceState204
       case Failure(ex) =>
-        logger.error(s"Error updating EService $eserviceId state for all clients", ex)
-        val problem = problemOf(StatusCodes.InternalServerError, ClientEServiceStateUpdateError(eserviceId))
+        logger.error(s"Error updating EService $eServiceId state for all clients", ex)
+        val problem = problemOf(StatusCodes.InternalServerError, ClientEServiceStateUpdateError(eServiceId))
         complete(problem.status, problem)
     }
 
   }
 
-  override def updateAgreementState(eserviceId: String, consumerId: String, payload: ClientAgreementDetailsUpdate)(
+  override def updateAgreementState(eServiceId: String, consumerId: String, payload: ClientAgreementDetailsUpdate)(
     implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    logger.info(s"Updating Agreement with EService $eserviceId and Consumer $consumerId state for all clients")
+    logger.info(s"Updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients")
 
     val result: Future[Seq[Unit]] = updateStateOnClients(
       UpdateAgreementState(
-        eserviceId,
+        eServiceId,
         consumerId,
         payload.agreementId,
         PersistentClientComponentState.fromApi(payload.state),
@@ -167,37 +167,33 @@ final case class PurposeApiServiceImpl(
         updateAgreementState204
       case Failure(ex) =>
         logger.error(
-          s"Error updating Agreement with EService $eserviceId and Consumer $consumerId state for all clients",
+          s"Error updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients",
           ex
         )
         val problem =
-          problemOf(StatusCodes.InternalServerError, ClientAgreementStateUpdateError(eserviceId, consumerId))
+          problemOf(StatusCodes.InternalServerError, ClientAgreementStateUpdateError(eServiceId, consumerId))
         complete(problem.status, problem)
     }
 
   }
 
-  /**
-   * Code: 204, Message: Clients updated
-   * Code: 400, Message: Client not found, DataType: Problem
-   */
   override def updateAgreementAndEServiceStates(
-    eserviceId: String,
+    eServiceId: String,
     consumerId: String,
     payload: ClientAgreementAndEServiceDetailsUpdate
   )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
     authorize(ADMIN_ROLE) {
       logger.info(
-        s"Updating Agreement and EService with EService $eserviceId and Consumer $consumerId state for all clients"
+        s"Updating Agreement and EService with EService $eServiceId and Consumer $consumerId state for all clients"
       )
       val result: Future[Seq[Unit]] = updateStateOnClients(
         UpdateAgreementAndEServiceState(
-          eserviceId = eserviceId,
+          eServiceId = eServiceId,
           descriptorId = payload.descriptorId,
           consumerId = consumerId,
           agreementId = payload.agreementId,
           agreementState = PersistentClientComponentState.fromApi(payload.agreementState),
-          eserviceState = PersistentClientComponentState.fromApi(payload.eserviceState),
+          eServiceState = PersistentClientComponentState.fromApi(payload.eserviceState),
           audience = payload.audience,
           voucherLifespan = payload.voucherLifespan,
           _
@@ -209,13 +205,13 @@ final case class PurposeApiServiceImpl(
           updateAgreementAndEServiceStates204
         case Failure(ex) =>
           logger.error(
-            s"Error updating Agreement and EService with EService $eserviceId and Consumer $consumerId state for all clients",
+            s"Error updating Agreement and EService with EService $eServiceId and Consumer $consumerId state for all clients",
             ex
           )
           val problem =
             problemOf(
               StatusCodes.InternalServerError,
-              ClientAgreementAndEServiceStatesUpdateError(eserviceId = eserviceId, consumerId = consumerId)
+              ClientAgreementAndEServiceStatesUpdateError(eServiceId = eServiceId, consumerId = consumerId)
             )
           complete(problem.status, problem)
       }

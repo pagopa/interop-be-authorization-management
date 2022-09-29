@@ -241,43 +241,43 @@ object KeyPersistentBehavior {
                 .thenRun((_: State) => replyTo ! StatusReply.Success(()))
           )
 
-      case UpdateEServiceState(eserviceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
+      case UpdateEServiceState(eServiceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsEService(eserviceId),
-          EServiceStateUpdated(eserviceId, descriptorId, componentState, audience, voucherLifespan),
+          state.containsEService(eServiceId),
+          EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan),
           replyTo
         )
 
-      case UpdateAgreementState(eserviceId, consumerId, agreementId, componentState, replyTo) =>
+      case UpdateAgreementState(eServiceId, consumerId, agreementId, componentState, replyTo) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsAgreement(eserviceId, consumerId),
-          AgreementStateUpdated(eserviceId, consumerId, agreementId, componentState),
+          state.containsAgreement(eServiceId, consumerId),
+          AgreementStateUpdated(eServiceId, consumerId, agreementId, componentState),
           replyTo
         )
 
       case UpdateAgreementAndEServiceState(
-            eserviceId,
+            eServiceId,
             descriptorId,
             consumerId,
             agreementId,
             agreementState,
-            eserviceState,
+            eServiceState,
             audience,
             voucherLifespan,
             replyTo
           ) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsAgreement(eserviceId, consumerId),
+          state.containsAgreement(eServiceId, consumerId),
           AgreementAndEServiceStatesUpdated(
-            eserviceId = eserviceId,
+            eServiceId = eServiceId,
             descriptorId = descriptorId,
             consumerId = consumerId,
             agreementId = agreementId,
             agreementState = agreementState,
-            eserviceState = eserviceState,
+            eServiceState = eServiceState,
             audience = audience,
             voucherLifespan = voucherLifespan
           ),

@@ -91,7 +91,7 @@ class ClientManagementSpec
       val purposeId2        = UUID.randomUUID()
       val purposeVersionId1 = UUID.randomUUID()
       val purposeVersionId2 = UUID.randomUUID()
-      val eserviceId        = UUID.randomUUID()
+      val eServiceId        = UUID.randomUUID()
       val descriptorId      = UUID.randomUUID()
       val agreementId       = UUID.randomUUID()
 
@@ -104,14 +104,14 @@ class ClientManagementSpec
       val payload1 = PurposeSeed(states =
         ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
-            eserviceId = eserviceId,
+            eserviceId = eServiceId,
             descriptorId = descriptorId,
             state = ACTIVE,
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(
-            eserviceId = eserviceId,
+            eserviceId = eServiceId,
             consumerId = consumerId,
             agreementId = agreementId,
             state = INACTIVE
@@ -127,14 +127,14 @@ class ClientManagementSpec
       val payload2 = PurposeSeed(states =
         ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
-            eserviceId = eserviceId,
+            eserviceId = eServiceId,
             descriptorId = descriptorId,
             state = ClientComponentState.ACTIVE,
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(
-            eserviceId = eserviceId,
+            eserviceId = eServiceId,
             consumerId = consumerId,
             agreementId = agreementId,
             state = ClientComponentState.INACTIVE
@@ -176,14 +176,14 @@ class ClientManagementSpec
               ClientStatesChain(
                 id = statesChainId,
                 eservice = ClientEServiceDetails(
-                  eserviceId = eserviceId,
+                  eserviceId = eServiceId,
                   descriptorId = descriptorId,
                   state = ClientComponentState.ACTIVE,
                   audience = Seq("some.audience"),
                   voucherLifespan = 10
                 ),
                 agreement = ClientAgreementDetails(
-                  eserviceId = eserviceId,
+                  eserviceId = eServiceId,
                   consumerId = consumerId,
                   agreementId = agreementId,
                   state = ClientComponentState.INACTIVE
@@ -212,7 +212,7 @@ class ClientManagementSpec
       val consumerId       = UUID.randomUUID()
       val purposeId        = UUID.randomUUID()
       val purposeVersionId = UUID.randomUUID()
-      val eserviceId       = UUID.randomUUID()
+      val eServiceId       = UUID.randomUUID()
       val descriptorId     = UUID.randomUUID()
       val agreementId      = UUID.randomUUID()
 
@@ -225,14 +225,14 @@ class ClientManagementSpec
       val payload = PurposeSeed(states =
         ClientStatesChainSeed(
           eservice = ClientEServiceDetailsSeed(
-            eserviceId = eserviceId,
+            eserviceId = eServiceId,
             descriptorId = descriptorId,
             state = ClientComponentState.ACTIVE,
             audience = Seq("some.audience"),
             voucherLifespan = 10
           ),
           agreement = ClientAgreementDetailsSeed(
-            eserviceId = eserviceId,
+            eserviceId = eServiceId,
             consumerId = consumerId,
             agreementId = agreementId,
             state = ClientComponentState.INACTIVE

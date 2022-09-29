@@ -168,11 +168,11 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val clientId1  = UUID.randomUUID()
       val clientId2  = UUID.randomUUID()
       val consumerId = UUID.randomUUID()
-      val eserviceId = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       val newDescriptorId = UUID.randomUUID()
       val updatedState    = ClientEServiceDetails(
-        eserviceId = eserviceId,
+        eserviceId = eServiceId,
         descriptorId = newDescriptorId,
         state = ClientComponentState.INACTIVE,
         audience = Seq("aud2", "aud3"),
@@ -181,8 +181,8 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
 
       val client1    = createClient(clientId1, consumerId)
       val client2    = createClient(clientId2, consumerId)
-      val purpose1_1 = addPurposeState(clientId1, makePurposeSeed(eserviceId = eserviceId), UUID.randomUUID())
-      val purpose1_2 = addPurposeState(clientId1, makePurposeSeed(eserviceId = eserviceId), UUID.randomUUID())
+      val purpose1_1 = addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId), UUID.randomUUID())
+      val purpose1_2 = addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId), UUID.randomUUID())
       val purpose1_3 = addPurposeState(clientId1, makePurposeSeed(), UUID.randomUUID())
       val purpose2_1 = addPurposeState(clientId2, makePurposeSeed(), UUID.randomUUID())
 
@@ -193,7 +193,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
         voucherLifespan = 333
       ).toJson.compactPrint
 
-      request(uri = s"$serviceURL/bulk/eservices/$eserviceId/state", method = HttpMethods.POST, data = Some(payload))
+      request(uri = s"$serviceURL/bulk/eservices/$eServiceId/state", method = HttpMethods.POST, data = Some(payload))
 
       val expectedClient1 = client1
         .copy(purposes =
@@ -218,11 +218,11 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val clientId1  = UUID.randomUUID()
       val clientId2  = UUID.randomUUID()
       val consumerId = UUID.randomUUID()
-      val eserviceId = UUID.randomUUID()
+      val eServiceId = UUID.randomUUID()
 
       val newAgreementId = UUID.randomUUID()
       val updatedState   = ClientAgreementDetails(
-        eserviceId = eserviceId,
+        eserviceId = eServiceId,
         consumerId = consumerId,
         agreementId = newAgreementId,
         state = ClientComponentState.INACTIVE
@@ -231,9 +231,9 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val client1    = createClient(clientId1, consumerId)
       val client2    = createClient(clientId2, consumerId)
       val purpose1_1 =
-        addPurposeState(clientId1, makePurposeSeed(eserviceId = eserviceId, consumerId = consumerId), UUID.randomUUID())
+        addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId, consumerId = consumerId), UUID.randomUUID())
       val purpose1_2 =
-        addPurposeState(clientId1, makePurposeSeed(eserviceId = eserviceId, consumerId = consumerId), UUID.randomUUID())
+        addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId, consumerId = consumerId), UUID.randomUUID())
       val purpose1_3 = addPurposeState(clientId1, makePurposeSeed(), UUID.randomUUID())
       val purpose2_1 = addPurposeState(clientId2, makePurposeSeed(), UUID.randomUUID())
 
@@ -243,7 +243,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       ).toJson.compactPrint
 
       request(
-        uri = s"$serviceURL/bulk/agreements/eserviceId/$eserviceId/consumerId/$consumerId/state",
+        uri = s"$serviceURL/bulk/agreements/eserviceId/$eServiceId/consumerId/$consumerId/state",
         method = HttpMethods.POST,
         data = Some(payload)
       )
@@ -270,7 +270,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
     "succeed for event AgreementAndEServiceStatesUpdated" in {
       val clientId1    = UUID.randomUUID()
       val consumerId   = UUID.randomUUID()
-      val eserviceId   = UUID.randomUUID()
+      val eServiceId   = UUID.randomUUID()
       val agreementId  = UUID.randomUUID()
       val descriptorId = UUID.randomUUID()
 
@@ -278,14 +278,14 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val newDescriptorId = UUID.randomUUID()
 
       val updatedAgreementState = ClientAgreementDetails(
-        eserviceId = eserviceId,
+        eserviceId = eServiceId,
         consumerId = consumerId,
         agreementId = newAgreementId,
         state = ClientComponentState.INACTIVE
       )
 
       val updatedEServiceState = ClientEServiceDetails(
-        eserviceId = eserviceId,
+        eserviceId = eServiceId,
         descriptorId = newDescriptorId,
         state = ClientComponentState.INACTIVE,
         audience = Seq("aud2"),
@@ -298,7 +298,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
         addPurposeState(
           clientId1,
           makePurposeSeed(
-            eserviceId = eserviceId,
+            eServiceId = eServiceId,
             descriptorId = descriptorId,
             agreementId = agreementId,
             consumerId = consumerId
@@ -309,7 +309,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
         addPurposeState(
           clientId1,
           makePurposeSeed(
-            eserviceId = eserviceId,
+            eServiceId = eServiceId,
             descriptorId = descriptorId,
             agreementId = agreementId,
             consumerId = consumerId
@@ -328,7 +328,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       ).toJson.compactPrint
 
       request(
-        uri = s"$serviceURL/bulk/agreements/eservices/eserviceId/$eserviceId/consumerId/$consumerId/state",
+        uri = s"$serviceURL/bulk/agreements/eservices/eserviceId/$eServiceId/consumerId/$consumerId/state",
         method = HttpMethods.POST,
         data = Some(payload)
       )
@@ -389,7 +389,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
   }
 
   def makePurposeSeed(
-    eserviceId: UUID = UUID.randomUUID(),
+    eServiceId: UUID = UUID.randomUUID(),
     descriptorId: UUID = UUID.randomUUID(),
     consumerId: UUID = UUID.randomUUID(),
     agreementId: UUID = UUID.randomUUID(),
@@ -398,14 +398,14 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
   ): PurposeSeed = PurposeSeed(
     ClientStatesChainSeed(
       eservice = ClientEServiceDetailsSeed(
-        eserviceId = eserviceId,
+        eserviceId = eServiceId,
         descriptorId = descriptorId,
         state = ClientComponentState.ACTIVE,
         audience = Seq("aud1"),
         voucherLifespan = 1000
       ),
       agreement = ClientAgreementDetailsSeed(
-        eserviceId = eserviceId,
+        eserviceId = eServiceId,
         consumerId = consumerId,
         agreementId = agreementId,
         state = ClientComponentState.ACTIVE

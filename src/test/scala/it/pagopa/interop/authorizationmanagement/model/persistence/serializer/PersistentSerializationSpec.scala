@@ -130,13 +130,13 @@ object PersistentSerializationSpec {
     )
 
   val persistentClientAgreementDetailsGen: Gen[(PersistentClientAgreementDetails, ClientAgreementDetailsV1)] = for {
-    eserviceId        <- Gen.uuid
+    eServiceId        <- Gen.uuid
     consumerId        <- Gen.uuid
     agreementId       <- Gen.uuid
     (pstate, stateV1) <- persistentClientComponentStateGen
   } yield (
-    PersistentClientAgreementDetails(eserviceId, consumerId, agreementId, pstate),
-    ClientAgreementDetailsV1(eserviceId.toString(), consumerId.toString(), agreementId.toString(), stateV1)
+    PersistentClientAgreementDetails(eServiceId, consumerId, agreementId, pstate),
+    ClientAgreementDetailsV1(eServiceId.toString(), consumerId.toString(), agreementId.toString(), stateV1)
   )
 
   val persistentClientPurposeDetailsGen: Gen[(PersistentClientPurposeDetails, ClientPurposeDetailsV1)] = for {
@@ -149,15 +149,15 @@ object PersistentSerializationSpec {
   )
 
   val persistentClientEServiceDetails: Gen[(PersistentClientEServiceDetails, ClientEServiceDetailsV1)] = for {
-    eserviceId                <- Gen.uuid
+    eServiceId                <- Gen.uuid
     descriptorId              <- Gen.uuid
     (pcompstate, compstatev1) <- persistentClientComponentStateGen
     audience                  <- Gen.containerOf[List, String](stringGen)
     voucherLifespan           <- Gen.chooseNum(0, 20000)
   } yield (
-    PersistentClientEServiceDetails(eserviceId, descriptorId, pcompstate, audience, voucherLifespan),
+    PersistentClientEServiceDetails(eServiceId, descriptorId, pcompstate, audience, voucherLifespan),
     ClientEServiceDetailsV1(
-      eserviceId = eserviceId.toString(),
+      eServiceId = eServiceId.toString(),
       descriptorId = descriptorId.toString(),
       state = compstatev1,
       audience = audience,
@@ -277,21 +277,21 @@ object PersistentSerializationSpec {
   } yield (ClientPurposeRemoved(clientId, purposeId), ClientPurposeRemovedV1(clientId, purposeId))
 
   val eserviceStateUpdatedGen: Gen[(EServiceStateUpdated, EServiceStateUpdatedV1)] = for {
-    eserviceId       <- stringGen
+    eServiceId       <- stringGen
     descriptorId     <- Gen.uuid
     (state, stateV1) <- persistentClientComponentStateGen
     audiences        <- Gen.listOf(stringGen)
     voucherLifespan  <- Gen.posNum[Int]
   } yield (
     EServiceStateUpdated(
-      eserviceId = eserviceId,
+      eServiceId = eServiceId,
       descriptorId = descriptorId,
       state = state,
       audience = audiences,
       voucherLifespan = voucherLifespan
     ),
     EServiceStateUpdatedV1(
-      eserviceId = eserviceId,
+      eServiceId = eServiceId,
       descriptorId = descriptorId.toString(),
       state = stateV1,
       audience = audiences,
@@ -300,14 +300,14 @@ object PersistentSerializationSpec {
   )
 
   val agreementStateUpdatedGen: Gen[(AgreementStateUpdated, AgreementStateUpdatedV1)] = for {
-    eserviceId       <- stringGen
+    eServiceId       <- stringGen
     consumerId       <- stringGen
     agreementId      <- Gen.uuid
     (state, stateV1) <- persistentClientComponentStateGen
   } yield (
-    AgreementStateUpdated(eserviceId = eserviceId, consumerId = consumerId, agreementId = agreementId, state = state),
+    AgreementStateUpdated(eServiceId = eServiceId, consumerId = consumerId, agreementId = agreementId, state = state),
     AgreementStateUpdatedV1(
-      eserviceId = eserviceId,
+      eServiceId = eServiceId,
       consumerId = consumerId,
       agreementId = agreementId.toString(),
       state = stateV1

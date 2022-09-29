@@ -137,7 +137,7 @@ package object v1 {
         descriptorId <- event.descriptorId.toUUID.toEither
         state        <- protobufToComponentState(event.state)
       } yield EServiceStateUpdated(
-        eserviceId = event.eserviceId,
+        eServiceId = event.eServiceId,
         descriptorId = descriptorId,
         state = state,
         audience = event.audience,
@@ -148,7 +148,7 @@ package object v1 {
     : PersistEventSerializer[EServiceStateUpdated, EServiceStateUpdatedV1] = event =>
     Right[Throwable, EServiceStateUpdatedV1](
       EServiceStateUpdatedV1.of(
-        eserviceId = event.eserviceId,
+        eServiceId = event.eServiceId,
         descriptorId = event.descriptorId.toString,
         state = componentStateToProtobuf(event.state),
         audience = event.audience,
@@ -163,7 +163,7 @@ package object v1 {
         agreementId <- event.agreementId.toUUID.toEither
         state       <- protobufToComponentState(event.state)
       } yield AgreementStateUpdated(
-        eserviceId = event.eserviceId,
+        eServiceId = event.eServiceId,
         consumerId = event.consumerId,
         agreementId = agreementId,
         state = state
@@ -174,7 +174,7 @@ package object v1 {
     Right[Throwable, AgreementStateUpdatedV1](
       AgreementStateUpdatedV1
         .of(
-          eserviceId = event.eserviceId,
+          eServiceId = event.eServiceId,
           consumerId = event.consumerId,
           agreementId = event.agreementId.toString,
           state = componentStateToProtobuf(event.state)
@@ -242,7 +242,7 @@ package object v1 {
 
   private def clientEServiceDetailsToProtobuf(details: PersistentClientEServiceDetails): ClientEServiceDetailsV1 =
     ClientEServiceDetailsV1.of(
-      eserviceId = details.eserviceId.toString,
+      eServiceId = details.eServiceId.toString,
       descriptorId = details.descriptorId.toString,
       state = componentStateToProtobuf(details.state),
       audience = details.audience,
@@ -251,7 +251,7 @@ package object v1 {
 
   private def clientAgreementDetailsToProtobuf(details: PersistentClientAgreementDetails): ClientAgreementDetailsV1 =
     ClientAgreementDetailsV1.of(
-      eserviceId = details.eserviceId.toString,
+      eServiceId = details.eServiceId.toString,
       consumerId = details.consumerId.toString,
       agreementId = details.agreementId.toString,
       state = componentStateToProtobuf(details.state)
@@ -309,11 +309,11 @@ package object v1 {
     details: ClientEServiceDetailsV1
   ): ErrorOr[PersistentClientEServiceDetails] =
     for {
-      eserviceId   <- details.eserviceId.toUUID.toEither
+      eServiceId   <- details.eServiceId.toUUID.toEither
       descriptorId <- details.descriptorId.toUUID.toEither
       state        <- protobufToComponentState(details.state)
     } yield PersistentClientEServiceDetails(
-      eserviceId = eserviceId,
+      eServiceId = eServiceId,
       descriptorId = descriptorId,
       state = state,
       audience = details.audience,
@@ -324,12 +324,12 @@ package object v1 {
     details: ClientAgreementDetailsV1
   ): ErrorOr[PersistentClientAgreementDetails] =
     for {
-      eserviceId  <- details.eserviceId.toUUID.toEither
+      eServiceId  <- details.eServiceId.toUUID.toEither
       consumerId  <- details.consumerId.toUUID.toEither
       agreementId <- details.agreementId.toUUID.toEither
       state       <- protobufToComponentState(details.state)
     } yield PersistentClientAgreementDetails(
-      eserviceId = eserviceId,
+      eServiceId = eServiceId,
       consumerId = consumerId,
       agreementId = agreementId,
       state = state

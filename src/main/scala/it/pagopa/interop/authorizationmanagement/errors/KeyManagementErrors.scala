@@ -77,13 +77,13 @@ object KeyManagementErrors {
   final case class ClientPurposeAdditionError(clientId: String, purposeId: String)
       extends ComponentError("0025", s"Error adding Purpose $purposeId to Client $clientId")
 
-  final case class ClientEServiceStateUpdateError(eserviceId: String)
-      extends ComponentError("0026", s"Error updating EService $eserviceId state for all clients")
+  final case class ClientEServiceStateUpdateError(eServiceId: String)
+      extends ComponentError("0026", s"Error updating EService $eServiceId state for all clients")
 
-  final case class ClientAgreementStateUpdateError(eserviceId: String, consumerId: String)
+  final case class ClientAgreementStateUpdateError(eServiceId: String, consumerId: String)
       extends ComponentError(
         "0027",
-        s"Error updating Agreement with EService $eserviceId and Consumer $consumerId state for all clients"
+        s"Error updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients"
       )
 
   final case class ClientPurposeStateUpdateError(purposeId: String)
@@ -97,10 +97,10 @@ object KeyManagementErrors {
   final case class ClientPurposeRemovalError(clientId: String, purposeId: String)
       extends ComponentError("0031", s"Error removing Purpose $purposeId from Client $clientId")
 
-  final case class ClientAgreementAndEServiceStatesUpdateError(eserviceId: String, consumerId: String)
+  final case class ClientAgreementAndEServiceStatesUpdateError(eServiceId: String, consumerId: String)
       extends ComponentError(
         "0032",
-        s"Error updating Agreement and EService with EService $eserviceId and Consumer $consumerId state for all clients"
+        s"Error updating Agreement and EService with EService $eServiceId and Consumer $consumerId state for all clients"
       )
 
 }

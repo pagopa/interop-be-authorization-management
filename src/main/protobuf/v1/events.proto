@@ -49,7 +49,7 @@ message ClientPurposeRemovedV1 {
 }
 
 message EServiceStateUpdatedV1 {
-  required string eserviceId = 1;
+  required string eServiceId = 1;
   required string descriptorId = 2;
   required ClientComponentStateV1 state = 3;
   repeated string audience = 4;
@@ -57,7 +57,7 @@ message EServiceStateUpdatedV1 {
 }
 
 message AgreementStateUpdatedV1 {
-  required string eserviceId = 1;
+  required string eServiceId = 1;
   required string consumerId = 2;
   required string agreementId = 3;
   required ClientComponentStateV1 state = 4;

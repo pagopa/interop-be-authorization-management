@@ -63,13 +63,13 @@ object ClientCqrsProjection {
       } yield Updates.set("data.purposes", BsonArray.fromIterable(updatedPurposes.map(_.toDocument.toBsonDocument())))
 
       ActionWithObservable(collection.updateOne(Filters.eq("data.id", cId), _), command)
-    case EServiceStateUpdated(eserviceId, descriptorId, state, audience, voucherLifespan) =>
+    case EServiceStateUpdated(eServiceId, descriptorId, state, audience, voucherLifespan) =>
       // Updates all purposes states of all clients matching criteria
       ActionWithBson(
         collection.updateMany(
           Filters.empty(),
           _,
-          UpdateOptions().arrayFilters(List(Filters.eq("elem.eService.eserviceId", eserviceId)).asJava)
+          UpdateOptions().arrayFilters(List(Filters.eq("elem.eService.eServiceId", eServiceId)).asJava)
         ),
         Updates.combine(
           Updates.set("data.purposes.$[elem].eService.state", state.toString),
@@ -78,7 +78,7 @@ object ClientCqrsProjection {
           Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan)
         )
       )
-    case AgreementStateUpdated(eserviceId, consumerId, agreementId, state)                =>
+    case AgreementStateUpdated(eServiceId, consumerId, agreementId, state)                =>
       // Updates all purposes states of all clients matching criteria
       ActionWithBson(
         collection.updateMany(
@@ -87,7 +87,7 @@ object ClientCqrsProjection {
           UpdateOptions().arrayFilters(
             List(
               Filters.and(
-                Filters.eq("elem.agreement.eserviceId", eserviceId),
+                Filters.eq("elem.agreement.eServiceId", eServiceId),
                 Filters.eq("elem.agreement.consumerId", consumerId)
               )
             ).asJava
@@ -99,12 +99,12 @@ object ClientCqrsProjection {
         )
       )
     case AgreementAndEServiceStatesUpdated(
-          eserviceId,
+          eServiceId,
           descriptorId,
           consumerId,
           agreementId,
           agreementState,
-          eserviceState,
+          eServiceState,
           audience,
           voucherLifespan
         ) =>
@@ -115,7 +115,7 @@ object ClientCqrsProjection {
           UpdateOptions().arrayFilters(
             List(
               Filters.and(
-                Filters.eq("elem.agreement.eserviceId", eserviceId),
+                Filters.eq("elem.agreement.eServiceId", eServiceId),
                 Filters.eq("elem.agreement.consumerId", consumerId)
               )
             ).asJava
@@ -127,7 +127,7 @@ object ClientCqrsProjection {
           Updates.set("data.purposes.$[elem].eService.descriptorId", descriptorId.toString),
           Updates.set("data.purposes.$[elem].eService.audience", audience),
           Updates.set("data.purposes.$[elem].eService.voucherLifespan", voucherLifespan),
-          Updates.set("data.purposes.$[elem].eService.state", eserviceState.toString)
+          Updates.set("data.purposes.$[elem].eService.state", eServiceState.toString)
         )
       )
     case PurposeStateUpdated(purposeId, versionId, state)                                 =>

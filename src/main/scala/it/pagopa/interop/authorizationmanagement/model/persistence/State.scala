@@ -68,7 +68,7 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
   def updateClientsByEService(event: EServiceStateUpdated): State =
     updateClients(
-      containsEService(event.eserviceId),
+      containsEService(event.eServiceId),
       states =>
         states.copy(eService =
           states.eService
@@ -83,17 +83,17 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
 
   def updateClientsByAgreement(event: AgreementStateUpdated): State =
     updateClients(
-      containsAgreement(event.eserviceId, event.consumerId),
+      containsAgreement(event.eServiceId, event.consumerId),
       states => states.copy(agreement = states.agreement.copy(agreementId = event.agreementId, state = event.state))
     )
 
   def updateClientsByAgreementAndEService(event: AgreementAndEServiceStatesUpdated): State = {
     updateClients(
-      containsAgreement(event.eserviceId, event.consumerId),
+      containsAgreement(event.eServiceId, event.consumerId),
       states =>
         states.copy(
           agreement = states.agreement.copy(agreementId = event.agreementId, state = event.agreementState),
-          eService = states.eService.copy(descriptorId = event.descriptorId, state = event.eserviceState)
+          eService = states.eService.copy(descriptorId = event.descriptorId, state = event.eServiceState)
         )
     )
   }
@@ -123,11 +123,11 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     copy(clients = clients ++ updatedClients)
   }
 
-  def containsEService(eserviceId: String)(statesChain: PersistentClientStatesChain): Boolean =
-    statesChain.eService.eserviceId.toString == eserviceId
+  def containsEService(eServiceId: String)(statesChain: PersistentClientStatesChain): Boolean =
+    statesChain.eService.eServiceId.toString == eServiceId
 
-  def containsAgreement(eserviceId: String, consumerId: String)(statesChain: PersistentClientStatesChain): Boolean =
-    statesChain.agreement.eserviceId.toString == eserviceId && statesChain.agreement.consumerId.toString == consumerId
+  def containsAgreement(eServiceId: String, consumerId: String)(statesChain: PersistentClientStatesChain): Boolean =
+    statesChain.agreement.eServiceId.toString == eServiceId && statesChain.agreement.consumerId.toString == consumerId
 
   def containsPurpose(purposeId: String)(statesChain: PersistentClientStatesChain): Boolean =
     statesChain.purpose.purposeId.toString == purposeId
