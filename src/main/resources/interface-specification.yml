@@ -657,8 +657,8 @@ paths:
     post:
       tags:
         - purpose
-      summary: Updates the Agreement state for all clients that contain it
-      description: 'Updates the Agreement state for all clients that contain it'
+      summary: Updates the Agreement and EServices states for all clients that contain it
+      description: 'Updates the Agreement and EServices states for all clients that contain it'
       operationId: updateAgreementAndEServiceStates
       parameters:
         - name: eserviceId
