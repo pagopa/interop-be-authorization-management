@@ -49,7 +49,7 @@ object ClientAdapters {
 
     def fromSeed(uuidSupplier: UUIDSupplier)(seed: ClientStatesChainSeed): PersistentClientStatesChain =
       client.PersistentClientStatesChain(
-        id = uuidSupplier.get,
+        id = uuidSupplier.get(),
         eService = PersistentClientEServiceDetails.fromSeed(seed.eservice),
         agreement = PersistentClientAgreementDetails.fromSeed(seed.agreement),
         purpose = PersistentClientPurposeDetails.fromSeed(seed.purpose)
