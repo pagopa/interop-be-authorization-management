@@ -2,7 +2,7 @@ object Versions {
   lazy val akkaHttpVersion            = "10.2.6"
   lazy val akkaManagementVersion      = "1.1.1"
   lazy val akkaVersion                = "2.6.17"
-  lazy val bouncycastleVersion        = "1.72"
+  lazy val bouncycastleVersion        = "1.70"
   lazy val catsVersion                = "2.8.0"
   lazy val httpJson4sVersion          = "1.38.2"
   lazy val jacksonVersion             = "2.13.0"
@@ -18,7 +18,7 @@ object Versions {
   lazy val scalaMockVersion           = "5.2.0"
   lazy val scalatestVersion           = "3.2.14"
   lazy val slickProjectionVersion     = "1.2.2"
-  lazy val slickVersion               = "3.4.1"
+  lazy val slickVersion               = "3.3.3"
   lazy val sprayVersion               = "1.3.6"
   lazy val testcontainersScalaVersion = "0.40.10"
 }
