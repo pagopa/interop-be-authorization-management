@@ -18,7 +18,7 @@ import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClientC
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.commons.jwt.ADMIN_ROLE
+import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, M2M_ROLE}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.TypeConversions._
@@ -149,7 +149,7 @@ final case class PurposeApiServiceImpl(
     implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
     logger.info(s"Updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients")
 
     val result: Future[Seq[Unit]] = updateStateOnClients(

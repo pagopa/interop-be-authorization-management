@@ -131,7 +131,7 @@
     {
       "route": "updateAgreementState",
       "roles": [
-        "admin"
+        "admin","m2m"
       ],
       "verb": "POST"
     },
