@@ -38,6 +38,9 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
   serdeCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
   serdeCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
+  serdeCheck[AgreementAndEServiceStatesUpdated, AgreementAndEServiceStatesUpdatedV1](
+    agreementAndEServiceStatesUpdatedGen
+  )
 
   deserCheck[State, StateV1](stateGen)
   deserCheck[KeysAdded, KeysAddedV1](keysAddedGen)
@@ -51,6 +54,9 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
   deserCheck[AgreementStateUpdated, AgreementStateUpdatedV1](agreementStateUpdatedGen)
   deserCheck[PurposeStateUpdated, PurposeStateUpdatedV1](purposeStateUpdatedGen)
+  deserCheck[AgreementAndEServiceStatesUpdated, AgreementAndEServiceStatesUpdatedV1](
+    agreementAndEServiceStatesUpdatedGen
+  )
 
   // TODO move me in commons
   def serdeCheck[A: TypeTag, B](gen: Gen[(A, B)], adapter: B => B = identity[B](_))(implicit
@@ -321,6 +327,39 @@ object PersistentSerializationSpec {
   } yield (
     PurposeStateUpdated(purposeId = purposeId, versionId = versionId, state = state),
     PurposeStateUpdatedV1(purposeId = purposeId, versionId = versionId.toString, state = stateV1)
+  )
+
+  val agreementAndEServiceStatesUpdatedGen
+    : Gen[(AgreementAndEServiceStatesUpdated, AgreementAndEServiceStatesUpdatedV1)] = for {
+    eServiceId                         <- stringGen
+    descriptorId                       <- Gen.uuid
+    consumerId                         <- stringGen
+    agreementId                        <- Gen.uuid
+    (agreementState, agreementStateV1) <- persistentClientComponentStateGen
+    (eServiceState, eServiceStateV1)   <- persistentClientComponentStateGen
+    audience                           <- Gen.containerOf[List, String](stringGen)
+    voucherLifespan                    <- Gen.chooseNum(0, 20000)
+  } yield (
+    AgreementAndEServiceStatesUpdated(
+      eServiceId = eServiceId,
+      descriptorId = descriptorId,
+      consumerId = consumerId,
+      agreementId = agreementId,
+      agreementState = agreementState,
+      eServiceState = eServiceState,
+      audience = audience,
+      voucherLifespan = voucherLifespan
+    ),
+    AgreementAndEServiceStatesUpdatedV1(
+      eServiceId = eServiceId,
+      descriptorId = descriptorId.toString,
+      consumerId = consumerId,
+      agreementId = agreementId.toString,
+      agreementState = agreementStateV1,
+      eServiceState = eServiceStateV1,
+      audience = audience,
+      voucherLifespan = voucherLifespan
+    )
   )
 
   implicit class PimpedPersistentClientV1(val client: PersistentClientV1) extends AnyVal {
