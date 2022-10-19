@@ -200,6 +200,41 @@ package object v1 {
         )
     )
 
+  implicit def agreementAndEServiceStatesUpdatedV1PersistEventDeserializer
+    : PersistEventDeserializer[AgreementAndEServiceStatesUpdatedV1, AgreementAndEServiceStatesUpdated] =
+    event =>
+      for {
+        descriptorId   <- event.descriptorId.toUUID.toEither
+        agreementId    <- event.agreementId.toUUID.toEither
+        agreementState <- protobufToComponentState(event.agreementState)
+        eServiceState  <- protobufToComponentState(event.eServiceState)
+      } yield AgreementAndEServiceStatesUpdated(
+        eServiceId = event.eServiceId,
+        descriptorId = descriptorId,
+        consumerId = event.consumerId,
+        agreementId = agreementId,
+        agreementState = agreementState,
+        eServiceState = eServiceState,
+        audience = event.audience,
+        voucherLifespan = event.voucherLifespan
+      )
+
+  implicit def agreementAndEServiceStatesUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[AgreementAndEServiceStatesUpdated, AgreementAndEServiceStatesUpdatedV1] = event =>
+    Right[Throwable, AgreementAndEServiceStatesUpdatedV1](
+      AgreementAndEServiceStatesUpdatedV1
+        .of(
+          eServiceId = event.eServiceId,
+          descriptorId = event.descriptorId.toString,
+          consumerId = event.consumerId,
+          agreementId = event.agreementId.toString,
+          agreementState = componentStateToProtobuf(event.agreementState),
+          eServiceState = componentStateToProtobuf(event.eServiceState),
+          audience = event.audience,
+          voucherLifespan = event.voucherLifespan
+        )
+    )
+
   private def keyToEntry(keys: Keys): ErrorOr[Seq[PersistentKeyEntryV1]] =
     keys.toList.traverse { case (kid, pkey) => keyToProtobuf(pkey).map(PersistentKeyEntryV1(kid, _)) }
 
