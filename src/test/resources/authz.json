@@ -117,21 +117,25 @@
     {
       "route": "getClientByPurposeId",
       "roles": [
-        "admin", "security", "m2m"
+        "admin",
+        "security",
+        "m2m"
       ],
       "verb": "GET"
     },
     {
       "route": "updateEServiceState",
       "roles": [
-        "admin"
+        "admin",
+        "api"
       ],
       "verb": "POST"
     },
     {
       "route": "updateAgreementState",
       "roles": [
-        "admin","m2m"
+        "admin",
+        "m2m"
       ],
       "verb": "POST"
     },
