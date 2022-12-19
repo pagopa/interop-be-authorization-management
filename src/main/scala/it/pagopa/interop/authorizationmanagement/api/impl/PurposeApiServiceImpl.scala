@@ -4,28 +4,25 @@ import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, onComplete}
+import akka.http.scaladsl.server.Directives.onComplete
 import akka.http.scaladsl.server.Route
 import akka.pattern.StatusReply
 import cats.implicits._
-import com.typesafe.scalalogging.Logger
+import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.authorizationmanagement.api.PurposeApiService
+import it.pagopa.interop.authorizationmanagement.api.impl.PurposeApiResponseHandlers._
 import it.pagopa.interop.authorizationmanagement.common.system._
-import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClientComponentState, PersistentClientPurpose}
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, API_ROLE, M2M_ROLE}
+import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, API_ROLE, M2M_ROLE, authorize}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.interop.commons.utils.AkkaUtils.getShard
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 final case class PurposeApiServiceImpl(
   system: ActorSystem[_],
@@ -36,92 +33,45 @@ final case class PurposeApiServiceImpl(
     extends PurposeApiService
     with Validation {
 
-  private val logger = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
+  private implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-  private val settings: ClusterShardingSettings = shardingSettings(entity, system)
+  private implicit val settings: ClusterShardingSettings = shardingSettings(entity, system)
+  private implicit val implicitSharding: ClusterSharding = sharding
 
   override def addClientPurpose(clientId: String, seed: PurposeSeed)(implicit
     toEntityMarshallerPurpose: ToEntityMarshaller[Purpose],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    logger.info("Adding Purpose for Client {}", clientId)
+    val operationLabel: String = s"Adding Purpose for Client $clientId"
+    logger.info(operationLabel)
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val persistentClientPurpose = PersistentClientPurpose.fromSeed(uuidSupplier)(seed)
+    val result: Future[Purpose] =
+      commander(clientId).askWithStatus(ref => AddClientPurpose(clientId, persistentClientPurpose, ref)).map(_.toApi)
 
-    val persistentClientPurpose                              = PersistentClientPurpose.fromSeed(uuidSupplier)(seed)
-    val result: Future[StatusReply[PersistentClientPurpose]] =
-      commander.ask(ref => AddClientPurpose(clientId, persistentClientPurpose, ref))
-
-    onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        addClientPurpose200(statusReply.getValue.toApi)
-      case Success(statusReply)                          =>
-        statusReply.getError match {
-          case err: ClientNotFoundError =>
-            logger.info(s"Client $clientId not found on Purpose add", err)
-            val problem = problemOf(StatusCodes.NotFound, err)
-            addClientPurpose404(problem)
-          case err                      =>
-            logger.error(s"Error adding Purpose for Client $clientId", err)
-            val problem =
-              problemOf(
-                StatusCodes.InternalServerError,
-                ClientPurposeAdditionError(clientId, seed.states.purpose.purposeId.toString)
-              )
-            complete(problem.status, problem)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error adding Purpose for Client $clientId", ex)
-        val problem =
-          problemOf(
-            StatusCodes.InternalServerError,
-            ClientPurposeAdditionError(clientId, seed.states.purpose.purposeId.toString)
-          )
-        complete(problem.status, problem)
-    }
+    onComplete(result) { addClientPurposeResponse[Purpose](operationLabel)(addClientPurpose200) }
   }
 
   override def removeClientPurpose(clientId: String, purposeId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    logger.info("Removing Purpose {} from Client {}", purposeId, clientId)
+    val operationLabel: String = s"Removing Purpose $purposeId from Client $clientId"
+    logger.info(operationLabel)
 
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val result: Future[Unit] = commander(clientId).askWithStatus(ref => RemoveClientPurpose(clientId, purposeId, ref))
 
-    val result: Future[StatusReply[Unit]] = commander.ask(ref => RemoveClientPurpose(clientId, purposeId, ref))
-
-    onComplete(result) {
-      case Success(statusReply) if statusReply.isSuccess =>
-        removeClientPurpose204
-      case Success(statusReply)                          =>
-        statusReply.getError match {
-          case err: ClientNotFoundError =>
-            logger.info(s"Client $clientId not found on Purpose $purposeId remove", err)
-            val problem = problemOf(StatusCodes.NotFound, err)
-            addClientPurpose404(problem)
-          case err                      =>
-            logger.error(s"Error removing Purpose $purposeId from Client $clientId", err)
-            val problem =
-              problemOf(StatusCodes.InternalServerError, ClientPurposeRemovalError(clientId, purposeId))
-            complete(problem.status, problem)
-        }
-      case Failure(ex)                                   =>
-        logger.error(s"Error removing Purpose $purposeId from Client $clientId", ex)
-        val problem =
-          problemOf(StatusCodes.InternalServerError, ClientPurposeAdditionError(clientId, purposeId))
-        complete(problem.status, problem)
-    }
+    onComplete(result) { removeClientPurposeResponse[Unit](operationLabel)(_ => removeClientPurpose204) }
   }
 
   override def updateEServiceState(eServiceId: String, payload: ClientEServiceDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, API_ROLE) {
-    logger.info("Updating EService {} state for all clients", eServiceId)
+    val operationLabel: String = s"Updating EService $eServiceId state for all clients"
+    logger.info(operationLabel)
 
     val result: Future[Seq[Unit]] = updateStateOnClients(
       UpdateEServiceState(
@@ -134,14 +84,7 @@ final case class PurposeApiServiceImpl(
       )
     )
 
-    onComplete(result) {
-      case Success(_)  =>
-        updateEServiceState204
-      case Failure(ex) =>
-        logger.error(s"Error updating EService $eServiceId state for all clients", ex)
-        val problem = problemOf(StatusCodes.InternalServerError, ClientEServiceStateUpdateError(eServiceId))
-        complete(problem.status, problem)
-    }
+    onComplete(result) { updateEServiceStateResponse[Seq[Unit]](operationLabel)(_ => updateEServiceState204) }
 
   }
 
@@ -150,7 +93,9 @@ final case class PurposeApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, M2M_ROLE) {
-    logger.info(s"Updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients")
+    val operationLabel: String =
+      s"Updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients"
+    logger.info(operationLabel)
 
     val result: Future[Seq[Unit]] = updateStateOnClients(
       UpdateAgreementState(
@@ -162,18 +107,7 @@ final case class PurposeApiServiceImpl(
       )
     )
 
-    onComplete(result) {
-      case Success(_)  =>
-        updateAgreementState204
-      case Failure(ex) =>
-        logger.error(
-          s"Error updating Agreement with EService $eServiceId and Consumer $consumerId state for all clients",
-          ex
-        )
-        val problem =
-          problemOf(StatusCodes.InternalServerError, ClientAgreementStateUpdateError(eServiceId, consumerId))
-        complete(problem.status, problem)
-    }
+    onComplete(result) { updateAgreementStateResponse[Seq[Unit]](operationLabel)(_ => updateAgreementState204) }
 
   }
 
@@ -183,9 +117,10 @@ final case class PurposeApiServiceImpl(
     payload: ClientAgreementAndEServiceDetailsUpdate
   )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
     authorize(ADMIN_ROLE) {
-      logger.info(
+      val operationLabel: String =
         s"Updating Agreement and EService with EService $eServiceId and Consumer $consumerId state for all clients"
-      )
+      logger.info(operationLabel)
+
       val result: Future[Seq[Unit]] = updateStateOnClients(
         UpdateAgreementAndEServiceState(
           eServiceId = eServiceId,
@@ -201,41 +136,24 @@ final case class PurposeApiServiceImpl(
       )
 
       onComplete(result) {
-        case Success(_)  =>
-          updateAgreementAndEServiceStates204
-        case Failure(ex) =>
-          logger.error(
-            s"Error updating Agreement and EService with EService $eServiceId and Consumer $consumerId state for all clients",
-            ex
-          )
-          val problem =
-            problemOf(
-              StatusCodes.InternalServerError,
-              ClientAgreementAndEServiceStatesUpdateError(eServiceId = eServiceId, consumerId = consumerId)
-            )
-          complete(problem.status, problem)
+        updateAgreementAndEServiceStatesResponse[Seq[Unit]](operationLabel)(_ => updateAgreementAndEServiceStates204)
       }
+
     }
 
   override def updatePurposeState(purposeId: String, payload: ClientPurposeDetailsUpdate)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE) {
-    logger.info("Updating Purpose {} state for all clients", purposeId)
+    val operationLabel: String = s"Updating Purpose $purposeId state for all clients"
+    logger.info(operationLabel)
 
     val result: Future[Seq[Unit]] =
       updateStateOnClients(
         UpdatePurposeState(purposeId, payload.versionId, PersistentClientComponentState.fromApi(payload.state), _)
       )
 
-    onComplete(result) {
-      case Success(_)  =>
-        updatePurposeState204
-      case Failure(ex) =>
-        logger.error(s"Error updating Purpose $purposeId state for all clients", ex)
-        val problem = problemOf(StatusCodes.InternalServerError, ClientPurposeStateUpdateError(purposeId))
-        complete(problem.status, problem)
-    }
+    onComplete(result) { updatePurposeStateResponse[Seq[Unit]](operationLabel)(_ => updatePurposeState204) }
 
   }
 

@@ -9,12 +9,15 @@ import it.pagopa.interop.authorizationmanagement.server.impl.Main.behaviorFactor
 import it.pagopa.interop.authorizationmanagement.util.{AuthorizedRoutes, ClusteredScalatestRouteTest}
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.OffsetDateTime
+
 class KeyApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestRouteTest {
 
   override val testPersistentEntity: Entity[Command, ShardingEnvelope[Command]] =
     Entity(KeyPersistentBehavior.TypeKey)(behaviorFactory)
 
-  val service: KeyApiServiceImpl = KeyApiServiceImpl(testTypedSystem, testAkkaSharding, testPersistentEntity)
+  val service: KeyApiServiceImpl =
+    KeyApiServiceImpl(testTypedSystem, testAkkaSharding, testPersistentEntity, () => OffsetDateTime.now())
 
   "Key api operation authorization spec" should {
 

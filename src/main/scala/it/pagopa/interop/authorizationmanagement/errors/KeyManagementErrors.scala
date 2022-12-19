@@ -3,6 +3,8 @@ package it.pagopa.interop.authorizationmanagement.errors
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.{ClientId, RelationshipId}
 import it.pagopa.interop.commons.utils.errors.ComponentError
 
+import java.util.UUID
+
 object KeyManagementErrors {
   final case class ClientAlreadyActiveError(clientId: String)
       extends ComponentError("0001", s"Client with id $clientId is already active")
@@ -30,8 +32,8 @@ object KeyManagementErrors {
         s"Party Relationship with id $relationshipId not found in Client with id $clientId"
       )
 
-  final case class CreateKeysBadRequest(clientId: String)
-      extends ComponentError("0007", s"Error while creating keys for client $clientId")
+  final case class CreateKeysBadRequest(clientId: String, reasons: String)
+      extends ComponentError("0007", s"Error while creating keys for client $clientId. Reason: $reasons")
   final case class CreateKeysInvalid(clientId: String)
       extends ComponentError("0008", s"Error while creating keys for client $clientId - invalid")
 
@@ -45,7 +47,8 @@ object KeyManagementErrors {
   final case class EncodedClientKeyNotFound(clientId: String, keyId: String)
       extends ComponentError("0012", s"Error while getting encoded key $keyId for client $clientId - not found")
 
-  final case object ClientAlreadyExisting extends ComponentError("0013", "Client already existing")
+  final case class ClientAlreadyExisting(clientId: UUID)
+      extends ComponentError("0013", s"Client $clientId already exists")
   final case class CreateClientError(consumerId: String)
       extends ComponentError("0014", s"Error creating client for Consumer $consumerId")
   final case class GetClientError(clientId: String)

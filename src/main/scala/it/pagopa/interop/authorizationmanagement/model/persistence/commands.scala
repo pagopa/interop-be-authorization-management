@@ -11,25 +11,22 @@ import it.pagopa.interop.authorizationmanagement.model.client.{
 }
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Kid
-import it.pagopa.interop.authorizationmanagement.model.{ClientKey, EncodedClientKey, KeysResponse}
 
 import java.util.UUID
 
 sealed trait Command
 
-final case class AddKeys(clientId: String, keys: Seq[ValidKey], replyTo: ActorRef[StatusReply[KeysResponse]])
+final case class AddKeys(clientId: String, keys: Seq[PersistentKey], replyTo: ActorRef[StatusReply[Seq[PersistentKey]]])
     extends Command
-final case class GetKeys(clientId: String, replyTo: ActorRef[StatusReply[KeysResponse]])            extends Command
-final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[ClientKey]]) extends Command
+final case class GetKeys(clientId: String, replyTo: ActorRef[StatusReply[Seq[PersistentKey]]])          extends Command
+final case class GetKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[PersistentKey]]) extends Command
 final case class GetKeyWithClient(
   clientId: String,
   keyId: String,
   replyTo: ActorRef[StatusReply[(PersistentClient, PersistentKey)]]
 ) extends Command
-final case class GetEncodedKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[EncodedClientKey]])
-    extends Command
-final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])   extends Command
-final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])           extends Command
+final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])       extends Command
+final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])               extends Command
 
 final case class AddClient(client: PersistentClient, replyTo: ActorRef[StatusReply[PersistentClient]]) extends Command
 final case class GetClient(clientId: String, replyTo: ActorRef[StatusReply[PersistentClient]])         extends Command

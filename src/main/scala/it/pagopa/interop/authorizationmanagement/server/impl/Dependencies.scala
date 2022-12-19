@@ -24,8 +24,7 @@ import it.pagopa.interop.authorizationmanagement.api.impl.{
   PurposeApiServiceImpl,
   TokenGenerationApiMarshallerImpl,
   TokenGenerationApiServiceImpl,
-  entityMarshallerProblem,
-  problemOf
+  serviceCode
 }
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration.{
@@ -40,6 +39,7 @@ import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, S
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.commons.utils.errors.{Problem => CommonProblem}
 import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -67,8 +67,8 @@ trait Dependencies {
 
   val validationExceptionToRoute: ValidationReport => Route = report => {
     val error =
-      problemOf(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report))
-    complete(error.status, error)(entityMarshallerProblem)
+      CommonProblem(StatusCodes.BadRequest, OpenapiUtils.errorFromRequestValidationReport(report), serviceCode)
+    complete(error.status, error)
   }
 
   def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
@@ -88,13 +88,19 @@ trait Dependencies {
     )
   }
 
-  def keyApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit actorSystem: ActorSystem[_]) = new KeyApi(
-    KeyApiServiceImpl(actorSystem, sharding, keyPersistentEntity),
+  def keyApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit
+    ec: ExecutionContext,
+    actorSystem: ActorSystem[_]
+  ) = new KeyApi(
+    KeyApiServiceImpl(actorSystem, sharding, keyPersistentEntity, dateTimeSupplier),
     keyApiMarshaller,
     jwtReader.OAuth2JWTValidatorAsContexts
   )
 
-  def clientApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit actorSystem: ActorSystem[_]) = new ClientApi(
+  def clientApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit
+    ec: ExecutionContext,
+    actorSystem: ActorSystem[_]
+  ) = new ClientApi(
     ClientApiServiceImpl(actorSystem, sharding, keyPersistentEntity, uuidSupplier),
     ClientApiMarshallerImpl,
     jwtReader.OAuth2JWTValidatorAsContexts
@@ -109,7 +115,7 @@ trait Dependencies {
     jwtReader.OAuth2JWTValidatorAsContexts
   )
 
-  def tokenGenerationApi(sharding: ClusterSharding)(implicit actorSystem: ActorSystem[_]) =
+  def tokenGenerationApi(sharding: ClusterSharding)(implicit ec: ExecutionContext, actorSystem: ActorSystem[_]) =
     new TokenGenerationApi(
       TokenGenerationApiServiceImpl(actorSystem, sharding, keyPersistentEntity),
       TokenGenerationApiMarshallerImpl,
