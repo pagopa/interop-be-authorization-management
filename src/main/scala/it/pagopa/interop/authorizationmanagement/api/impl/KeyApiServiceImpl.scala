@@ -56,9 +56,7 @@ final case class KeyApiServiceImpl(
 
     val result: Future[KeysResponse] = for {
       validKeys      <- validatedPayload
-        .andThen(k =>
-          validateWithCurrentKeys(k, keysIdentifiers) // TODO Not sure this validateWithCurrentKeys should be done
-        )
+        .andThen(k => validateWithCurrentKeys(k, keysIdentifiers))
         .leftMap(reasons => CreateKeysBadRequest(clientId, reasons.mkString_("[", ",", "]")))
         .toEither
         .toFuture
