@@ -5,74 +5,69 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import akka.cluster.sharding.typed.{ClusterShardingSettings, ShardingEnvelope}
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.onSuccess
+import akka.http.scaladsl.server.Directives.onComplete
 import akka.http.scaladsl.server.Route
-import akka.pattern.StatusReply
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import com.typesafe.scalalogging.Logger
+import cats.syntax.all._
+import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.authorizationmanagement.api.KeyApiService
+import it.pagopa.interop.authorizationmanagement.api.impl.KeyApiResponseHandlers._
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
+import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
+import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, INTERNAL_ROLE, M2M_ROLE, SECURITY_ROLE}
+import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.interop.commons.utils.AkkaUtils.getShard
+import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 final case class KeyApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
-  entity: Entity[Command, ShardingEnvelope[Command]]
-) extends KeyApiService
+  entity: Entity[Command, ShardingEnvelope[Command]],
+  dateTimeSupplier: OffsetDateTimeSupplier
+)(implicit ec: ExecutionContext)
+    extends KeyApiService
     with Validation {
 
-  private val logger = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
+  private implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-  private val settings: ClusterShardingSettings = shardingSettings(entity, system)
+  private implicit val settings: ClusterShardingSettings = shardingSettings(entity, system)
+  private implicit val implicitSharding: ClusterSharding = sharding
 
-  /** Code: 201, Message: Keys created
-    * Code: 400, Message: Missing Required Information
-    * Code: 404, Message: Client id not found, DataType: Problem
-    */
   override def createKeys(clientId: String, key: Seq[KeySeed])(implicit
     toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE) {
-    // TODO consider a preauthorize for user rights validations...
-    logger.info("Creating keys for client {}", clientId)
+    val operationLabel: String = s"Creating keys for client $clientId"
+    logger.info(operationLabel)
+
     val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
 
-    validatedPayload.andThen(k => validateWithCurrentKeys(k, keysIdentifiers)) match {
-      case Valid(validKeys) =>
-        val commander: EntityRef[Command]             =
-          sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
-        val result: Future[StatusReply[KeysResponse]] =
-          commander.ask(ref => AddKeys(clientId, validKeys, ref))
-        onSuccess(result) {
-          case statusReply if statusReply.isSuccess => createKeys201(statusReply.getValue)
-          case statusReply                          =>
-            logger.error(s"Error while creating keys for client $clientId", statusReply.getError)
-            createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysBadRequest(clientId: String)))
-        }
+    val result: Future[KeysResponse] = for {
+      validKeys      <- validatedPayload
+        .andThen(k => validateWithCurrentKeys(k, keysIdentifiers))
+        .leftMap(reasons => CreateKeysBadRequest(clientId, reasons.mkString_("[", ",", "]")))
+        .toEither
+        .toFuture
+      persistentKeys <- validKeys.traverse(PersistentKey.toPersistentKey(dateTimeSupplier)).toFuture
+      addedKeys      <- commander(clientId).askWithStatus(ref => AddKeys(clientId, persistentKeys, ref))
+      apiKeys        <- addedKeys.traverse(_.toApi).toFuture
+    } yield KeysResponse(apiKeys)
 
-      case Invalid(errors) =>
-        val errorsStr = errors.toList.mkString(", ")
-        logger.error(s"Error while creating keys for client $clientId - $errorsStr")
-        createKeys400(problemOf(StatusCodes.BadRequest, CreateKeysInvalid(clientId)))
-    }
+    onComplete(result) { createKeysResponse[KeysResponse](operationLabel)(createKeys201) }
   }
 
-  /** Code: 200, Message: List of keyIdentifiers, DataType: Seq[Pet]
-    */
   private def keysIdentifiers: LazyList[Kid] = {
     val sliceSize                           = 1000
     val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
@@ -96,90 +91,61 @@ final case class KeyApiServiceImpl(
     readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
-  /** Code: 200, Message: returns the corresponding key, DataType: Key
-    * Code: 404, Message: Key not found, DataType: Problem
-    */
   override def getClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
-    logger.info("Getting key {} for client {}", keyId, clientId)
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val operationLabel: String = s"Getting key $keyId for client $clientId"
+    logger.info(operationLabel)
 
-    val result: Future[StatusReply[ClientKey]] = commander.ask(ref => GetKey(clientId, keyId, ref))
+    val result: Future[ClientKey] = for {
+      persistentKey <- commander(clientId).askWithStatus(ref => GetKey(clientId, keyId, ref))
+      apiKey        <- persistentKey.toApi.toFuture
+    } yield apiKey
 
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => getClientKeyById200(statusReply.getValue)
-      case statusReply                          =>
-        logger.info("Error while getting key {} for client {}", keyId, clientId, statusReply.getError)
-        getClientKeyById404(problemOf(StatusCodes.NotFound, ClientKeyNotFound(clientId, keyId)))
-    }
+    onComplete(result) { getClientKeyByIdResponse[ClientKey](operationLabel)(getClientKeyById200) }
   }
 
-  /** Code: 200, Message: returns the corresponding array of keys, DataType: KeysCreatedResponse
-    * Code: 404, Message: Client id not found, DataType: Problem
-    */
   override def getClientKeys(clientId: String)(implicit
     toEntityMarshallerKeysCreatedResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
-    logger.info("Getting keys for client {}", clientId)
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val operationLabel: String = s"Getting keys for client $clientId"
+    logger.info(operationLabel)
 
-    val result: Future[StatusReply[KeysResponse]] = commander.ask(ref => GetKeys(clientId, ref))
+    val result: Future[KeysResponse] = for {
+      persistentKeys <- commander(clientId).askWithStatus(ref => GetKeys(clientId, ref))
+      apiKeys        <- persistentKeys.traverse(_.toApi.toFuture)
+    } yield KeysResponse(apiKeys)
 
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => getClientKeys200(statusReply.getValue)
-      case statusReply                          =>
-        logger.info("Error while getting keys for client {}", clientId, statusReply.getError)
-        getClientKeys404(problemOf(StatusCodes.NotFound, ClientKeysNotFound(clientId)))
-    }
+    onComplete(result) { getClientKeysResponse[KeysResponse](operationLabel)(getClientKeys200) }
   }
 
-  /** Code: 204, Message: the corresponding key has been deleted.
-    * Code: 404, Message: Key not found, DataType: Problem
-    */
   override def deleteClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE) {
-    logger.info("Deleting key {} belonging to {}", keyId, clientId)
-    val commander: EntityRef[Command]     =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
-    val result: Future[StatusReply[Done]] = commander.ask(ref => DeleteKey(clientId, keyId, ref))
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => deleteClientKeyById204
-      case statusReply                          =>
-        logger.info("Error while deleting key {} belonging to {}", keyId, clientId, statusReply.getError)
-        deleteClientKeyById404(problemOf(StatusCodes.BadRequest, DeleteClientKeyNotFound(clientId, keyId)))
-    }
+    val operationLabel: String = s"Deleting key $keyId of client $clientId"
+    logger.info(operationLabel)
+
+    val result: Future[Done] = commander(clientId).askWithStatus(ref => DeleteKey(clientId, keyId, ref))
+
+    onComplete(result) { deleteClientKeyByIdResponse[Done](operationLabel)(_ => deleteClientKeyById204) }
   }
 
-  /** Code: 200, Message: returns the corresponding base 64 encoded key, DataType: EncodedClientKey
-    * Code: 401, Message: Unauthorized, DataType: Problem
-    * Code: 404, Message: Key not found, DataType: Problem
-    * Code: 500, Message: Internal Server Error, DataType: Problem
-    */
   override def getEncodedClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerEncodedClientKey: ToEntityMarshaller[EncodedClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
-    logger.info("Getting encoded key {} for client {}", keyId, clientId)
-    val commander: EntityRef[Command] =
-      sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(clientId, settings.numberOfShards))
+    val operationLabel: String = s"Getting encoded key $keyId for client $clientId"
+    logger.info(operationLabel)
 
-    val result: Future[StatusReply[EncodedClientKey]] = commander.ask(ref => GetEncodedKey(clientId, keyId, ref))
+    val result: Future[EncodedClientKey] =
+      commander(clientId).askWithStatus(ref => GetKey(clientId, keyId, ref)).map(k => EncodedClientKey(k.encodedPem))
 
-    onSuccess(result) {
-      case statusReply if statusReply.isSuccess => getEncodedClientKeyById200(statusReply.getValue)
-      case statusReply                          =>
-        logger.info("Error while getting encoded key {} for client {}", keyId, clientId, statusReply.getError)
-        getEncodedClientKeyById404(problemOf(StatusCodes.NotFound, EncodedClientKeyNotFound(clientId, keyId)))
-    }
+    onComplete(result) { getEncodedClientKeyByIdResponse[EncodedClientKey](operationLabel)(getEncodedClientKeyById200) }
   }
 }

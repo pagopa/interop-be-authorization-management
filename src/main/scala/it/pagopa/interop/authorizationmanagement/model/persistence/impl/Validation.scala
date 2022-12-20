@@ -8,9 +8,7 @@ import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
 
 trait Validation {
 
-  def validateKeys(keys: Seq[KeySeed]): ValidatedNel[String, Seq[ValidKey]] = {
-    keys.traverse(validateKey)
-  }
+  def validateKeys(keys: Seq[KeySeed]): ValidatedNel[String, Seq[ValidKey]] = keys.traverse(validateKey)
 
   private def validateKey(keySeed: KeySeed): ValidatedNel[String, ValidKey] = {
     val processedKey = for {
