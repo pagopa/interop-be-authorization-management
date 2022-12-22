@@ -45,6 +45,8 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
+import com.typesafe.scalalogging.Logger
+import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 
 trait Dependencies {
 
@@ -94,7 +96,7 @@ trait Dependencies {
   ) = new KeyApi(
     KeyApiServiceImpl(actorSystem, sharding, keyPersistentEntity, dateTimeSupplier),
     keyApiMarshaller,
-    jwtReader.OAuth2JWTValidatorAsContexts
+    jwtReader.OAuth2JWTValidatorAsContexts(Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts"))
   )
 
   def clientApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit
