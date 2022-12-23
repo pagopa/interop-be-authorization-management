@@ -50,6 +50,9 @@ import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLo
 
 trait Dependencies {
 
+  implicit val loggerTI: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts")
+
   val keyApiMarshaller: KeyApiMarshaller       = KeyApiMarshallerImpl
   val uuidSupplier: UUIDSupplier               = UUIDSupplier
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
@@ -96,7 +99,7 @@ trait Dependencies {
   ) = new KeyApi(
     KeyApiServiceImpl(actorSystem, sharding, keyPersistentEntity, dateTimeSupplier),
     keyApiMarshaller,
-    jwtReader.OAuth2JWTValidatorAsContexts(Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts"))
+    jwtReader.OAuth2JWTValidatorAsContexts
   )
 
   def clientApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit
