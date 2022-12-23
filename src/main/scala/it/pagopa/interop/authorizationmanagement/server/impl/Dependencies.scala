@@ -45,7 +45,7 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
-import com.typesafe.scalalogging.Logger
+import com.typesafe.scalalogging.{Logger, LoggerTakinImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 
 trait Dependencies {
