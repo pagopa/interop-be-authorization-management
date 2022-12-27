@@ -16,7 +16,7 @@ import scala.reflect.classTag
 package object impl extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val problemErrorFormat: RootJsonFormat[ProblemError] = jsonFormat2(ProblemError)
-  implicit val problemFormat: RootJsonFormat[Problem]           = jsonFormat5(Problem)
+  implicit val problemFormat: RootJsonFormat[Problem]           = jsonFormat6(Problem)
 
   implicit val otherPrimeInfoFormat: RootJsonFormat[OtherPrimeInfo]     = jsonFormat3(OtherPrimeInfo)
   implicit val keySeedFormat: RootJsonFormat[KeySeed]                   = jsonFormat5(KeySeed)
