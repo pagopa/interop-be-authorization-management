@@ -46,8 +46,8 @@ object KeyManagementErrors {
       extends ComponentError("0030", s"Keys already exist: ${existingIds.mkString("[", ",", "]")}")
 
   final case class InvalidKey(kid: String, reason: String)
-      extends ComponentError("0032", s"Key $kid is invalid. Reason: $reason")
+      extends ComponentError("0031", s"Key $kid is invalid. Reason: $reason")
 
-  final case class InvalidKeys(errors: List[InvalidKey]) extends ComponentError("0033", errors.mkString("[", ",", "]"))
+  final case class InvalidKeys(errors: List[InvalidKey]) extends ComponentError("0032", errors.mkString("[", ",", "]"))
 
 }
