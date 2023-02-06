@@ -52,14 +52,11 @@ final case class KeyApiServiceImpl(
     val operationLabel: String = s"Creating keys for client $clientId"
     logger.info(operationLabel)
 
-    val validatedPayload: ValidatedNel[String, Seq[ValidKey]] = validateKeys(key)
+    val validatedPayload: ValidatedNel[InvalidKey, Seq[ValidKey]] = validateKeys(key)
 
     val result: Future[KeysResponse] = for {
-      validKeys      <- validatedPayload
-        .andThen(k => validateWithCurrentKeys(k, keysIdentifiers))
-        .leftMap(reasons => CreateKeysBadRequest(clientId, reasons.mkString_("[", ",", "]")))
-        .toEither
-        .toFuture
+      validPayload   <- validatedPayload.toEither.leftMap(err => InvalidKeys(err.toList)).toFuture
+      validKeys      <- validateWithCurrentKeys(validPayload, keysIdentifiers).toFuture
       persistentKeys <- validKeys.traverse(PersistentKey.toPersistentKey(dateTimeSupplier)).toFuture
       addedKeys      <- commander(clientId).askWithStatus(ref => AddKeys(clientId, persistentKeys, ref))
       apiKeys        <- addedKeys.traverse(_.toApi).toFuture

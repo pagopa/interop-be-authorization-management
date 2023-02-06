@@ -42,4 +42,12 @@ object KeyManagementErrors {
   final case class ClientWithPurposeNotFoundError(clientId: String, purposeId: String)
       extends ComponentError("0029", s"Not found a client for client=$clientId/purpose=$purposeId")
 
+  final case class KeysAlreadyExist(existingIds: Seq[String])
+      extends ComponentError("0030", s"Keys already exist: ${existingIds.mkString("[", ",", "]")}")
+
+  final case class InvalidKey(kid: String, reason: String)
+      extends ComponentError("0032", s"Key $kid is invalid. Reason: $reason")
+
+  final case class InvalidKeys(errors: List[InvalidKey]) extends ComponentError("0033", errors.mkString("[", ",", "]"))
+
 }
