@@ -289,7 +289,7 @@ class PurposeManagementSpec
       addPurposeState(clientId2, purpose2EService1Seed, statesChainId4)
 
       val updatePayload = ClientEServiceDetailsUpdate(
-        descriptorId = UUID.randomUUID(),
+        descriptorId = descriptorId1,
         state = ClientComponentState.INACTIVE,
         audience = Seq("some.other.audience"),
         voucherLifespan = 50

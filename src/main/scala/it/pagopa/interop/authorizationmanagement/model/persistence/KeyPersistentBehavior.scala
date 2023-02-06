@@ -208,7 +208,7 @@ object KeyPersistentBehavior {
       case UpdateEServiceState(eServiceId, descriptorId, componentState, audience, voucherLifespan, replyTo) =>
         conditionalClientsStateUpdate(
           state,
-          state.containsEService(eServiceId),
+          state.containsEService(eServiceId, descriptorId.toString),
           EServiceStateUpdated(eServiceId, descriptorId, componentState, audience, voucherLifespan),
           replyTo
         )

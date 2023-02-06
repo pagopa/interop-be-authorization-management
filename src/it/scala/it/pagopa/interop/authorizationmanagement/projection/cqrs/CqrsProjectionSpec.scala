@@ -181,8 +181,16 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
 
       val client1    = createClient(clientId1, consumerId)
       val client2    = createClient(clientId2, consumerId)
-      val purpose1_1 = addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId), UUID.randomUUID())
-      val purpose1_2 = addPurposeState(clientId1, makePurposeSeed(eServiceId = eServiceId), UUID.randomUUID())
+      val purpose1_1 = addPurposeState(
+        clientId1,
+        makePurposeSeed(eServiceId = eServiceId, descriptorId = newDescriptorId),
+        UUID.randomUUID()
+      )
+      val purpose1_2 = addPurposeState(
+        clientId1,
+        makePurposeSeed(eServiceId = eServiceId, descriptorId = newDescriptorId),
+        UUID.randomUUID()
+      )
       val purpose1_3 = addPurposeState(clientId1, makePurposeSeed(), UUID.randomUUID())
       val purpose2_1 = addPurposeState(clientId2, makePurposeSeed(), UUID.randomUUID())
 
