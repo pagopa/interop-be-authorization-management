@@ -15,7 +15,6 @@ trait Validation {
     val processedKey = for {
       jwk <- KeyProcessor.fromBase64encodedPEM(keySeed.key)
       _   <- KeyProcessor.publicKeyOnly(jwk)
-      // _   <- KeyProcessor.usableJWK(jwk)
     } yield jwk
 
     processedKey match {
