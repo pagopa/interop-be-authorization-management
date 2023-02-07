@@ -14,7 +14,6 @@ import scala.util.Try
 trait KeyProcessor {
   def calculateKid(key: JWK): Either[Throwable, String]
   def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK]
-  def usableJWK(key: JWK): Either[Throwable, Boolean]
   def publicKeyOnly(key: JWK): Either[Throwable, Boolean]
   def fromBase64encodedPEMToAPIKey(
     kid: String,
@@ -44,14 +43,6 @@ object KeyProcessor extends KeyProcessor {
     }
 
   }.toEither.flatten
-
-  override def usableJWK(key: JWK): Either[Throwable, Boolean] = {
-    key.getKeyUse match {
-      case KeyUse.SIGNATURE  => Right[Throwable, Boolean](true)
-      case KeyUse.ENCRYPTION => Right[Throwable, Boolean](true)
-      case _                 => Left[Throwable, Boolean](new RuntimeException("Key use not valid for this key"))
-    }
-  }
 
   override def publicKeyOnly(key: JWK): Either[Throwable, Boolean] = {
     Either.cond(!key.isPrivate, true, new RuntimeException("This contains a private key!"))
