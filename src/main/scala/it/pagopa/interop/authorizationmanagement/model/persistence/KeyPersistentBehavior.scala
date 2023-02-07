@@ -69,11 +69,10 @@ object KeyPersistentBehavior {
         }
 
       case GetKeys(clientId, replyTo) =>
-        state.keys.get(clientId) match {
-          case Some(keys) =>
-            replyTo ! StatusReply.Success(keys.values.toSeq)
-            Effect.none[Event, State]
-          case None       => commandError(replyTo, ClientNotFoundError(clientId))
+        state.clients.get(clientId).fold(commandError(replyTo, ClientNotFoundError(clientId))) { _ =>
+          val keys: Seq[PersistentKey] = state.keys.get(clientId).map(_.values.toSeq).getOrElse(Nil)
+          replyTo ! StatusReply.Success(keys)
+          Effect.none[Event, State]
         }
 
       case ListKid(from: Int, until: Int, replyTo) =>
