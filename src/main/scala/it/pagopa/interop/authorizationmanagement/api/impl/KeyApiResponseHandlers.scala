@@ -53,6 +53,8 @@ object KeyApiResponseHandlers extends AkkaResponses {
       case Success(s)                                    => success(s)
       case Failure(ex: CreateKeysBadRequest)             => badRequest(ex, logMessage)
       case Failure(ex: PartyRelationshipNotAllowedError) => badRequest(ex, logMessage)
+      case Failure(ex: InvalidKeys)                      => badRequest(ex, logMessage)
+      case Failure(ex: KeysAlreadyExist)                 => conflict(ex, logMessage)
       case Failure(ex)                                   => internalServerError(ex, logMessage)
     }
 
