@@ -22,11 +22,12 @@ import it.pagopa.interop.authorizationmanagement.model.{Client, KeySeed, KeysRes
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
-import it.pagopa.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupplier}
 import org.scalamock.scalatest.MockFactory
 import spray.json._
 
 import java.net.InetAddress
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -48,8 +49,9 @@ trait ItSpecHelper
       headers.`X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
     )
 
-  val mockUUIDSupplier: UUIDSupplier = mock[UUIDSupplier]
-  val healthApiMock: HealthApi       = mock[HealthApi]
+  val mockUUIDSupplier: UUIDSupplier                     = mock[UUIDSupplier]
+  val mockOffsetDateTimeSupplier: OffsetDateTimeSupplier = () => OffsetDateTime.now()
+  val healthApiMock: HealthApi                           = mock[HealthApi]
 
   val clientApiMarshaller: ClientApiMarshaller                   = ClientApiMarshallerImpl
   val purposeApiMarshaller: PurposeApiMarshaller                 = PurposeApiMarshallerImpl
@@ -76,7 +78,11 @@ trait ItSpecHelper
     sharding.init(persistentEntity)
 
     val keyApi =
-      new KeyApi(KeyApiServiceImpl(system, sharding, persistentEntity), keyApiMarshaller, wrappingDirective)
+      new KeyApi(
+        KeyApiServiceImpl(system, sharding, persistentEntity, mockOffsetDateTimeSupplier),
+        keyApiMarshaller,
+        wrappingDirective
+      )
 
     val clientApi = new ClientApi(
       ClientApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
