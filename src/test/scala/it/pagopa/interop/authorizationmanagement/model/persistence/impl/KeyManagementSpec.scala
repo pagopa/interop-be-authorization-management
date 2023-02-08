@@ -2,10 +2,15 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import it.pagopa.interop.authorizationmanagement.api.impl.keyResponseFormat
+import it.pagopa.interop.authorizationmanagement.model.KeysResponse
 import it.pagopa.interop.authorizationmanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /** Local integration test.
   *
@@ -100,4 +105,34 @@ class KeyManagementSpec
     }
   }
 
+  "Key retrieve" should {
+    "return existing keys" in {
+      val clientUuid       = UUID.randomUUID()
+      val consumerUuid     = UUID.randomUUID()
+      val relationshipUuid = UUID.randomUUID()
+
+      createClient(clientUuid, consumerUuid)
+      addRelationship(clientUuid, relationshipUuid)
+      createKey(clientUuid, relationshipUuid)
+
+      val response = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
+      response.status shouldBe StatusCodes.OK
+
+      val retrievedKeys = Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
+      retrievedKeys.keys.length shouldBe 1
+    }
+
+    "return empty list if client has no keys" in {
+      val clientUuid   = UUID.randomUUID()
+      val consumerUuid = UUID.randomUUID()
+
+      createClient(clientUuid, consumerUuid)
+
+      val response = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
+      response.status shouldBe StatusCodes.OK
+
+      val retrievedKeys = Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
+      retrievedKeys.keys shouldBe Seq.empty
+    }
+  }
 }
