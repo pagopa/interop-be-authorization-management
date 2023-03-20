@@ -10,7 +10,7 @@ object Versions {
   lazy val json4sVersion              = "4.0.6"
   lazy val logbackVersion             = "1.4.6"
   lazy val mustacheVersion            = "0.9.10"
-  lazy val nimbusVersion              = "9.25.4"
+  lazy val nimbusVersion              = "9.25.6"
   lazy val openapi4jVersion           = "1.0.7"
   lazy val postgresVersion            = "42.5.0"
   lazy val projectionVersion          = "1.2.5"
