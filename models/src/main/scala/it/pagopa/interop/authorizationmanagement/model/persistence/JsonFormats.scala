@@ -61,6 +61,8 @@ object JsonFormats {
   implicit val pcscFormat: RootJsonFormat[PersistentClientStatesChain] = jsonFormat4(PersistentClientStatesChain.apply)
   implicit val pcFormat: RootJsonFormat[PersistentClient]              = jsonFormat7(PersistentClient.apply)
 
-  implicit val pkFormat: RootJsonFormat[PersistentKey] = jsonFormat7(PersistentKey.apply)
+  implicit val pkFormat: RootJsonFormat[PersistentKey]              = jsonFormat7(PersistentKey.apply)
+  implicit val rmcwkFormat: RootJsonFormat[ReadModelClientWithKeys] =
+    jsonFormat2(ReadModelClientWithKeys.apply)
 
 }
