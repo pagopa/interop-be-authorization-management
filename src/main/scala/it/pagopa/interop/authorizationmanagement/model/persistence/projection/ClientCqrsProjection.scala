@@ -18,6 +18,8 @@ import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
 object ClientCqrsProjection {
+
+  private final val emptyKeys: Map[String, JsValue] = Map("keys" -> JsArray.empty)
   def projection(offsetDbConfig: DatabaseConfig[JdbcProfile], mongoDbConfig: MongoDbConfig, projectionId: String)(
     implicit
     system: ActorSystem[_],
@@ -27,7 +29,8 @@ object ClientCqrsProjection {
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
     case ClientAdded(c)                  =>
-      ActionWithDocument(collection.insertOne, Document(s"{ data: ${c.toJson.compactPrint} }"))
+      val data = JsObject(c.toJson.asJsObject.fields ++ emptyKeys)
+      ActionWithDocument(collection.insertOne, Document(s"{ data: ${data.compactPrint} }"))
     case ClientDeleted(cId)              => Action(collection.deleteOne(Filters.eq("data.id", cId)))
     case KeysAdded(cId, keys)            =>
       val updates = keys.map { case (_, key) => Updates.push(s"data.keys", key.toDocument) }
