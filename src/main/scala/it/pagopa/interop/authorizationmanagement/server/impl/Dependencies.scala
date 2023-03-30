@@ -47,6 +47,10 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.{ExecutionContext, Future}
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import scala.concurrent.ExecutionContextExecutor
+import it.pagopa.interop.commons.queue.QueueWriter
+import it.pagopa.interop.authorizationmanagement.model.persistence.AuthorizationEventsSerde
+import it.pagopa.interop.authorizationmanagement.model.persistence.projection.ClientNotificationProjection
 
 trait Dependencies {
 
@@ -76,7 +80,14 @@ trait Dependencies {
     complete(error.status, error)
   }
 
-  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+  def initProjections(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    initCQRSProjection()
+    initNotificationProjection(blockingEc)
+  }
+
+  def initCQRSProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     val dbConfig: DatabaseConfig[JdbcProfile] =
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
@@ -89,6 +100,28 @@ trait Dependencies {
       name = projectionId,
       numberOfInstances = numberOfProjectionTags,
       behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
+      stopMessage = ProjectionBehavior.Stop
+    )
+  }
+
+  def initNotificationProjection(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    val queueWriter: QueueWriter =
+      QueueWriter.get(ApplicationConfiguration.queueUrl)(AuthorizationEventsSerde.authToJson)(blockingEc)
+
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
+    val notificationProjectionId: String = "authorization-notification-projections"
+
+    val clientNotificationProjection: ClientNotificationProjection =
+      new ClientNotificationProjection(dbConfig, queueWriter, notificationProjectionId)
+
+    ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
+      name = notificationProjectionId,
+      numberOfInstances = numberOfProjectionTags,
+      behaviorFactory = (i: Int) => ProjectionBehavior(clientNotificationProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }
