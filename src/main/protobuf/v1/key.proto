@@ -20,6 +20,7 @@ message PersistentKeyV1 {
   required string algorithm = 5;
   required string creationTimestamp = 6;
   required string name = 7;
+  optional int64 createdAt = 8; // TODO inutile?
 }
 
 enum KeyUseV1 {
