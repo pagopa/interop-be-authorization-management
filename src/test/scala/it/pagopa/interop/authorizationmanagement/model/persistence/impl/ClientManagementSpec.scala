@@ -51,7 +51,8 @@ class ClientManagementSpec
           purposes = Seq.empty,
           description = description,
           relationships = Set.empty,
-          kind = ClientKind.CONSUMER
+          kind = ClientKind.CONSUMER,
+          createdAt = Some(timestamp)
         )
 
       val data =
@@ -59,7 +60,8 @@ class ClientManagementSpec
            |  "consumerId": "${consumerUuid.toString}",
            |  "name": "$name",
            |  "kind": "CONSUMER",
-           |  "description": "${description.get}"
+           |  "description": "${description.get}",
+           |  "createdAt": "$timestamp"
            |}""".stripMargin
 
       val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
@@ -196,7 +198,8 @@ class ClientManagementSpec
               )
             )
           ),
-          relationships = Set.empty
+          relationships = Set.empty,
+          createdAt = Some(timestamp)
         )
 
       }

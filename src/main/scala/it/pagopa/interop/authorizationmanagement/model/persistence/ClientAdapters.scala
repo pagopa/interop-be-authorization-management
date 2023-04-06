@@ -17,7 +17,8 @@ object ClientAdapters {
         purposes = p.purposes.map(_.toApi).map(Purpose),
         description = p.description,
         relationships = p.relationships,
-        kind = p.kind.toApi
+        kind = p.kind.toApi,
+        createdAt = p.createdAt
       )
   }
 
