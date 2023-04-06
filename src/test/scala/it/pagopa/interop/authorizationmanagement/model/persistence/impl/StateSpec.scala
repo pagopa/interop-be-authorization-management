@@ -24,7 +24,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         ),
         "2" -> PersistentKey(
           kid = "2",
@@ -33,7 +33,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         ),
         "3" -> PersistentKey(
           kid = "3",
@@ -42,7 +42,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         ),
         "4" -> PersistentKey(
           kid = "4",
@@ -51,7 +51,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         )
       )
       val keys           = Map("fooBarKeys" -> fooBarKeys)
@@ -87,7 +87,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         )
       )
       val client2Keys = Map(
@@ -98,7 +98,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         )
       )
       val client3Keys = Map(
@@ -109,7 +109,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           encodedPem = "123",
           use = Sig,
           algorithm = "sha",
-          creationTimestamp = OffsetDateTime.now()
+          createdAt = OffsetDateTime.now()
         )
       )
       val client1     =
@@ -120,7 +120,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 1 desc"),
           relationships = Set.empty,
-          kind = Consumer
+          kind = Consumer,
+          createdAt = Some(OffsetDateTime.now())
         )
       val client2     =
         PersistentClient(
@@ -130,7 +131,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 2 desc"),
           relationships = Set.empty,
-          kind = Consumer
+          kind = Consumer,
+          createdAt = Some(OffsetDateTime.now())
         )
       val client3     =
         PersistentClient(
@@ -140,7 +142,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 3 desc"),
           relationships = Set.empty,
-          kind = Consumer
+          kind = Consumer,
+          createdAt = Some(OffsetDateTime.now())
         )
 
       val keys    = Map(clientId1 -> client1Keys, clientId2 -> client2Keys, clientId3 -> client3Keys)

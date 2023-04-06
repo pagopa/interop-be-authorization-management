@@ -9,6 +9,7 @@ import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.OffsetDateTime
 import java.util.{Base64, UUID}
 
 object ValidationTest extends Validation
@@ -36,7 +37,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         alg = "123",
         use = KeyUse.SIG,
         relationshipId = UUID.randomUUID(),
-        name = "Random Key"
+        name = "Random Key",
+        createdAt = OffsetDateTime.now()
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -66,7 +68,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         alg = "123",
         use = KeyUse.SIG,
         relationshipId = UUID.randomUUID(),
-        name = "Random Key"
+        name = "Random Key",
+        createdAt = OffsetDateTime.now()
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))
@@ -97,7 +100,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         alg = "123",
         use = KeyUse.SIG,
         relationshipId = UUID.randomUUID(),
-        name = "Random Key"
+        name = "Random Key",
+        createdAt = OffsetDateTime.now()
       )
 
       val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, Enc, "123")
@@ -122,7 +126,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         alg = "123",
         use = KeyUse.SIG,
         relationshipId = UUID.randomUUID(),
-        name = "Random Key"
+        name = "Random Key",
+        createdAt = OffsetDateTime.now()
       )
 
       val validation = ValidationTest.validateKeys(Seq(key))

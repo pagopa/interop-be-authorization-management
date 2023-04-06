@@ -3,11 +3,13 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 import cats.implicits._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen
+
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import munit.ScalaCheckSuite
 import PersistentSerializationSpec._
+
 import scala.jdk.CollectionConverters._
 import it.pagopa.interop.authorizationmanagement.model.key._
 import it.pagopa.interop.authorizationmanagement.model.client._
@@ -22,7 +24,9 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 import com.softwaremill.diffx.munit.DiffxAssertions
 import com.softwaremill.diffx.generic.auto._
 import com.softwaremill.diffx.Diff
-import scala.reflect.runtime.universe.{typeOf, TypeTag}
+import it.pagopa.interop.commons.utils.TypeConversions.OffsetDateTimeOps
+
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
 
@@ -101,13 +105,13 @@ object PersistentSerializationSpec {
     Gen.oneOf[(PersistentKeyUse, KeyUseV1)]((Sig, KeyUseV1.SIG), (Enc, KeyUseV1.ENC))
 
   val persistentKeyGen: Gen[(PersistentKey, PersistentKeyV1)] = for {
-    relationshipId                               <- Gen.uuid
-    kid                                          <- stringGen
-    name                                         <- stringGen
-    encodedPem                                   <- stringGen
-    algorithm                                    <- stringGen
-    (puse, usev1)                                <- persistentKeyUseGen
-    (creationTimestamp, creationTimestampString) <- offsetDatetimeGen
+    relationshipId               <- Gen.uuid
+    kid                          <- stringGen
+    name                         <- stringGen
+    encodedPem                   <- stringGen
+    algorithm                    <- stringGen
+    (puse, usev1)                <- persistentKeyUseGen
+    (createdAt, createdAtString) <- offsetDatetimeGen
   } yield (
     PersistentKey(
       relationshipId = relationshipId,
@@ -116,7 +120,7 @@ object PersistentSerializationSpec {
       encodedPem = encodedPem,
       algorithm = algorithm,
       use = puse,
-      creationTimestamp = creationTimestamp
+      createdAt = createdAt
     ),
     PersistentKeyV1(
       relationshipId = relationshipId.toString(),
@@ -124,7 +128,7 @@ object PersistentSerializationSpec {
       encodedPem = encodedPem,
       use = usev1,
       algorithm = algorithm,
-      creationTimestamp = creationTimestampString,
+      createdAt = createdAtString,
       name = name
     )
   )
@@ -201,8 +205,9 @@ object PersistentSerializationSpec {
     description              <- stringGen.map(Option(_).filter(_.nonEmpty))
     relations                <- Gen.containerOf[Set, UUID](Gen.uuid)
     (pkind, kindV1)          <- persistentClientKindGen
+    (createdAt, _)           <- offsetDatetimeGen
   } yield (
-    PersistentClient(id, consumerId, name, ppurposesC, description, relations, pkind),
+    PersistentClient(id, consumerId, name, ppurposesC, description, relations, pkind, Some(createdAt)),
     PersistentClientV1(
       id = id.toString(),
       consumerId = consumerId.toString(),
@@ -210,7 +215,8 @@ object PersistentSerializationSpec {
       description = description,
       relationships = relations.map(_.toString()).toSeq,
       purposes = purposeCV1,
-      kind = kindV1
+      kind = kindV1,
+      createdAt = Some(createdAt.toMillis)
     )
   )
 
