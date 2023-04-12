@@ -4,7 +4,7 @@ import cats.implicits._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen
 
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import munit.ScalaCheckSuite
@@ -99,6 +99,20 @@ object PersistentSerializationSpec {
     now = OffsetDateTime.now()
     time <- Gen.oneOf(now.minusSeconds(n), now.plusSeconds(n))
   } yield (time, DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time))
+
+  val offsetDatetimeLongGen: Gen[(OffsetDateTime, Long)] = for {
+    n <- Gen.chooseNum(0, 10000L)
+    now      = OffsetDateTime.now(ZoneOffset.UTC)
+    // Truncate to millis precision
+    nowMills = now.withNano(now.getNano - (now.getNano % 1000000))
+    time <- Gen.oneOf(nowMills.minusSeconds(n), nowMills.plusSeconds(n))
+  } yield (time, time.toInstant.toEpochMilli)
+
+  val default: OffsetDateTime                         = OffsetDateTime.of(2022, 10, 21, 12, 0, 0, 0, ZoneOffset.UTC)
+  val defaultGen: Gen[(OffsetDateTime, Option[Long])] = Gen.const((default, none[Long]))
+
+  val offsetDatetimeOrDefaultGen: Gen[(OffsetDateTime, Option[Long])] =
+    Gen.frequency((1, defaultGen), (49, offsetDatetimeLongGen.map { case (x, y) => (x, y.some) }))
 
   val persistentKeyUseGen: Gen[(PersistentKeyUse, KeyUseV1)] =
     Gen.oneOf[(PersistentKeyUse, KeyUseV1)]((Sig, KeyUseV1.SIG), (Enc, KeyUseV1.ENC))
@@ -197,24 +211,25 @@ object PersistentSerializationSpec {
     Gen.oneOf[(PersistentClientKind, ClientKindV1)]((Consumer, ClientKindV1.CONSUMER), (Api, ClientKindV1.API))
 
   val persistentClientGen: Gen[(PersistentClient, PersistentClientV1)] = for {
-    id                       <- Gen.uuid
-    consumerId               <- Gen.uuid
-    name                     <- stringGen
-    (ppurposesC, purposeCV1) <- persistentClientPurposesGen
-    description              <- stringGen.map(Option(_).filter(_.nonEmpty))
-    relations                <- Gen.containerOf[Set, UUID](Gen.uuid)
-    (pkind, kindV1)          <- persistentClientKindGen
+    id                         <- Gen.uuid
+    consumerId                 <- Gen.uuid
+    name                       <- stringGen
+    (ppurposesC, purposeCV1)   <- persistentClientPurposesGen
+    description                <- stringGen.map(Option(_).filter(_.nonEmpty))
+    relations                  <- Gen.containerOf[Set, UUID](Gen.uuid)
+    (pkind, kindV1)            <- persistentClientKindGen
+    (createdAt, createdAtLong) <- offsetDatetimeOrDefaultGen
   } yield (
-    PersistentClient(id, consumerId, name, ppurposesC, description, relations, pkind, None),
+    PersistentClient(id, consumerId, name, ppurposesC, description, relations, pkind, createdAt),
     PersistentClientV1(
-      id = id.toString(),
-      consumerId = consumerId.toString(),
+      id = id.toString,
+      consumerId = consumerId.toString,
       name = name,
       description = description,
       relationships = relations.map(_.toString()).toSeq,
       purposes = purposeCV1,
       kind = kindV1,
-      createdAt = None // TODO Set None because there's a problem with comparing this with the one of the object
+      createdAt = createdAtLong
     )
   )
 

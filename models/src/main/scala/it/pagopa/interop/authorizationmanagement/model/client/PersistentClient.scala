@@ -11,5 +11,5 @@ final case class PersistentClient(
   description: Option[String],
   relationships: Set[UUID],
   kind: PersistentClientKind,
-  createdAt: Option[OffsetDateTime]
+  createdAt: OffsetDateTime
 )

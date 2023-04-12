@@ -18,7 +18,7 @@ object ClientAdapters {
         description = p.description,
         relationships = p.relationships,
         kind = p.kind.toApi,
-        createdAt = p.createdAt
+        createdAt = Some(p.createdAt)
       )
   }
 
@@ -32,7 +32,7 @@ object ClientAdapters {
         description = seed.description,
         relationships = Set.empty[UUID],
         kind = PersistentClientKind.fromApi(seed.kind),
-        createdAt = Some(seed.createdAt)
+        createdAt = seed.createdAt
       )
   }
 

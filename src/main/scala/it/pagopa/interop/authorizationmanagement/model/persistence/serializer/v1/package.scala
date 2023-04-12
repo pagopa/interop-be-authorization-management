@@ -19,12 +19,15 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 }
 import it.pagopa.interop.commons.utils.TypeConversions._
 
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.util.Try
 
 package object v1 {
 
   type ErrorOr[A] = Either[Throwable, A]
+
+  final val defaultCreatedAt: OffsetDateTime = OffsetDateTime.of(2022, 10, 21, 12, 0, 0, 0, ZoneOffset.UTC)
 
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
@@ -264,7 +267,7 @@ package object v1 {
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq,
         kind = clientKindToProtobufV1(client.kind),
-        createdAt = client.createdAt.map(_.toMillis)
+        createdAt = client.createdAt
       )
     )
 
@@ -317,7 +320,7 @@ package object v1 {
       clientId      <- client.id.toUUID.toEither
       consumerId    <- client.consumerId.toUUID.toEither
       purposes      <- protobufToPurposesEntry(client.purposes)
-      relationships <- client.relationships.map(_.toUUID).sequence.toEither
+      relationships <- client.relationships.traverse(_.toUUID).toEither
       kind          <- clientKindFromProtobufV1(client.kind)
       createdAt     <- client.createdAt.traverse(_.toOffsetDateTime).toEither
     } yield PersistentClient(
@@ -328,7 +331,7 @@ package object v1 {
       description = client.description,
       relationships = relationships.toSet,
       kind = kind,
-      createdAt = createdAt
+      createdAt = createdAt.getOrElse(defaultCreatedAt)
     )
   }
 
