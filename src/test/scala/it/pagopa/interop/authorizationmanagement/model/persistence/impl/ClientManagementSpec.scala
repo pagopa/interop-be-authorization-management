@@ -52,7 +52,7 @@ class ClientManagementSpec
           description = description,
           relationships = Set.empty,
           kind = ClientKind.CONSUMER,
-          createdAt = Some(timestamp)
+          createdAt = timestamp
         )
 
       val data =
@@ -199,7 +199,7 @@ class ClientManagementSpec
             )
           ),
           relationships = Set.empty,
-          createdAt = Some(timestamp)
+          createdAt = timestamp
         )
 
       }

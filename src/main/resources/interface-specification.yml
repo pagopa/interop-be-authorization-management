@@ -946,6 +946,7 @@ components:
         - purposes
         - relationships
         - kind
+        - createdAt
     Clients:
       type: array
       items:

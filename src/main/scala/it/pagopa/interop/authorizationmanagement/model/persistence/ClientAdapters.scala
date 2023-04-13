@@ -18,7 +18,7 @@ object ClientAdapters {
         description = p.description,
         relationships = p.relationships,
         kind = p.kind.toApi,
-        createdAt = Some(p.createdAt)
+        createdAt = p.createdAt
       )
   }
 
