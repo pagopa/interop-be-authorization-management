@@ -267,7 +267,7 @@ package object v1 {
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq,
         kind = clientKindToProtobufV1(client.kind),
-        createdAt = client.createdAt
+        createdAt = Option(client.createdAt.toMillis)
       )
     )
 
