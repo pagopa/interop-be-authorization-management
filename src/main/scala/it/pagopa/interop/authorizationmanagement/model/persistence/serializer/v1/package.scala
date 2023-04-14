@@ -27,7 +27,7 @@ package object v1 {
 
   type ErrorOr[A] = Either[Throwable, A]
 
-  final val defaultCreatedAt: OffsetDateTime = OffsetDateTime.of(2022, 10, 21, 12, 0, 0, 0, ZoneOffset.UTC)
+  final val DEFAULT_CREATED_AT: OffsetDateTime = OffsetDateTime.of(2022, 10, 21, 12, 0, 0, 0, ZoneOffset.UTC)
 
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
@@ -331,7 +331,7 @@ package object v1 {
       description = client.description,
       relationships = relationships.toSet,
       kind = kind,
-      createdAt = createdAt.getOrElse(defaultCreatedAt)
+      createdAt = createdAt.getOrElse(DEFAULT_CREATED_AT)
     )
   }
 
