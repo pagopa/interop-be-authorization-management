@@ -256,15 +256,10 @@ object PersistentSerializationSpec {
 
   def sizedClientsGenerator(
     n: Int,
-    withCreatedAt: Boolean
+    persistentClientGen: Gen[(PersistentClient, PersistentClientV1)]
   ): Gen[(Map[String, PersistentClient], List[StateClientsEntryV1])] =
     Gen
-      .containerOfN[List, (PersistentClient, PersistentClientV1)](
-        n, {
-          if (withCreatedAt) persistentClientGenWithCreatedAt
-          else persistentClientGenNoCreatedAt
-        }
-      )
+      .containerOfN[List, (PersistentClient, PersistentClientV1)](n, persistentClientGen)
       .map {
         _.foldLeft((Map.empty[String, PersistentClient], List.empty[StateClientsEntryV1])) {
           case ((map, list), (pc, pcv1)) => (map + (pc.id.toString -> pc), StateClientsEntryV1(pcv1.id, pcv1) :: list)
@@ -289,14 +284,14 @@ object PersistentSerializationSpec {
   val stateGenWithCreatedAt: Gen[(State, StateV1)] = for {
     cardinality                <- Gen.chooseNum(1, 10)
     mapCardinality             <- Gen.chooseNum(1, 2)
-    (clientsMap, clientsV1Map) <- sizedClientsGenerator(cardinality, withCreatedAt = true)
+    (clientsMap, clientsV1Map) <- sizedClientsGenerator(cardinality, persistentClientGenWithCreatedAt)
     (keys, keysv1)             <- keysGen(clientsMap.keySet.toList, mapCardinality)
   } yield (State(keys, clientsMap), StateV1(keysv1, clientsV1Map))
 
   val stateGenNoCreatedAt: Gen[(State, StateV1)] = for {
     cardinality                <- Gen.chooseNum(1, 10)
     mapCardinality             <- Gen.chooseNum(1, 2)
-    (clientsMap, clientsV1Map) <- sizedClientsGenerator(cardinality, withCreatedAt = false)
+    (clientsMap, clientsV1Map) <- sizedClientsGenerator(cardinality, persistentClientGenNoCreatedAt)
     (keys, keysv1)             <- keysGen(clientsMap.keySet.toList, mapCardinality)
   } yield (State(keys, clientsMap), StateV1(keysv1, clientsV1Map))
 
