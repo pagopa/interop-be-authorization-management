@@ -111,7 +111,7 @@ object PersistentSerializationSpec {
     time <- Gen.oneOf(nowMills.minusSeconds(n), nowMills.plusSeconds(n))
   } yield (time, time.toInstant.toEpochMilli)
 
-  val defaultCreatedAt: OffsetDateTime = OffsetDateTime.of(2022, 10, 21, 12, 0, 0, 0, ZoneOffset.UTC)
+  val defaultCreatedAt: OffsetDateTime = OffsetDateTime.of(2023, 4, 18, 12, 0, 0, 0, ZoneOffset.UTC)
 
   val persistentKeyUseGen: Gen[(PersistentKeyUse, KeyUseV1)] =
     Gen.oneOf[(PersistentKeyUse, KeyUseV1)]((Sig, KeyUseV1.SIG), (Enc, KeyUseV1.ENC))

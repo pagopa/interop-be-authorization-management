@@ -27,7 +27,7 @@ package object v1 {
 
   type ErrorOr[A] = Either[Throwable, A]
 
-  final val DEFAULT_CREATED_AT: OffsetDateTime = OffsetDateTime.of(2022, 10, 21, 12, 0, 0, 0, ZoneOffset.UTC)
+  final val DEFAULT_CREATED_AT: OffsetDateTime = OffsetDateTime.of(2023, 4, 18, 12, 0, 0, 0, ZoneOffset.UTC)
 
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
