@@ -19,12 +19,15 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1
 }
 import it.pagopa.interop.commons.utils.TypeConversions._
 
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.util.Try
 
 package object v1 {
 
   type ErrorOr[A] = Either[Throwable, A]
+
+  final val DEFAULT_CREATED_AT: OffsetDateTime = OffsetDateTime.of(2023, 4, 18, 12, 0, 0, 0, ZoneOffset.UTC)
 
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
@@ -242,7 +245,7 @@ package object v1 {
     clientToProtobuf(client).map(StateClientsEntryV1.of(client.id.toString, _))
 
   private def keyToProtobuf(key: PersistentKey): ErrorOr[PersistentKeyV1] =
-    key.creationTimestamp.asFormattedString.toEither.map(creationTimestampString =>
+    key.createdAt.asFormattedString.toEither.map(createdAt =>
       PersistentKeyV1(
         kid = key.kid,
         name = key.name,
@@ -250,7 +253,7 @@ package object v1 {
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
         use = persistentKeyUseToProtobuf(key.use),
-        creationTimestamp = creationTimestampString
+        createdAt = createdAt
       )
     )
 
@@ -263,7 +266,8 @@ package object v1 {
         purposes = client.purposes.map(p => ClientPurposesEntryV1.of(clientStatesChainToProtobuf(p))),
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq,
-        kind = clientKindToProtobufV1(client.kind)
+        kind = clientKindToProtobufV1(client.kind),
+        createdAt = Option(client.createdAt.toMillis)
       )
     )
 
@@ -311,13 +315,14 @@ package object v1 {
   private def protoEntryToClient(client: StateClientsEntryV1): ErrorOr[(String, PersistentClient)] =
     protobufToClient(client.client).map(pc => client.clientId -> pc)
 
-  private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] =
+  private def protobufToClient(client: PersistentClientV1): ErrorOr[PersistentClient] = {
     for {
-      clientId      <- Try(UUID.fromString(client.id)).toEither
-      consumerId    <- Try(UUID.fromString(client.consumerId)).toEither
+      clientId      <- client.id.toUUID.toEither
+      consumerId    <- client.consumerId.toUUID.toEither
       purposes      <- protobufToPurposesEntry(client.purposes)
-      relationships <- client.relationships.map(id => Try(UUID.fromString(id))).sequence.toEither
+      relationships <- client.relationships.traverse(_.toUUID).toEither
       kind          <- clientKindFromProtobufV1(client.kind)
+      createdAt     <- client.createdAt.traverse(_.toOffsetDateTime).toEither
     } yield PersistentClient(
       id = clientId,
       consumerId = consumerId,
@@ -325,8 +330,10 @@ package object v1 {
       purposes = purposes,
       description = client.description,
       relationships = relationships.toSet,
-      kind = kind
+      kind = kind,
+      createdAt = createdAt.getOrElse(DEFAULT_CREATED_AT)
     )
+  }
 
   private def protobufToPurposesEntry(purposes: Seq[ClientPurposesEntryV1]): ErrorOr[Seq[PersistentClientStatesChain]] =
     purposes.traverse(p => protobufToClientStatesChain(p.states))
@@ -387,9 +394,9 @@ package object v1 {
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      relationshipId    <- Try(UUID.fromString(key.relationshipId)).toEither
-      use               <- persistentKeyUseFromProtobuf(key.use)
-      creationTimestamp <- key.creationTimestamp.toOffsetDateTime.toEither
+      relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
+      use            <- persistentKeyUseFromProtobuf(key.use)
+      createdAt      <- key.createdAt.toOffsetDateTime.toEither
     } yield PersistentKey(
       kid = key.kid,
       name = key.name,
@@ -397,7 +404,7 @@ package object v1 {
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = use,
-      creationTimestamp = creationTimestamp
+      createdAt = createdAt
     )
 
   def persistentKeyUseToProtobuf(use: PersistentKeyUse): KeyUseV1 = use match {

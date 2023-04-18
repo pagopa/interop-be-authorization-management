@@ -10,5 +10,5 @@ final case class PersistentKey(
   encodedPem: String,
   algorithm: String,
   use: PersistentKeyUse,
-  creationTimestamp: OffsetDateTime
+  createdAt: OffsetDateTime
 )
