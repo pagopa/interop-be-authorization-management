@@ -3,15 +3,10 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.projection
 import akka.actor.typed.ActorSystem
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.authorizationmanagement.api.impl.keyFormat
-import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
-import it.pagopa.interop.authorizationmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
-import it.pagopa.interop.commons.cqrs
 import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
-import it.pagopa.interop.commons.cqrs.service.DocumentConversions._
-import org.mongodb.scala.bson.BsonArray
 import org.mongodb.scala.model._
 import org.mongodb.scala.{MongoCollection, _}
 import slick.basic.DatabaseConfig
@@ -19,11 +14,9 @@ import slick.jdbc.JdbcProfile
 import spray.json._
 
 import scala.concurrent.ExecutionContext
-import scala.jdk.CollectionConverters._
 
 object KeyCqrsProjection {
 
-  private final val emptyKeys: Map[String, JsValue] = Map("keys" -> JsArray.empty)
   def projection(offsetDbConfig: DatabaseConfig[JdbcProfile], mongoDbConfig: MongoDbConfig, projectionId: String)(
     implicit
     system: ActorSystem[_],
@@ -32,7 +25,7 @@ object KeyCqrsProjection {
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId, eventHandler)
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
-    case KeysAdded(_, keys)      =>
+    case KeysAdded(_, keys)    =>
       val updates: Either[Throwable, Seq[ActionWithDocument]] = keys.values.toSeq.traverse(key =>
         KeyProcessor
           .fromBase64encodedPEMToAPIKey(key.kid, key.encodedPem, key.use, key.algorithm)
@@ -40,12 +33,12 @@ object KeyCqrsProjection {
             ActionWithDocument(collection.insertOne, Document(s"{ data: ${jwk.toJson.asJsObject.compactPrint}}"))
           )
       )
-      updates.fold(ErrorAction, MultiAction(_))
-    case KeyDeleted(cId, kId, _) =>
+      updates.fold(ErrorAction, MultiAction)
+    case KeyDeleted(_, kId, _) =>
       ActionWithBson(
-        collection.updateOne(Filters.eq("data.id", cId), _),
+        collection.updateOne(Filters.eq("data.kid", kId), _),
         Updates.pull("data.keys", Document(s"{ kid : \"$kId\" }"))
       )
-    case _                       => NoOpAction
+    case _                     => NoOpAction
   }
 }
