@@ -86,7 +86,8 @@ trait Dependencies {
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
     val projectionId   = "client-cqrs-projections"
-    val cqrsProjection = ClientCqrsProjection.projection(dbConfig, ApplicationConfiguration.mongoDb, projectionId)
+    val cqrsProjection =
+      ClientCqrsProjection.projection(dbConfig, ApplicationConfiguration.clientsMongoDB, projectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = projectionId,
@@ -101,7 +102,7 @@ trait Dependencies {
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
     val projectionId   = "key-cqrs-projections"
-    val cqrsProjection = KeyCqrsProjection.projection(dbConfig, ApplicationConfiguration.mongoDb, projectionId)
+    val cqrsProjection = KeyCqrsProjection.projection(dbConfig, ApplicationConfiguration.keysMongoDB, projectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = projectionId,
