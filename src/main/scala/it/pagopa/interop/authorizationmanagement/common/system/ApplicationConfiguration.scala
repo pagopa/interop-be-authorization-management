@@ -24,8 +24,8 @@ object ApplicationConfiguration {
     val dbName: String           = config.getString("cqrs-projection.db.name")
 
     (
-      MongoDbConfig(connectionString, dbName, "cqrs-projection.db.clients-collection-name"),
-      MongoDbConfig(connectionString, dbName, "cqrs-projection.db.keys-collection-name")
+      MongoDbConfig(connectionString, dbName, config.getString("cqrs-projection.db.clients-collection-name")),
+      MongoDbConfig(connectionString, dbName, config.getString("cqrs-projection.db.keys-collection-name"))
     )
   }
 
