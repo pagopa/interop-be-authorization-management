@@ -35,7 +35,7 @@ object KeyCqrsProjection {
       )
       updates.fold(ErrorAction, MultiAction)
     case KeyDeleted(_, kid, _) =>
-      Action(collection.deleteOne(Filters.eq("data.kid", kid), _))
+      Action(collection.deleteOne(Filters.eq("data.kid", kid)))
     case _                     => NoOpAction
   }
 }
