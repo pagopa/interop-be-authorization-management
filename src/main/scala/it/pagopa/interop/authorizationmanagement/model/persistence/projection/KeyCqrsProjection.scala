@@ -37,7 +37,7 @@ object KeyCqrsProjection {
     case KeyDeleted(_, kid, _) =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.kid", kid), _),
-        Updates.pull("data.keys", Document(s"{ kid : \"$kid\" }"))
+        Updates.pull("data", Document(s"{ kid : \"$kid\" }"))
       )
     case _                     => NoOpAction
   }
