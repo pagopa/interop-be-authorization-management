@@ -34,10 +34,10 @@ object KeyCqrsProjection {
           )
       )
       updates.fold(ErrorAction, MultiAction)
-    case KeyDeleted(_, kId, _) =>
+    case KeyDeleted(_, kid, _) =>
       ActionWithBson(
-        collection.updateOne(Filters.eq("data.kid", kId), _),
-        Updates.pull("data.keys", Document(s"{ kid : \"$kId\" }"))
+        collection.updateOne(Filters.eq("data.kid", kid), _),
+        Updates.pull("data.keys", Document(s"{ kid : \"$kid\" }"))
       )
     case _                     => NoOpAction
   }
