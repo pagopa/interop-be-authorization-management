@@ -19,20 +19,14 @@ object ApplicationConfiguration {
   def projectionTag(index: Int) = s"interop-be-authorization-management-persistence|$index"
 
   // Loaded only if projections are enabled
-  lazy val clientsMongoDB: MongoDbConfig = {
-    val connectionString: String = config.getString("cqrs-projection.clients.connection-string")
-    val dbName: String           = config.getString("cqrs-projection.clients.name")
-    val collectionName: String   = config.getString("cqrs-projection.clients.collection-name")
+  lazy val (clientsMongoDB, keysMongoDB): (MongoDbConfig, MongoDbConfig) = {
+    val connectionString: String = config.getString("cqrs-projection.db.connection-string")
+    val dbName: String           = config.getString("cqrs-projection.db.name")
 
-    MongoDbConfig(connectionString, dbName, collectionName)
-  }
-
-  lazy val keysMongoDB: MongoDbConfig = {
-    val connectionString: String = config.getString("cqrs-projection.keys.connection-string")
-    val dbName: String           = config.getString("cqrs-projection.keys.name")
-    val collectionName: String   = config.getString("cqrs-projection.keys.collection-name")
-
-    MongoDbConfig(connectionString, dbName, collectionName)
+    (
+      MongoDbConfig(connectionString, dbName, "cqrs-projection.db.clients-collection-name"),
+      MongoDbConfig(connectionString, dbName, "cqrs-projection.db.keys-collection-name")
+    )
   }
 
   require(jwtAudience.nonEmpty, "Audience cannot be empty")
