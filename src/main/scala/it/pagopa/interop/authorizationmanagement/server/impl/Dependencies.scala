@@ -12,6 +12,7 @@ import akka.projection.ProjectionBehavior
 import com.atlassian.oai.validator.report.ValidationReport
 import com.nimbusds.jose.proc.SecurityContext
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
+import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.authorizationmanagement.api._
 import it.pagopa.interop.authorizationmanagement.api.impl.{
   ClientApiMarshallerImpl,
@@ -31,11 +32,21 @@ import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfig
   numberOfProjectionTags,
   projectionTag
 }
-import it.pagopa.interop.authorizationmanagement.model.persistence.projection.ClientCqrsProjection
-import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
+import it.pagopa.interop.authorizationmanagement.model.persistence.projection.{
+  ClientCqrsProjection,
+  ClientNotificationProjection,
+  KeyCqrsProjection
+}
+import it.pagopa.interop.authorizationmanagement.model.persistence.{
+  AuthorizationEventsSerde,
+  Command,
+  KeyPersistentBehavior
+}
 import it.pagopa.interop.commons.jwt.service.JWTReader
 import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
+import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
@@ -44,13 +55,7 @@ import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupp
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
-import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
-import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import scala.concurrent.ExecutionContextExecutor
-import it.pagopa.interop.commons.queue.QueueWriter
-import it.pagopa.interop.authorizationmanagement.model.persistence.AuthorizationEventsSerde
-import it.pagopa.interop.authorizationmanagement.model.persistence.projection.ClientNotificationProjection
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 trait Dependencies {
 
@@ -83,18 +88,33 @@ trait Dependencies {
   def initProjections(
     blockingEc: ExecutionContextExecutor
   )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
-    initCQRSProjection()
+    initClientCqrsProjection()
+    initKeyCqrsProjection()
     initNotificationProjection(blockingEc)
   }
 
-  def initCQRSProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+  def initClientCqrsProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     val dbConfig: DatabaseConfig[JdbcProfile] =
       DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
 
-    val mongoDbConfig = ApplicationConfiguration.mongoDb
-
     val projectionId   = "client-cqrs-projections"
-    val cqrsProjection = ClientCqrsProjection.projection(dbConfig, mongoDbConfig, projectionId)
+    val cqrsProjection =
+      ClientCqrsProjection.projection(dbConfig, ApplicationConfiguration.clientsMongoDB, projectionId)
+
+    ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
+      name = projectionId,
+      numberOfInstances = numberOfProjectionTags,
+      behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
+      stopMessage = ProjectionBehavior.Stop
+    )
+  }
+
+  def initKeyCqrsProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
+    val projectionId   = "key-cqrs-projections"
+    val cqrsProjection = KeyCqrsProjection.projection(dbConfig, ApplicationConfiguration.keysMongoDB, projectionId)
 
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
       name = projectionId,

@@ -761,6 +761,9 @@ components:
         key:
           type: string
           description: 'Base64 UTF-8 encoding of a public key in PEM format'
+        createdAt:
+          type: string
+          format: date-time
         use:
           $ref: '#/components/schemas/KeyUse'
         alg:
@@ -775,6 +778,7 @@ components:
         - use
         - alg
         - name
+        - createdAt
     ClientKey:
       type: object
       properties:
@@ -896,12 +900,16 @@ components:
           type: string
         description:
           type: string
+        createdAt:
+          type: string
+          format: date-time
         kind:
           $ref: '#/components/schemas/ClientKind'
       required:
         - consumerId
         - name
         - kind
+        - createdAt
     Client:
       description: Models a Client
       type: object
@@ -912,6 +920,9 @@ components:
         consumerId:
           type: string
           format: uuid
+        createdAt:
+          type: string
+          format: date-time
         name:
           type: string
         description:
@@ -935,6 +946,7 @@ components:
         - purposes
         - relationships
         - kind
+        - createdAt
     Clients:
       type: array
       items:

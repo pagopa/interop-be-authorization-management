@@ -4,7 +4,6 @@ import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.Thum
 import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.model.{ClientKey, KeyUse}
 import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
-import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 object KeyAdapters {
 
@@ -12,13 +11,11 @@ object KeyAdapters {
     def toApi: Either[Throwable, ClientKey] =
       KeyProcessor
         .fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use, p.algorithm)
-        .map(ClientKey(_, p.relationshipId, p.name, p.creationTimestamp))
+        .map(ClientKey(_, p.relationshipId, p.name, p.createdAt))
   }
 
   implicit class PersistentKeyObjectWrapper(private val p: PersistentKey.type) extends AnyVal {
-    def toPersistentKey(
-      dateTimeSupplier: OffsetDateTimeSupplier
-    )(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] =
+    def toPersistentKey(validKey: ValidKey): Either[ThumbprintCalculationError, PersistentKey] =
       for {
         kid <- KeyProcessor.calculateKid(validKey._2)
       } yield PersistentKey(
@@ -28,7 +25,7 @@ object KeyAdapters {
         encodedPem = validKey._1.key,
         algorithm = validKey._1.alg,
         use = PersistentKeyUse.fromApi(validKey._1.use),
-        creationTimestamp = dateTimeSupplier.get()
+        createdAt = validKey._1.createdAt
       )
   }
 

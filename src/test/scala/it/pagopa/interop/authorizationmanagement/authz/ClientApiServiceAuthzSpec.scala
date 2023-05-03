@@ -11,6 +11,7 @@ import it.pagopa.interop.authorizationmanagement.util.{AuthorizedRoutes, Cluster
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.OffsetDateTime
 import java.util.UUID
 
 class ClientApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestRouteTest {
@@ -38,7 +39,8 @@ class ClientApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestR
         consumerId = UUID.randomUUID(),
         name = "fake",
         description = Some("fake"),
-        kind = ClientKind.CONSUMER
+        kind = ClientKind.CONSUMER,
+        createdAt = OffsetDateTime.now()
       )
 
       validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.createClient(fakeSeed) })

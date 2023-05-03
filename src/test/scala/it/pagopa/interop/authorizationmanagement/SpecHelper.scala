@@ -26,7 +26,7 @@ import org.scalamock.scalatest.MockFactory
 import spray.json._
 
 import java.net.InetAddress
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -39,14 +39,14 @@ trait SpecHelper
     with Dependencies {
   self: ScalaTestWithActorTestKit =>
 
-  val bearerToken: String                   = "token"
-  final val requestHeaders: Seq[HttpHeader] =
+  val bearerToken: String                          = "token"
+  final val requestHeaders: Seq[HttpHeader]        =
     Seq(
       headers.Authorization(OAuth2BearerToken("token")),
       headers.RawHeader("X-Correlation-Id", "test-id"),
       headers.`X-Forwarded-For`(RemoteAddress(InetAddress.getByName("127.0.0.1")))
     )
-
+  final val timestamp                              = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
   val mockUUIDSupplier: UUIDSupplier               = mock[UUIDSupplier]
   val mockDateTimeSupplier: OffsetDateTimeSupplier = () => OffsetDateTime.now()
   val healthApiMock: HealthApi                     = mock[HealthApi]
@@ -118,19 +118,19 @@ trait SpecHelper
     ActorTestKit.shutdown(httpSystem, 5.seconds)
   }
 
-  def createClient(id: UUID, consumerId: UUID): Client = {
+  def createClient(id: UUID, consumerUUID: UUID): Client = {
     (() => mockUUIDSupplier.get()).expects().returning(id).once()
 
-    val consumerUuid = consumerId
-    val name         = s"New Client ${id.toString}"
-    val description  = s"New Client ${id.toString} description"
+    val name        = s"New Client ${id.toString}"
+    val description = s"New Client ${id.toString} description"
 
     val data =
       s"""{
-         |  "consumerId": "${consumerUuid.toString}",
+         |  "consumerId": "${consumerUUID.toString}",
          |  "name": "$name",
          |  "kind": "CONSUMER",
-         |  "description": "$description"
+         |  "description": "$description",
+         |  "createdAt": "$timestamp"
          |}""".stripMargin
 
     val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
@@ -186,7 +186,8 @@ trait SpecHelper
          |    "key": "${generateEncodedKey()}",
          |    "name": "Test",
          |    "use": "SIG",
-         |    "alg": "123"
+         |    "alg": "123",
+         |    "createdAt": "$timestamp"
          |  }
          |]
          |""".stripMargin

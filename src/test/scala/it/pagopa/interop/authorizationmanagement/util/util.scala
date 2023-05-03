@@ -1,6 +1,6 @@
 package it.pagopa.interop.authorizationmanagement
 
-import it.pagopa.interop.commons.jwt.{ADMIN_ROLE, API_ROLE, INTERNAL_ROLE, M2M_ROLE, SECURITY_ROLE}
+import it.pagopa.interop.commons.jwt._
 
 package object util {
 

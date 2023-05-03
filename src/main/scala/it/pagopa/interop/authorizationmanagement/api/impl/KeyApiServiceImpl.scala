@@ -57,7 +57,7 @@ final case class KeyApiServiceImpl(
     val result: Future[KeysResponse] = for {
       validPayload   <- validatedPayload.toEither.leftMap(err => InvalidKeys(err.toList)).toFuture
       validKeys      <- validateWithCurrentKeys(validPayload, keysIdentifiers).toFuture
-      persistentKeys <- validKeys.traverse(PersistentKey.toPersistentKey(dateTimeSupplier)).toFuture
+      persistentKeys <- validKeys.traverse(PersistentKey.toPersistentKey).toFuture
       addedKeys      <- commander(clientId).askWithStatus(ref => AddKeys(clientId, persistentKeys, ref))
       apiKeys        <- addedKeys.traverse(_.toApi).toFuture
     } yield KeysResponse(apiKeys)
