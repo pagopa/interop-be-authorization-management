@@ -31,7 +31,7 @@ object Main extends App with Dependencies {
       implicit val executionContext: ExecutionContext = actorSystem.executionContext
       // Let's keep it here in the case we'll need to call any external service
       val selector: DispatcherSelector                = DispatcherSelector.fromConfig("futures-dispatcher")
-      val _: ExecutionContextExecutor                 = actorSystem.dispatchers.lookup(selector)
+      val blockingEc: ExecutionContextExecutor        = actorSystem.dispatchers.lookup(selector)
 
       AkkaManagement.get(actorSystem).start()
 
@@ -51,7 +51,7 @@ object Main extends App with Dependencies {
 
       cluster.subscriptions ! Subscribe(listener, classOf[ClusterEvent.MemberEvent])
 
-      if (ApplicationConfiguration.projectionsEnabled) initProjections()
+      if (ApplicationConfiguration.projectionsEnabled) initProjections(blockingEc)
 
       logger.info(renderBuildInfo(BuildInfo))
       logger.info(s"Started cluster at ${cluster.selfMember.address}")

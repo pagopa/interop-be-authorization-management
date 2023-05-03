@@ -32,12 +32,21 @@ import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfig
   numberOfProjectionTags,
   projectionTag
 }
-import it.pagopa.interop.authorizationmanagement.model.persistence.projection.{ClientCqrsProjection, KeyCqrsProjection}
-import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
+import it.pagopa.interop.authorizationmanagement.model.persistence.projection.{
+  ClientCqrsProjection,
+  ClientNotificationProjection,
+  KeyCqrsProjection
+}
+import it.pagopa.interop.authorizationmanagement.model.persistence.{
+  AuthorizationEventsSerde,
+  Command,
+  KeyPersistentBehavior
+}
 import it.pagopa.interop.commons.jwt.service.JWTReader
 import it.pagopa.interop.commons.jwt.service.impl.{DefaultJWTReader, getClaimsVerifier}
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, KID, PublicKeysHolder, SerializedKey}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.queue.QueueWriter
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
 import it.pagopa.interop.commons.utils.OpenapiUtils
 import it.pagopa.interop.commons.utils.TypeConversions._
@@ -46,7 +55,7 @@ import it.pagopa.interop.commons.utils.service.{OffsetDateTimeSupplier, UUIDSupp
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 trait Dependencies {
 
@@ -76,9 +85,12 @@ trait Dependencies {
     complete(error.status, error)
   }
 
-  def initProjections()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+  def initProjections(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
     initClientCqrsProjection()
     initKeyCqrsProjection()
+    initNotificationProjection(blockingEc)
   }
 
   def initClientCqrsProjection()(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
@@ -108,6 +120,28 @@ trait Dependencies {
       name = projectionId,
       numberOfInstances = numberOfProjectionTags,
       behaviorFactory = (i: Int) => ProjectionBehavior(cqrsProjection.projection(projectionTag(i))),
+      stopMessage = ProjectionBehavior.Stop
+    )
+  }
+
+  def initNotificationProjection(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Unit = {
+    val queueWriter: QueueWriter =
+      QueueWriter.get(ApplicationConfiguration.queueUrl)(AuthorizationEventsSerde.authToJson)(blockingEc)
+
+    val dbConfig: DatabaseConfig[JdbcProfile] =
+      DatabaseConfig.forConfig("akka-persistence-jdbc.shared-databases.slick")
+
+    val notificationProjectionId: String = "authorization-notification-projections"
+
+    val clientNotificationProjection: ClientNotificationProjection =
+      new ClientNotificationProjection(dbConfig, queueWriter, notificationProjectionId)
+
+    ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
+      name = notificationProjectionId,
+      numberOfInstances = numberOfProjectionTags,
+      behaviorFactory = (i: Int) => ProjectionBehavior(clientNotificationProjection.projection(projectionTag(i))),
       stopMessage = ProjectionBehavior.Stop
     )
   }

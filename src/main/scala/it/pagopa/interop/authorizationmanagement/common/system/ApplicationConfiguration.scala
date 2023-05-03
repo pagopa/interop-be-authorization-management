@@ -18,6 +18,8 @@ object ApplicationConfiguration {
 
   def projectionTag(index: Int) = s"interop-be-authorization-management-persistence|$index"
 
+  lazy val queueUrl: String = config.getString("authorization-management.persistence-events-queue-url")
+
   // Loaded only if projections are enabled
   lazy val (clientsMongoDB, keysMongoDB): (MongoDbConfig, MongoDbConfig) = {
     val connectionString: String = config.getString("cqrs-projection.db.connection-string")

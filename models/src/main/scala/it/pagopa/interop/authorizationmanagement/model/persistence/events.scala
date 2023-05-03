@@ -6,11 +6,11 @@ import it.pagopa.interop.authorizationmanagement.model.client.{
   PersistentClientStatesChain
 }
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes.Keys
-
+import it.pagopa.interop.commons.queue.message.ProjectableEvent
 import java.time.OffsetDateTime
 import java.util.UUID
 
-sealed trait Event extends Persistable
+sealed trait Event extends Persistable with ProjectableEvent
 
 final case class KeysAdded(clientId: String, keys: Keys)                                            extends Event
 final case class KeyDeleted(clientId: String, keyId: String, deactivationTimestamp: OffsetDateTime) extends Event
