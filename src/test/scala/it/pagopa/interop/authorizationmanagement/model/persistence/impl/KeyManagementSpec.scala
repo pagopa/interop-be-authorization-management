@@ -102,7 +102,7 @@ class KeyManagementSpec
       val response =
         request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
 
-      response.status shouldBe StatusCodes.Created
+      response.status shouldBe StatusCodes.OK
     }
   }
 

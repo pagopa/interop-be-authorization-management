@@ -87,7 +87,7 @@ paths:
       summary: Create Client
       operationId: createClient
       responses:
-        '201':
+        '200':
           description: Client created
           content:
             application/json:
@@ -244,7 +244,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '201':
+        '200':
           description: Relationship added
           content:
             application/json:
@@ -308,7 +308,7 @@ paths:
       summary: Create Keys for the specific clientId.
       operationId: createKeys
       responses:
-        '201':
+        '200':
           description: Keys created
           content:
             application/json:

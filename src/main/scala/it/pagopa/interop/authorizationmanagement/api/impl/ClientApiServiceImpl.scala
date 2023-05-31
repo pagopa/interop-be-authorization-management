@@ -57,7 +57,7 @@ final case class ClientApiServiceImpl(
         .askWithStatus(ref => AddClient(persistentClient, ref))
         .map(_.toApi)
 
-    onComplete(result) { createClientResponse(operationLabel)(createClient201) }
+    onComplete(result) { createClientResponse(operationLabel)(createClient200) }
   }
 
   override def getClient(clientId: String)(implicit
@@ -158,7 +158,7 @@ final case class ClientApiServiceImpl(
         .askWithStatus(ref => AddRelationship(clientId, relationshipSeed.relationshipId, ref))
         .map(_.toApi)
 
-    onComplete(result) { addRelationshipResponse[Client](operationLabel)(addRelationship201) }
+    onComplete(result) { addRelationshipResponse[Client](operationLabel)(addRelationship200) }
 
   }
 

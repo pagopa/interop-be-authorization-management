@@ -66,7 +66,7 @@ class ClientManagementSpec
 
       val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
 
-      response.status shouldBe StatusCodes.Created
+      response.status shouldBe StatusCodes.OK
       val createdClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
 
       createdClient shouldBe expected
