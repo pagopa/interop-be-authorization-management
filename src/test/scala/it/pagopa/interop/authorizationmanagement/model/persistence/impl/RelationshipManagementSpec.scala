@@ -46,7 +46,7 @@ class RelationshipManagementSpec
       val response =
         request(uri = s"$serviceURL/clients/$clientId/relationships", method = HttpMethods.POST, data = Some(data))
 
-      response.status shouldBe StatusCodes.Created
+      response.status shouldBe StatusCodes.OK
       val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
 
       retrievedClient.relationships shouldBe Set(relationshipId)

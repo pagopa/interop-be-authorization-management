@@ -62,7 +62,7 @@ final case class KeyApiServiceImpl(
       apiKeys        <- addedKeys.traverse(_.toApi).toFuture
     } yield KeysResponse(apiKeys)
 
-    onComplete(result) { createKeysResponse[KeysResponse](operationLabel)(createKeys201) }
+    onComplete(result) { createKeysResponse[KeysResponse](operationLabel)(createKeys200) }
   }
 
   private def keysIdentifiers: LazyList[Kid] = {
