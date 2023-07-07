@@ -4,7 +4,7 @@ import akka.actor.typed.ActorSystem
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.authorizationmanagement.api.impl.keyFormat
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyProcessor
 import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
 import org.mongodb.scala.model._

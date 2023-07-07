@@ -18,9 +18,6 @@ object KeyManagementErrors {
           .mkString("[", ",", "]")
       )
 
-  final case class ThumbprintCalculationError(message: String)
-      extends ComponentError("0005", s"Error while calculating keys thumbprints: $message")
-
   final case class PartyRelationshipNotFoundError(clientId: String, relationshipId: String)
       extends ComponentError(
         "0006",

@@ -12,7 +12,7 @@ import it.pagopa.interop.authorizationmanagement.api.impl.TokenGenerationApiResp
 import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
-import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}

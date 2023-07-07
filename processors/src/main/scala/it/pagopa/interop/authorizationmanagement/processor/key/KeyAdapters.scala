@@ -1,11 +1,14 @@
-package it.pagopa.interop.authorizationmanagement.model.persistence
+package it.pagopa.interop.authorizationmanagement.processor.key
 
-import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.ThumbprintCalculationError
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyErrors.ThumbprintCalculationError
 import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
-import it.pagopa.interop.authorizationmanagement.model.{ClientKey, KeyUse}
-import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
+import it.pagopa.interop.authorizationmanagement.model.{ClientKey, KeyUse, KeySeed}
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyProcessor
+import com.nimbusds.jose.jwk.JWK
 
 object KeyAdapters {
+
+  type ValidKey = (KeySeed, JWK)
 
   implicit class PersistentKeyWrapper(private val p: PersistentKey) extends AnyVal {
     def toApi: Either[Throwable, ClientKey] =

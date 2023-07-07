@@ -6,7 +6,7 @@ import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.client.PersistentClient
 import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, PersistentKeyUse}
 import it.pagopa.interop.authorizationmanagement.model.persistence.JsonFormats._
-import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.utils.ClientAdapters.ClientWrapper
 import it.pagopa.interop.authorizationmanagement.utils.JsonFormats._
 import it.pagopa.interop.authorizationmanagement.{ItSpecConfiguration, ItSpecHelper}

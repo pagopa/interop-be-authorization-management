@@ -167,5 +167,9 @@ object Dependencies {
       Seq(akka.stream, akka.http, akka.httpJson4s, akka.slf4j, json4s.jackson, json4s.ext, pagopa.commonsUtils).map(
         _ % Compile
       )
+    lazy val processors: Seq[ModuleID] = Seq(
+      pagopa.commonsUtils         % Compile,
+      nimbus.joseJwt              % Compile
+    )
   }
 }

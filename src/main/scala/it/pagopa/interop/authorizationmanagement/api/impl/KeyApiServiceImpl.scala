@@ -16,7 +16,7 @@ import it.pagopa.interop.authorizationmanagement.common.system._
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
-import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation

@@ -1,12 +1,14 @@
-package it.pagopa.interop.authorizationmanagement.service.impl
+package it.pagopa.interop.authorizationmanagement.processor.key
 
 import com.nimbusds.jose.jwk._
 import com.nimbusds.jose.util.X509CertUtils
-import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.ThumbprintCalculationError
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyAdapters._
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyErrors.ThumbprintCalculationError
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKeyUse
-import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.{Key, OtherPrimeInfo}
+import com.nimbusds.jose.util.StandardCharset
 
+import java.util.Base64
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 import scala.util.Try
@@ -24,6 +26,11 @@ trait KeyProcessor {
 }
 
 object KeyProcessor extends KeyProcessor {
+
+  def decodeBase64(encoded: String): Try[String] = Try {
+    val decoded: Array[Byte] = Base64.getDecoder.decode(encoded.getBytes(StandardCharset.UTF_8))
+    new String(decoded, StandardCharset.UTF_8)
+  }
 
   override def calculateKid(key: JWK): Either[ThumbprintCalculationError, String] = Try {
     key.computeThumbprint().toString
