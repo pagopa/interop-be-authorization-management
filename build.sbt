@@ -71,6 +71,8 @@ cleanFiles += baseDirectory.value / "client" / "src"
 
 cleanFiles += baseDirectory.value / "client" / "target"
 
+cleanFiles += baseDirectory.value / "processor" / "target"
+
 lazy val generated = project
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*)
@@ -85,6 +87,15 @@ lazy val generated = project
     publishTo           := None
   )
   .setupBuildInfo
+
+lazy val processor = project
+.in(file("processor"))
+.settings(
+  name                := "interop-be-authorization-management-processor",
+  libraryDependencies := Dependencies.Jars.processor,
+  scalafmtOnCompile   := true,
+  Docker / publish    := {}
+)
 
 lazy val models = project
   .in(file("models"))
@@ -128,8 +139,8 @@ lazy val root = (project in file("."))
     libraryDependencies         := Dependencies.Jars.`server`,
     dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
   )
-  .aggregate(client, models)
-  .dependsOn(generated, models)
+  .aggregate(client, models, processor)
+  .dependsOn(generated, models, processor)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
   .enablePlugins(NoPublishPlugin)

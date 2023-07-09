@@ -11,7 +11,7 @@ import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 import scala.util.Try
 
-trait KeyProcessor {
+trait KeyProcessorOld {
   def calculateKid(key: JWK): Either[Throwable, String]
   def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK]
   def publicKeyOnly(key: JWK): Either[Throwable, Boolean]
@@ -23,7 +23,7 @@ trait KeyProcessor {
   ): Either[Throwable, Key]
 }
 
-object KeyProcessor extends KeyProcessor {
+object KeyProcessorOld extends KeyProcessorOld {
 
   override def calculateKid(key: JWK): Either[ThumbprintCalculationError, String] = Try {
     key.computeThumbprint().toString

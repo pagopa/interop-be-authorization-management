@@ -5,7 +5,7 @@ import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.{InvalidKey, KeysAlreadyExist}
 import it.pagopa.interop.authorizationmanagement.model.KeySeed
 import it.pagopa.interop.authorizationmanagement.model.persistence.ValidKey
-import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
+import it.pagopa.interop.authorizationmanagement.processor.key.KeyProcessor
 
 trait Validation {
 
