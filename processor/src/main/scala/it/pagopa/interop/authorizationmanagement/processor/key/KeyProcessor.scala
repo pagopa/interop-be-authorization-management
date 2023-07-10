@@ -17,14 +17,10 @@ object KeyProcessor extends KeyProcessor {
 
   override def calculateKid(key: JWK): Either[Throwable, String] = Try {
     key.computeThumbprint().toString
-  }.toEither.left.map(ex => new RuntimeException(ex.getLocalizedMessage))
+  }.toEither
 
-  override def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK] = {
-    for {
-      decodedPem <- decodeBase64(base64PEM).toEither
-      key        <- fromPEM(decodedPem)
-    } yield key
-  }
+  override def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK] =
+    decodeBase64(base64PEM).toEither.flatMap(fromPEM)
 
   private def decodeBase64(encoded: String): Try[String] = Try {
     val decoded: Array[Byte] = Base64.getDecoder.decode(encoded.getBytes(StandardCharset.UTF_8))
