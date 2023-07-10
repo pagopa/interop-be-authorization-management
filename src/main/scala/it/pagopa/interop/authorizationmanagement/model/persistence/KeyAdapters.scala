@@ -46,7 +46,7 @@ object KeyAdapters {
     }
   }
 
-  implicit class KeyUseWrapper(private val p: JwkKey)                    extends AnyVal {
+  implicit class JwkKeyUseWrapper(private val p: JwkKey)                    extends AnyVal {
     def toApi: Key = Key(
       kty = p.kty,
       keyOps = p.keyOps,
@@ -72,7 +72,7 @@ object KeyAdapters {
       oth = p.oth.map(_.map(_.toApi))
     )
   }
-  implicit class OtherPrimeInfoWrapper(private val o: JwkOtherPrimeInfo) extends AnyVal {
+  implicit class JwkOtherPrimeInfoWrapper(private val o: JwkOtherPrimeInfo) extends AnyVal {
     def toApi: OtherPrimeInfo = OtherPrimeInfo(r = o.r, d = o.d, t = o.t)
   }
 }
