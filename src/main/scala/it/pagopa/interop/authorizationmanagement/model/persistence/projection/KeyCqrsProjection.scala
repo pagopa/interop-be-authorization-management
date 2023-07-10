@@ -4,7 +4,8 @@ import akka.actor.typed.ActorSystem
 import cats.implicits.toTraverseOps
 import it.pagopa.interop.authorizationmanagement.api.impl.keyFormat
 import it.pagopa.interop.authorizationmanagement.model.persistence._
-import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
+import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
+import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 import it.pagopa.interop.commons.cqrs.model._
 import it.pagopa.interop.commons.cqrs.service.CqrsProjection
 import org.mongodb.scala.model._
@@ -27,10 +28,10 @@ object KeyCqrsProjection {
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
     case KeysAdded(_, keys)    =>
       val updates: Either[Throwable, Seq[ActionWithDocument]] = keys.values.toSeq.traverse(key =>
-        KeyProcessor
-          .fromBase64encodedPEMToAPIKey(key.kid, key.encodedPem, key.use, key.algorithm)
+        KeyConverter
+          .fromBase64encodedPEMToAPIKey(key.kid, key.encodedPem, key.use.toJwk, key.algorithm)
           .map(jwk =>
-            ActionWithDocument(collection.insertOne, Document(s"{ data: ${jwk.toJson.asJsObject.compactPrint}}"))
+            ActionWithDocument(collection.insertOne, Document(s"{ data: ${jwk.toApi.toJson.asJsObject.compactPrint}}"))
           )
       )
       updates.fold(ErrorAction, MultiAction)

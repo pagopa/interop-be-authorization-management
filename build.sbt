@@ -71,6 +71,8 @@ cleanFiles += baseDirectory.value / "client" / "src"
 
 cleanFiles += baseDirectory.value / "client" / "target"
 
+cleanFiles += baseDirectory.value / "keyconverter" / "target"
+
 lazy val generated = project
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*)
@@ -85,6 +87,15 @@ lazy val generated = project
     publishTo           := None
   )
   .setupBuildInfo
+
+lazy val keyconverter = project
+.in(file("keyconverter"))
+.settings(
+  name                := "interop-be-authorization-management-keyconverter",
+  libraryDependencies := Dependencies.Jars.keyconverter,
+  scalafmtOnCompile   := true,
+  Docker / publish    := {}
+).dependsOn(models)
 
 lazy val models = project
   .in(file("models"))
@@ -128,8 +139,8 @@ lazy val root = (project in file("."))
     libraryDependencies         := Dependencies.Jars.`server`,
     dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
   )
-  .aggregate(client, models)
-  .dependsOn(generated, models)
+  .aggregate(client, models, keyconverter)
+  .dependsOn(generated, models, keyconverter)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
   .enablePlugins(NoPublishPlugin)

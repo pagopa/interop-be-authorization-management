@@ -1,59 +1,62 @@
-package it.pagopa.interop.authorizationmanagement.service.impl
+package it.pagopa.interop.authorizationmanagement.jwk.converter
 
 import com.nimbusds.jose.jwk._
-import com.nimbusds.jose.util.X509CertUtils
-import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.ThumbprintCalculationError
-import it.pagopa.interop.authorizationmanagement.model.key.PersistentKeyUse
-import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
-import it.pagopa.interop.authorizationmanagement.model.{Key, OtherPrimeInfo}
+import com.nimbusds.jose.util.{X509CertUtils, StandardCharset}
+import cats.syntax.all._
+
+import it.pagopa.interop.authorizationmanagement.jwk.model.Models._
+import it.pagopa.interop.authorizationmanagement.jwk.model.Adapters._
 
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
+
+import java.util.Base64
 import scala.util.Try
 
-trait KeyProcessor {
+class ParsingException(message: String)              extends IllegalArgumentException(message)
+class NotAllowedPrivateKeyException(message: String) extends IllegalArgumentException(message)
+
+trait KeyConverter {
   def calculateKid(key: JWK): Either[Throwable, String]
   def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK]
   def publicKeyOnly(key: JWK): Either[Throwable, Boolean]
   def fromBase64encodedPEMToAPIKey(
     kid: String,
     base64PEM: String,
-    use: PersistentKeyUse,
+    use: JwkKeyUse,
     algorithm: String
-  ): Either[Throwable, Key]
+  ): Either[Throwable, JwkKey]
 }
 
-object KeyProcessor extends KeyProcessor {
+object KeyConverter extends KeyConverter {
 
-  override def calculateKid(key: JWK): Either[ThumbprintCalculationError, String] = Try {
+  override def calculateKid(key: JWK): Either[Throwable, String] = Try {
     key.computeThumbprint().toString
-  }.toEither.left.map(ex => ThumbprintCalculationError(ex.getLocalizedMessage))
+  }.toEither
 
-  override def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK] = {
-    for {
-      decodedPem <- decodeBase64(base64PEM).toEither
-      key        <- fromPEM(decodedPem)
-    } yield key
+  override def fromBase64encodedPEM(base64PEM: String): Either[Throwable, JWK] =
+    decodeBase64(base64PEM).toEither.flatMap(fromPEM)
+
+  private def decodeBase64(encoded: String): Try[String] = Try {
+    val decoded: Array[Byte] = Base64.getDecoder.decode(encoded.getBytes(StandardCharset.UTF_8))
+    new String(decoded, StandardCharset.UTF_8)
   }
 
-  private def fromPEM(pem: String): Either[Throwable, JWK] = Try {
-    Option(X509CertUtils.parse(pem)) match {
-      case None    => Try { JWK.parseFromPEMEncodedObjects(pem) }.toEither
-      case Some(_) => Left[Throwable, JWK](new RuntimeException("The platform does not allow to upload certificates"))
-    }
-
-  }.toEither.flatten
+  private def fromPEM(pem: String): Either[Throwable, JWK] =
+    Option(X509CertUtils.parse(pem)).fold(JWK.parseFromPEMEncodedObjects(pem).asRight[Throwable])(_ =>
+      new ParsingException("The platform does not allow to upload certificates").asLeft[JWK]
+    )
 
   override def publicKeyOnly(key: JWK): Either[Throwable, Boolean] = {
-    Either.cond(!key.isPrivate, true, new RuntimeException("This contains a private key!"))
+    Either.cond(!key.isPrivate, true, new NotAllowedPrivateKeyException("This contains a private key!"))
   }
 
   override def fromBase64encodedPEMToAPIKey(
     kid: String,
     base64PEM: String,
-    use: PersistentKeyUse,
+    use: JwkKeyUse,
     algorithm: String
-  ): Either[Throwable, Key] = {
+  ): Either[Throwable, JwkKey] = {
     val key = for {
       jwk <- fromBase64encodedPEM(base64PEM)
     } yield jwk.getKeyType match {
@@ -67,12 +70,12 @@ object KeyProcessor extends KeyProcessor {
     key.map(_.copy(alg = Some(algorithm), use = Some(use.toRfcValue)))
   }
 
-  private def rsa(kid: String, key: RSAKey): Key           = {
+  private def rsa(kid: String, key: RSAKey): JwkKey           = {
     val otherPrimes = Option(key.getOtherPrimes)
       .map(list =>
         list.asScala
           .map(entry =>
-            OtherPrimeInfo(
+            JwkOtherPrimeInfo(
               r = entry.getPrimeFactor.toString,
               d = entry.getFactorCRTExponent.toString,
               t = entry.getFactorCRTCoefficient.toString
@@ -82,7 +85,7 @@ object KeyProcessor extends KeyProcessor {
       )
       .filter(_.nonEmpty)
 
-    Key(
+    JwkKey(
       use = None,
       alg = None,
       kty = key.getKeyType.getValue,
@@ -107,7 +110,7 @@ object KeyProcessor extends KeyProcessor {
       oth = otherPrimes
     )
   }
-  private def ec(kid: String, key: ECKey): Key             = Key(
+  private def ec(kid: String, key: ECKey): JwkKey             = JwkKey(
     use = None,
     alg = None,
     kty = key.getKeyType.getValue,
@@ -131,8 +134,8 @@ object KeyProcessor extends KeyProcessor {
     qi = None,
     oth = None
   )
-  private def okp(kid: String, key: OctetKeyPair): Key     = {
-    Key(
+  private def okp(kid: String, key: OctetKeyPair): JwkKey     = {
+    JwkKey(
       use = None,
       alg = None,
       kty = key.getKeyType.getValue,
@@ -157,8 +160,8 @@ object KeyProcessor extends KeyProcessor {
       oth = None
     )
   }
-  private def oct(kid: String, key: OctetSequenceKey): Key = {
-    Key(
+  private def oct(kid: String, key: OctetSequenceKey): JwkKey = {
+    JwkKey(
       use = None,
       alg = None,
       kty = key.getKeyType.getValue,
@@ -188,4 +191,5 @@ object KeyProcessor extends KeyProcessor {
   // encapsulating in a method to avoid compilation errors because of Nimbus deprecated method
   @nowarn
   @inline private def getX5T(key: JWK): Option[String] = Option(key.getX509CertThumbprint).map(_.toString)
+
 }

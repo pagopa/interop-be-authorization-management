@@ -2,9 +2,9 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import cats.data.Validated.{Invalid, Valid}
 import com.nimbusds.jose.util.StandardCharset
-import it.pagopa.interop.authorizationmanagement.model.key.Enc
+import it.pagopa.interop.authorizationmanagement.jwk.model.Models.JwkEnc
 import it.pagopa.interop.authorizationmanagement.model.{KeySeed, KeyUse}
-import it.pagopa.interop.authorizationmanagement.service.impl.KeyProcessor
+import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -104,7 +104,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         createdAt = OffsetDateTime.now()
       )
 
-      val key = KeyProcessor.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, Enc, "123")
+      val key = KeyConverter.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, JwkEnc, "123")
       key.isLeft shouldBe true
     }
 
