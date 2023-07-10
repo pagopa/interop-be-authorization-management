@@ -58,7 +58,7 @@ object KeyConverter extends KeyConverter {
     algorithm: String
   ): Either[Throwable, JwkKey] = {
     val key = for {
-      jwk <- KeyConverter.fromBase64encodedPEM(base64PEM)
+      jwk <- fromBase64encodedPEM(base64PEM)
     } yield jwk.getKeyType match {
       case KeyType.RSA => rsa(kid, jwk.toRSAKey)
       case KeyType.EC  => ec(kid, jwk.toECKey)
