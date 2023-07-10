@@ -5,7 +5,7 @@ import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.{InvalidKey, KeysAlreadyExist}
 import it.pagopa.interop.authorizationmanagement.model.KeySeed
 import it.pagopa.interop.authorizationmanagement.model.persistence.ValidKey
-import it.pagopa.interop.authorizationmanagement.processor.key.KeyProcessor
+import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 
 trait Validation {
 
@@ -13,8 +13,8 @@ trait Validation {
 
   private def validateKey(keySeed: KeySeed): ValidatedNel[InvalidKey, ValidKey] = {
     val processedKey = for {
-      jwk <- KeyProcessor.fromBase64encodedPEM(keySeed.key)
-      _   <- KeyProcessor.publicKeyOnly(jwk)
+      jwk <- KeyConverter.fromBase64encodedPEM(keySeed.key)
+      _   <- KeyConverter.publicKeyOnly(jwk)
     } yield jwk
 
     processedKey match {
