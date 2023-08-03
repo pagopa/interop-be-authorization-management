@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ItCqrsSpec extends AnyWordSpecLike with TestContainersForAll {
 
   private var internalMongodbClient: Option[MongoClient] = None
-  private val mongoDbConfig: MongoDbConfig               = ApplicationConfiguration.mongoDb
+  private val mongoDbConfig: MongoDbConfig               = ApplicationConfiguration.clientsMongoDB
 
   def startServer(): Unit
   def shutdownServer(): Unit

@@ -40,7 +40,8 @@ class ClientApiServiceAuthzSpec extends AnyWordSpecLike with ClusteredScalatestR
         name = "fake",
         description = Some("fake"),
         kind = ClientKind.CONSUMER,
-        createdAt = OffsetDateTime.now()
+        createdAt = OffsetDateTime.now(),
+        members = Seq.empty
       )
 
       validateAuthorization(endpoint, { implicit c: Seq[(String, String)] => service.createClient(fakeSeed) })

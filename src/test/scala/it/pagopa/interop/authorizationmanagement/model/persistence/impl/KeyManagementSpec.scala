@@ -82,7 +82,7 @@ class KeyManagementSpec
       val consumerId     = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
 
-      createClient(clientId, consumerId)
+      createClient(clientId, consumerId, Seq(relationshipId))
       addRelationship(clientId, relationshipId)
 
       val data =
@@ -112,7 +112,7 @@ class KeyManagementSpec
       val consumerUuid     = UUID.randomUUID()
       val relationshipUuid = UUID.randomUUID()
 
-      createClient(clientUuid, consumerUuid)
+      createClient(clientUuid, consumerUuid, Seq(relationshipUuid))
       addRelationship(clientUuid, relationshipUuid)
       createKey(clientUuid, relationshipUuid)
 

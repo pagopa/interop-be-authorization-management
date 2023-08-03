@@ -61,7 +61,8 @@ class ClientManagementSpec
            |  "name": "$name",
            |  "kind": "CONSUMER",
            |  "description": "${description.get}",
-           |  "createdAt": "$timestamp"
+           |  "createdAt": "$timestamp",
+           |  "members": []
            |}""".stripMargin
 
       val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))

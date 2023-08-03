@@ -30,7 +30,7 @@ object ClientAdapters {
         name = seed.name,
         purposes = Seq.empty,
         description = seed.description,
-        relationships = Set.empty[UUID],
+        relationships = seed.members.toSet,
         kind = PersistentClientKind.fromApi(seed.kind),
         createdAt = seed.createdAt
       )

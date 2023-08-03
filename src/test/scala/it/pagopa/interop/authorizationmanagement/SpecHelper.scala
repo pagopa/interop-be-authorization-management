@@ -118,11 +118,12 @@ trait SpecHelper
     ActorTestKit.shutdown(httpSystem, 5.seconds)
   }
 
-  def createClient(id: UUID, consumerUUID: UUID): Client = {
+  def createClient(id: UUID, consumerUUID: UUID, membersIds: Seq[UUID] = Seq.empty): Client = {
     (() => mockUUIDSupplier.get()).expects().returning(id).once()
 
     val name        = s"New Client ${id.toString}"
     val description = s"New Client ${id.toString} description"
+    val members     = if (membersIds.isEmpty) "[]" else membersIds.map(_.toString).mkString("[\"", "\",\"", "\"]")
 
     val data =
       s"""{
@@ -130,7 +131,8 @@ trait SpecHelper
          |  "name": "$name",
          |  "kind": "CONSUMER",
          |  "description": "$description",
-         |  "createdAt": "$timestamp"
+         |  "createdAt": "$timestamp",
+         |  "members": ${members}
          |}""".stripMargin
 
     val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
