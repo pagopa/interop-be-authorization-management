@@ -102,7 +102,7 @@ trait ItSpecHelper
       SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
     )
 
-    if (ApplicationConfiguration.projectionsEnabled) initProjections()
+    if (ApplicationConfiguration.projectionsEnabled) initProjections(executionContext)
 
     controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi, tokenGenerationApi)(classicSystem))
 

@@ -905,11 +905,16 @@ components:
           format: date-time
         kind:
           $ref: '#/components/schemas/ClientKind'
+        members:
+          items:
+            type: string
+            format: uuid
       required:
         - consumerId
         - name
         - kind
         - createdAt
+        - members
     Client:
       description: Models a Client
       type: object
