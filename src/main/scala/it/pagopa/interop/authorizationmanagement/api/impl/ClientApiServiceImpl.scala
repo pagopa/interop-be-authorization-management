@@ -16,7 +16,7 @@ import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient,
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.commons.jwt._
+//import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import cats.syntax.all._
@@ -45,7 +45,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Creating client for Consumer ${clientSeed.consumerId}"
     logger.info(operationLabel)
 
@@ -64,7 +64,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Retrieving Client $clientId"
     logger.info(operationLabel)
 
@@ -87,7 +87,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClientarray: ToEntityMarshaller[Seq[Client]],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = {
     val operationLabel: String =
       s"Listing clients for relationship $relationshipId and consumer $consumerId, purpose $purposeId and kind $kind"
     logger.info(operationLabel)
@@ -149,7 +149,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Adding relationship ${relationshipSeed.relationshipId} to client $clientId"
     logger.info(operationLabel)
 
@@ -164,20 +164,19 @@ final case class ClientApiServiceImpl(
 
   override def deleteClient(
     clientId: String
-  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route =
-    authorize(ADMIN_ROLE) {
-      val operationLabel: String = s"Deleting client $clientId"
-      logger.info(operationLabel)
+  )(implicit toEntityMarshallerProblem: ToEntityMarshaller[Problem], contexts: Seq[(String, String)]): Route = {
+    val operationLabel: String = s"Deleting client $clientId"
+    logger.info(operationLabel)
 
-      val result: Future[Done] = commander(clientId).askWithStatus(ref => DeleteClient(clientId, ref))
+    val result: Future[Done] = commander(clientId).askWithStatus(ref => DeleteClient(clientId, ref))
 
-      onComplete(result) { deleteClientResponse[Done](operationLabel)(_ => deleteClient204) }
-    }
+    onComplete(result) { deleteClientResponse[Done](operationLabel)(_ => deleteClient204) }
+  }
 
   override def removeClientRelationship(clientId: String, relationshipId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Removing relationship $relationshipId from client $clientId"
     logger.info(operationLabel)
 
@@ -191,7 +190,7 @@ final case class ClientApiServiceImpl(
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Retrieving Client $clientId"
     logger.info(operationLabel)
 
