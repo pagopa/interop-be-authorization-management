@@ -20,7 +20,6 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
@@ -48,7 +47,7 @@ final case class KeyApiServiceImpl(
     toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Creating keys for client $clientId"
     logger.info(operationLabel)
 
@@ -92,7 +91,7 @@ final case class KeyApiServiceImpl(
     toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Getting key $keyId for client $clientId"
     logger.info(operationLabel)
 
@@ -108,7 +107,7 @@ final case class KeyApiServiceImpl(
     toEntityMarshallerKeysCreatedResponse: ToEntityMarshaller[KeysResponse],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Getting keys for client $clientId"
     logger.info(operationLabel)
 
@@ -123,7 +122,7 @@ final case class KeyApiServiceImpl(
   override def deleteClientKeyById(clientId: String, keyId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Deleting key $keyId of client $clientId"
     logger.info(operationLabel)
 
@@ -136,7 +135,7 @@ final case class KeyApiServiceImpl(
     toEntityMarshallerEncodedClientKey: ToEntityMarshaller[EncodedClientKey],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
-  ): Route = authorize(ADMIN_ROLE, SECURITY_ROLE, M2M_ROLE, INTERNAL_ROLE) {
+  ): Route = {
     val operationLabel: String = s"Getting encoded key $keyId for client $clientId"
     logger.info(operationLabel)
 
