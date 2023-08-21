@@ -16,7 +16,6 @@ import it.pagopa.interop.authorizationmanagement.model.client.{PersistentClient,
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
-//import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import cats.syntax.all._
