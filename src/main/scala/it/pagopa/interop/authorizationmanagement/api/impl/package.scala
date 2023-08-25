@@ -18,12 +18,9 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val problemErrorFormat: RootJsonFormat[ProblemError] = jsonFormat2(ProblemError)
   implicit val problemFormat: RootJsonFormat[Problem]           = jsonFormat6(Problem)
 
-  implicit val otherPrimeInfoFormat: RootJsonFormat[OtherPrimeInfo]     = jsonFormat3(OtherPrimeInfo)
-  implicit val keySeedFormat: RootJsonFormat[KeySeed]                   = jsonFormat6(KeySeed)
-  implicit val keyFormat: RootJsonFormat[Key]                           = customKeyFormat
-  implicit val clientKeyFormat: RootJsonFormat[ClientKey]               = jsonFormat4(ClientKey)
-  implicit val encodedClientKeyFormat: RootJsonFormat[EncodedClientKey] = jsonFormat1(EncodedClientKey)
-  implicit val keyResponseFormat: RootJsonFormat[KeysResponse]          = jsonFormat1(KeysResponse)
+  implicit val otherPrimeInfoFormat: RootJsonFormat[OtherPrimeInfo] = jsonFormat3(OtherPrimeInfo)
+  implicit val JWKKeyFormat: RootJsonFormat[JWKKey]                 = customKeyFormat
+  implicit val KeyFormat: RootJsonFormat[Key]                       = jsonFormat7(Key)
 
   implicit val clientAgreementDetailsFormat: RootJsonFormat[ClientAgreementDetails] =
     jsonFormat4(ClientAgreementDetails)
@@ -63,12 +60,12 @@ package object impl extends SprayJsonSupport with DefaultJsonProtocol {
   def commander(id: String)(implicit sharding: ClusterSharding, settings: ClusterShardingSettings): EntityRef[Command] =
     sharding.entityRefFor(KeyPersistentBehavior.TypeKey, getShard(id, settings.numberOfShards))
 
-  private def customKeyFormat: RootJsonFormat[Key] = {
-    val arrayFields = extractFieldNames(classTag[Key])
+  private def customKeyFormat: RootJsonFormat[JWKKey] = {
+    val arrayFields = extractFieldNames(classTag[JWKKey])
     val Array(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22) =
       arrayFields.map(elem => if (elem.equals("x5tS256")) "x5t#S256" else elem)
     jsonFormat(
-      Key.apply,
+      JWKKey.apply,
       p1,
       p2,
       p3,

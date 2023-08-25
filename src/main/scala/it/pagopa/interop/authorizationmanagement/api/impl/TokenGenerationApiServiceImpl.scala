@@ -10,6 +10,7 @@ import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.authorizationmanagement.api.TokenGenerationApiService
 import it.pagopa.interop.authorizationmanagement.api.impl.TokenGenerationApiResponseHandlers._
 import it.pagopa.interop.authorizationmanagement.common.system._
+import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
@@ -47,10 +48,15 @@ final case class TokenGenerationApiServiceImpl(
         (persistentClient, persistentKey) <- commander(clientId).askWithStatus(ref =>
           GetKeyWithClient(clientId, keyId, ref)
         )
-        keys                              <- persistentKey.toApi
-          .map(apiKey => KeyWithClient(key = apiKey.key, client = persistentClient.toApi))
+        jwk                               <- KeyConverter
+          .fromBase64encodedPEMToAPIKey(
+            persistentKey.kid,
+            persistentKey.encodedPem,
+            persistentKey.use.toJwk,
+            persistentKey.algorithm
+          )
           .toFuture
-      } yield keys
+      } yield KeyWithClient(key = jwk.toApi, client = persistentClient.toApi)
 
     onComplete(result) { getClientKeyByIdResponseResponse[KeyWithClient](operationLabel)(getKeyWithClientByKeyId200) }
   }

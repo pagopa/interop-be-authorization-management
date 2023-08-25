@@ -3,8 +3,8 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import it.pagopa.interop.authorizationmanagement.api.impl.keyResponseFormat
-import it.pagopa.interop.authorizationmanagement.model.KeysResponse
+import it.pagopa.interop.authorizationmanagement.api.impl.KeyFormat
+import it.pagopa.interop.authorizationmanagement.model.Key
 import it.pagopa.interop.authorizationmanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -33,15 +33,18 @@ class KeyManagementSpec
 
   "Key creation" should {
     "fail if client does not exist" in {
+
       val data =
         s"""
            |[
            |  {
-           |    "relationshipId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-           |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
+           |    "relationshipId": "2ce51cdd-ae78-4829-89cc-39e363270b53",
+           |    "kid": "kid",
+           |    "encodedPem": "${generateEncodedKey()}",
+           |    "name": "Test",
            |    "use": "SIG",
-           |    "name": "Devedeset devet",
-           |    "alg": "123"
+           |    "algorithm": "123",
+           |    "createdAt": "$timestamp"
            |  }
            |]
            |""".stripMargin
@@ -63,10 +66,12 @@ class KeyManagementSpec
            |[
            |  {
            |    "relationshipId": "2ce51cdd-ae78-4829-89cc-39e363270b53",
-           |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
+           |    "kid": "kid",
+           |    "encodedPem": "${generateEncodedKey()}",
+           |    "name": "Test",
            |    "use": "SIG",
-           |    "name": "Devedeset",
-           |    "alg": "123"
+           |    "algorithm": "123",
+           |    "createdAt": "$timestamp"
            |  }
            |]
            |""".stripMargin
@@ -90,10 +95,11 @@ class KeyManagementSpec
            |[
            |  {
            |    "relationshipId": "$relationshipId",
-           |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
+           |    "kid": "kid",
+           |    "encodedPem": "${generateEncodedKey()}",
+           |    "name": "Test",
            |    "use": "SIG",
-           |    "name": "Devet",
-           |    "alg": "123",
+           |    "algorithm": "123",
            |    "createdAt": "$timestamp"
            |  }
            |]
@@ -119,8 +125,8 @@ class KeyManagementSpec
       val response = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
       response.status shouldBe StatusCodes.OK
 
-      val retrievedKeys = Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
-      retrievedKeys.keys.length shouldBe 1
+      val retrievedKeys = Await.result(Unmarshal(response).to[Seq[Key]], Duration.Inf)
+      retrievedKeys.length shouldBe 1
     }
 
     "return empty list if client has no keys" in {
@@ -132,8 +138,8 @@ class KeyManagementSpec
       val response = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
       response.status shouldBe StatusCodes.OK
 
-      val retrievedKeys = Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
-      retrievedKeys.keys shouldBe Seq.empty
+      val retrievedKeys = Await.result(Unmarshal(response).to[Seq[Key]], Duration.Inf)
+      retrievedKeys shouldBe Seq.empty
     }
   }
 }

@@ -1,7 +1,7 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
-import it.pagopa.interop.authorizationmanagement.api.impl.keyFormat
-import it.pagopa.interop.authorizationmanagement.model.Key
+import it.pagopa.interop.authorizationmanagement.api.impl.JWKKeyFormat
+import it.pagopa.interop.authorizationmanagement.model.JWKKey
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import spray.json.enrichAny
@@ -10,7 +10,7 @@ class KeySerializationSpec extends AnyWordSpecLike with Matchers {
 
   "serialization of Key" should {
     "contain x5t#s256" in {
-      val key       = Key(
+      val key       = JWKKey(
         kty = "1",
         keyOps = None,
         use = Some("sig"),
