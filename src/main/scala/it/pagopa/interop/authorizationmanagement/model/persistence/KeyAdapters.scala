@@ -27,8 +27,8 @@ object KeyAdapters {
         relationshipId = validKey._1.relationshipId,
         kid = kid,
         name = validKey._1.name,
-        encodedPem = validKey._1.encodedPem,
-        algorithm = validKey._1.algorithm,
+        encodedPem = validKey._1.key,
+        algorithm = validKey._1.alg,
         use = PersistentKeyUse.fromApi(validKey._1.use),
         createdAt = validKey._1.createdAt
       )

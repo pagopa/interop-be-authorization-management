@@ -332,7 +332,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Keys'
+              $ref: '#/components/schemas/KeysSeed'
       description: Creates one or more keys for the corresponding client.
       parameters:
         - name: clientId
@@ -729,10 +729,48 @@ components:
         - algorithm
         - use
         - createdAt
-    Keys:
+    KeySeed:
+      description: 'Models the seed for a public key to be persisted'
+      type: object
+      properties:
+        relationshipId:
+          type: string
+          format: uuid
+          description: 'Represents the identifier of the party relationship whose platform security operator is uploading the key'
+        key:
+          type: string
+          description: 'Base64 UTF-8 encoding of a public key in PEM format'
+        createdAt:
+          type: string
+          format: date-time
+        use:
+          $ref: '#/components/schemas/KeyUse'
+        alg:
+          type: string
+          description: 'The algorithm type of the key.'
+        name:
+          type: string
+          description: 'Descriptive name of this key.'
+      required:
+        - relationshipId
+        - key
+        - use
+        - alg
+        - name
+        - createdAt
+    KeysSeed:
       type: array
       items:
-        $ref: '#/components/schemas/Key'
+        $ref: '#/components/schemas/KeySeed'
+    Keys:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/Key'
+      required:
+        - keys
     KeyWithClient:
       type: object
       properties:

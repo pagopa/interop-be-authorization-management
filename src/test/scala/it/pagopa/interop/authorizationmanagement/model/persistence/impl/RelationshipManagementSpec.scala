@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.authorizationmanagement.api.impl._
-import it.pagopa.interop.authorizationmanagement.model.{Client, Key}
+import it.pagopa.interop.authorizationmanagement.model.{Client, Keys}
 import it.pagopa.interop.authorizationmanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -90,8 +90,8 @@ class RelationshipManagementSpec
       retrievedClient.relationships shouldBe Set(relationshipId2)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId/keys", method = HttpMethods.GET)
-      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Seq[Key]], Duration.Inf)
-      retrievedKeys shouldEqual (keyOne ++ keyTwo)
+      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Keys], Duration.Inf)
+      retrievedKeys.keys shouldEqual (keyOne.keys ++ keyTwo.keys)
     }
 
     "be successful and don't remove same relationship keys of different client" in {
@@ -117,7 +117,7 @@ class RelationshipManagementSpec
       retrievedClient.relationships shouldBe Set(relationshipId)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2/keys", method = HttpMethods.GET)
-      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Seq[Key]], Duration.Inf)
+      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Keys], Duration.Inf)
       retrievedKeys shouldBe client2Keys
     }
 

@@ -1,6 +1,6 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
-import it.pagopa.interop.authorizationmanagement.api.impl.JWKKeyFormat
+import it.pagopa.interop.authorizationmanagement.api.impl.jwkKeyFormat
 import it.pagopa.interop.authorizationmanagement.model.JWKKey
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike

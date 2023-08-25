@@ -8,11 +8,11 @@ import it.pagopa.interop.authorizationmanagement.model._
 import spray.json._
 
 object KeyApiMarshallerImpl extends KeyApiMarshaller with SprayJsonSupport with DefaultJsonProtocol {
-  override implicit def fromEntityUnmarshallerKeyList: FromEntityUnmarshaller[Seq[Key]] =
-    sprayJsonUnmarshaller[Seq[Key]]
-  override implicit def toEntityMarshallerKeyarray: ToEntityMarshaller[Seq[Key]]        =
-    sprayJsonMarshaller[Seq[Key]]
-  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem]          = entityMarshallerProblem
-  override implicit def toEntityMarshallerKey: ToEntityMarshaller[Key]                  = sprayJsonMarshaller[Key]
+  override implicit def fromEntityUnmarshallerKeySeedList: FromEntityUnmarshaller[Seq[KeySeed]] =
+    sprayJsonUnmarshaller[Seq[KeySeed]]
+  override implicit def toEntityMarshallerKeys: ToEntityMarshaller[Keys]                        =
+    sprayJsonMarshaller[Keys]
+  override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = entityMarshallerProblem
+  override implicit def toEntityMarshallerKey: ToEntityMarshaller[Key]         = sprayJsonMarshaller[Key]
 
 }

@@ -2,7 +2,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.projection
 
 import akka.actor.typed.ActorSystem
 import cats.implicits.toTraverseOps
-import it.pagopa.interop.authorizationmanagement.api.impl.JWKKeyFormat
+import it.pagopa.interop.authorizationmanagement.api.impl.jwkKeyFormat
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
 import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter

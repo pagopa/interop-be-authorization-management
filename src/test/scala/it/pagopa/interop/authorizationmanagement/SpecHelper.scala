@@ -17,7 +17,7 @@ import com.nimbusds.jose.util.Base64
 import it.pagopa.interop.authorizationmanagement.api._
 import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
-import it.pagopa.interop.authorizationmanagement.model.{Client, Key, Purpose, PurposeSeed}
+import it.pagopa.interop.authorizationmanagement.model.{Client, Keys, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
@@ -178,18 +178,17 @@ trait SpecHelper
     Base64.encode(key).toString
   }
 
-  def createKey(clientId: UUID, relationshipId: UUID): Seq[Key] = {
+  def createKey(clientId: UUID, relationshipId: UUID): Keys = {
 
     val data =
       s"""
          |[
          |  {
          |    "relationshipId": "${relationshipId.toString}",
-         |    "kid": "kid",
-         |    "encodedPem": "${generateEncodedKey()}",
+         |    "key": "${generateEncodedKey()}",
          |    "name": "Test",
          |    "use": "SIG",
-         |    "algorithm": "123",
+         |    "alg": "123",
          |    "createdAt": "$timestamp"
          |  }
          |]
@@ -200,7 +199,7 @@ trait SpecHelper
 
     response.status shouldBe StatusCodes.OK
 
-    Await.result(Unmarshal(response).to[Seq[Key]], Duration.Inf)
+    Await.result(Unmarshal(response).to[Keys], Duration.Inf)
   }
 
   def addRelationship(clientId: UUID, relationshipId: UUID): Client = {
