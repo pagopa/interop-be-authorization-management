@@ -3,7 +3,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 import cats.data.Validated.{Invalid, Valid}
 import com.nimbusds.jose.util.StandardCharset
 import it.pagopa.interop.authorizationmanagement.jwk.model.Models.JwkEnc
-import it.pagopa.interop.authorizationmanagement.model.{Key, KeySeed, KeyUse}
+import it.pagopa.interop.authorizationmanagement.model.{KeySeed, KeyUse}
 import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
@@ -79,33 +79,32 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
     "return an error since certificates are not uploadable on the platform" in {
       // given
       val key = KeySeed(
-        kid = "kid",
-        encodedPem = Base64Encoder.encode("""-----BEGIN CERTIFICATE-----
-                                            |MIIC6jCCAdKgAwIBAgIGAXqBCekBMA0GCSqGSIb3DQEBCwUAMDYxNDAyBgNVBAMM
-                                            |K1NQcEZnUzFJQzBJZzEyYkVXZDlnc1JNcGpYWGxOOE83alduWm0yYi1VQzAwHhcN
-                                            |MjEwNzA3MTI1NTQ4WhcNMjIwNTAzMTI1NTQ4WjA2MTQwMgYDVQQDDCtTUHBGZ1Mx
-                                            |SUMwSWcxMmJFV2Q5Z3NSTXBqWFhsTjhPN2pXblptMmItVUMwMIIBIjANBgkqhkiG
-                                            |9w0BAQEFAAOCAQ8AMIIBCgKCAQEAg5fQtCnaHyXMPtlXn7l/ZlAGlwR0XFzFsjLR
-                                            |8HtUsgsdo7ZY7MToV7Oz2ZkuKayIqrwCtud9/8LijXEOw42fPon04XTOQ3HAl8zT
-                                            |22lkV9f7Q0XTl1PaREEewEqOWYhGJUxRcGXqpKQMm40JGNP24+DH8WJZmUTsU83f
-                                            |GAr7uats+xQq902yWKNoII2OJvGzHxhK9cDmyfNzPE8w3L6KmOs6BXMYTBOor2Vu
-                                            |PeK1s2FByHtR5VuhydmE79mZJZnIBkm7N4odcWGU5qEOgFR3BlV0S51QDsw5tA31
-                                            |83D8Utf+k4HjXodwyMwfR4bLJ9SPK5XvC/+3W7JNJH/awH6AsQIDAQABMA0GCSqG
-                                            |SIb3DQEBCwUAA4IBAQBd5ipvdbGSg5l+FS+FKUMaATcJ2nN41Bh/eTr7U8fdhDuJ
-                                            |Gsi+h7joZbCMSoLSW3z6bxyezQhseQm+Vbm1AgSl88vM47Lb4ldZ1G5Qx+0UB172
-                                            |qY1FZ2MQKDKNBfiaciFcDE4kafe4Pzht8nCXUsvf6XUmRtBJoXweiFrhiaP4qXr5
-                                            |VNEGKvMn2xcLicSd0DnkhOwTDu5WCp3SO6psze+8sjx7HSUJDStTZNppPnSU3RWw
-                                            |KhpRlvg0kUGWnXuYPQcO27LfAtNrkfpUrrmlZ/0emcgPcoE00BjQWQ3SfjywJIdE
-                                            |Xq3dfXqqnHpThqcNNnoZX0jSwT/o62zGtvGvybbL
-                                            |-----END CERTIFICATE-----""".stripMargin),
-        algorithm = "123",
+        key = Base64Encoder.encode("""-----BEGIN CERTIFICATE-----
+                                     |MIIC6jCCAdKgAwIBAgIGAXqBCekBMA0GCSqGSIb3DQEBCwUAMDYxNDAyBgNVBAMM
+                                     |K1NQcEZnUzFJQzBJZzEyYkVXZDlnc1JNcGpYWGxOOE83alduWm0yYi1VQzAwHhcN
+                                     |MjEwNzA3MTI1NTQ4WhcNMjIwNTAzMTI1NTQ4WjA2MTQwMgYDVQQDDCtTUHBGZ1Mx
+                                     |SUMwSWcxMmJFV2Q5Z3NSTXBqWFhsTjhPN2pXblptMmItVUMwMIIBIjANBgkqhkiG
+                                     |9w0BAQEFAAOCAQ8AMIIBCgKCAQEAg5fQtCnaHyXMPtlXn7l/ZlAGlwR0XFzFsjLR
+                                     |8HtUsgsdo7ZY7MToV7Oz2ZkuKayIqrwCtud9/8LijXEOw42fPon04XTOQ3HAl8zT
+                                     |22lkV9f7Q0XTl1PaREEewEqOWYhGJUxRcGXqpKQMm40JGNP24+DH8WJZmUTsU83f
+                                     |GAr7uats+xQq902yWKNoII2OJvGzHxhK9cDmyfNzPE8w3L6KmOs6BXMYTBOor2Vu
+                                     |PeK1s2FByHtR5VuhydmE79mZJZnIBkm7N4odcWGU5qEOgFR3BlV0S51QDsw5tA31
+                                     |83D8Utf+k4HjXodwyMwfR4bLJ9SPK5XvC/+3W7JNJH/awH6AsQIDAQABMA0GCSqG
+                                     |SIb3DQEBCwUAA4IBAQBd5ipvdbGSg5l+FS+FKUMaATcJ2nN41Bh/eTr7U8fdhDuJ
+                                     |Gsi+h7joZbCMSoLSW3z6bxyezQhseQm+Vbm1AgSl88vM47Lb4ldZ1G5Qx+0UB172
+                                     |qY1FZ2MQKDKNBfiaciFcDE4kafe4Pzht8nCXUsvf6XUmRtBJoXweiFrhiaP4qXr5
+                                     |VNEGKvMn2xcLicSd0DnkhOwTDu5WCp3SO6psze+8sjx7HSUJDStTZNppPnSU3RWw
+                                     |KhpRlvg0kUGWnXuYPQcO27LfAtNrkfpUrrmlZ/0emcgPcoE00BjQWQ3SfjywJIdE
+                                     |Xq3dfXqqnHpThqcNNnoZX0jSwT/o62zGtvGvybbL
+                                     |-----END CERTIFICATE-----""".stripMargin),
+        alg = "123",
         use = KeyUse.SIG,
         relationshipId = UUID.randomUUID(),
         name = "Random Key",
         createdAt = OffsetDateTime.now()
       )
 
-      val jwk = KeyConverter.fromBase64encodedPEMToAPIKey("mockKID", key.encodedPem, JwkEnc, "123")
+      val jwk = KeyConverter.fromBase64encodedPEMToAPIKey("mockKID", key.key, JwkEnc, "123")
       jwk.isLeft shouldBe true
     }
 
