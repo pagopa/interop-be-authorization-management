@@ -42,10 +42,14 @@ object KeyConverter extends KeyConverter {
     new String(decoded, StandardCharset.UTF_8)
   }
 
-  private def fromPEM(pem: String): Either[Throwable, JWK] =
-    Option(X509CertUtils.parse(pem)).fold(JWK.parseFromPEMEncodedObjects(pem).asRight[Throwable])(_ =>
+  private def fromPEM(pem: String): Either[Throwable, JWK] = for {
+    parsed <- Try(Option(X509CertUtils.parse(pem))).toEither.leftMap(err =>
+      new ParsingException(s"PEM parse failed. Reason: ${err.getMessage}")
+    )
+    result <- parsed.fold(JWK.parseFromPEMEncodedObjects(pem).asRight[Throwable])(_ =>
       new ParsingException("The platform does not allow to upload certificates").asLeft[JWK]
     )
+  } yield result
 
   override def publicKeyOnly(key: JWK): Either[Throwable, Boolean] = {
     Either.cond(!key.isPrivate, true, new NotAllowedPrivateKeyException("This contains a private key!"))
