@@ -81,7 +81,8 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
         key = generateEncodedKey(),
         use = KeyUse.SIG,
         alg = "123",
-        name = "IT Key"
+        name = "IT Key",
+        createdAt = timestamp
       )
 
       createClient(clientId, consumerId)
@@ -103,7 +104,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
           encodedPem = keySeed.key,
           algorithm = keySeed.alg,
           use = PersistentKeyUse.fromApi(keySeed.use),
-          creationTimestamp = persistentKey.head.creationTimestamp
+          createdAt = persistentKey.head.createdAt
         )
       )
 

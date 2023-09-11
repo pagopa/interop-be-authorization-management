@@ -15,7 +15,8 @@ object ClientAdapters {
         purposes = p.purposes.map(_.toPersistent),
         description = p.description,
         relationships = p.relationships,
-        kind = PersistentClientKind.fromApi(p.kind)
+        kind = PersistentClientKind.fromApi(p.kind),
+        createdAt = p.createdAt
       )
   }
 

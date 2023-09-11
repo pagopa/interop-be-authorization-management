@@ -27,7 +27,7 @@ import org.scalamock.scalatest.MockFactory
 import spray.json._
 
 import java.net.InetAddress
-import java.time.OffsetDateTime
+import java.time.{OffsetDateTime, ZoneOffset}
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor, Future}
@@ -56,6 +56,8 @@ trait ItSpecHelper
   val clientApiMarshaller: ClientApiMarshaller                   = ClientApiMarshallerImpl
   val purposeApiMarshaller: PurposeApiMarshaller                 = PurposeApiMarshallerImpl
   val tokenGenerationApiMarshaller: TokenGenerationApiMarshaller = TokenGenerationApiMarshallerImpl
+
+  final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
