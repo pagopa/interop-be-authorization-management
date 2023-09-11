@@ -1,15 +1,14 @@
 package it.pagopa.interop.authorizationmanagement.jwk.converter
 
 import com.nimbusds.jose.jwk._
-import com.nimbusds.jose.util.{X509CertUtils, StandardCharset}
+import com.nimbusds.jose.util.{StandardCharset, X509CertUtils}
 import cats.syntax.all._
-
 import it.pagopa.interop.authorizationmanagement.jwk.model.Models._
 import it.pagopa.interop.authorizationmanagement.jwk.model.Adapters._
 
+import java.security.cert.X509Certificate
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
-
 import java.util.Base64
 import scala.util.Try
 
@@ -42,14 +41,24 @@ object KeyConverter extends KeyConverter {
     new String(decoded, StandardCharset.UTF_8)
   }
 
-  private def fromPEM(pem: String): Either[Throwable, JWK] = for {
-    parsed <- Try(Option(X509CertUtils.parse(pem))).toEither.leftMap(err =>
-      new ParsingException(s"PEM parse failed. Reason: ${err.getMessage}")
-    )
-    result <- parsed.fold(JWK.parseFromPEMEncodedObjects(pem).asRight[Throwable])(_ =>
-      new ParsingException("The platform does not allow to upload certificates").asLeft[JWK]
-    )
-  } yield result
+  private def fromPEM(pem: String): Either[Throwable, JWK] = {
+    def parseAsCertificate: Either[ParsingException, Option[X509Certificate]] =
+      Try(Option(X509CertUtils.parse(pem))).toEither.leftMap(err =>
+        new ParsingException(s"PEM parse failed. Reason: ${err.getMessage}")
+      )
+
+    def parseAsPEM: Either[ParsingException, JWK] =
+      Try(JWK.parseFromPEMEncodedObjects(pem)).toEither.leftMap(err =>
+        new ParsingException(s"PEM parse failed. Reason: ${err.getMessage}")
+      )
+
+    for {
+      certificate <- parseAsCertificate
+      result      <- certificate.fold(parseAsPEM)(_ =>
+        new ParsingException("The platform does not allow to upload certificates").asLeft[JWK]
+      )
+    } yield result
+  }
 
   override def publicKeyOnly(key: JWK): Either[Throwable, Boolean] = {
     Either.cond(!key.isPrivate, true, new NotAllowedPrivateKeyException("This contains a private key!"))
