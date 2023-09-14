@@ -78,6 +78,35 @@ class KeyManagementSpec
       response.status shouldBe StatusCodes.BadRequest
     }
 
+    "fail if key is not a valid PEM" in {
+
+      val clientId       = UUID.randomUUID()
+      val consumerId     = UUID.randomUUID()
+      val relationshipId = UUID.randomUUID()
+
+      createClient(clientId, consumerId, Seq(relationshipId))
+      addRelationship(clientId, relationshipId)
+
+      val data =
+        s"""
+           |[
+           |  {
+           |    "relationshipId": "$relationshipId",
+           |    "key": "LS0tLS1CRUdJ",
+           |    "use": "SIG",
+           |    "name": "Devet",
+           |    "alg": "123",
+           |    "createdAt": "$timestamp"
+           |  }
+           |]
+           |""".stripMargin
+
+      val response =
+        request(uri = s"$serviceURL/clients/${clientId.toString}/keys", method = HttpMethods.POST, data = Some(data))
+
+      response.status shouldBe StatusCodes.BadRequest
+    }
+
     "succeed" in {
       val clientId       = UUID.randomUUID()
       val consumerId     = UUID.randomUUID()

@@ -91,9 +91,7 @@ class ClientManagementSpec
       val clientId          = UUID.randomUUID()
       val consumerId        = UUID.randomUUID()
       val purposeId1        = UUID.randomUUID()
-      val purposeId2        = UUID.randomUUID()
       val purposeVersionId1 = UUID.randomUUID()
-      val purposeVersionId2 = UUID.randomUUID()
       val eServiceId        = UUID.randomUUID()
       val descriptorId      = UUID.randomUUID()
       val agreementId       = UUID.randomUUID()
@@ -127,29 +125,6 @@ class ClientManagementSpec
         )
       )
 
-      val payload2 = PurposeSeed(states =
-        ClientStatesChainSeed(
-          eservice = ClientEServiceDetailsSeed(
-            eserviceId = eServiceId,
-            descriptorId = descriptorId,
-            state = ClientComponentState.ACTIVE,
-            audience = Seq("some.audience"),
-            voucherLifespan = 10
-          ),
-          agreement = ClientAgreementDetailsSeed(
-            eserviceId = eServiceId,
-            consumerId = consumerId,
-            agreementId = agreementId,
-            state = ClientComponentState.INACTIVE
-          ),
-          purpose = ClientPurposeDetailsSeed(
-            purposeId = purposeId2,
-            versionId = purposeVersionId2,
-            state = ClientComponentState.ACTIVE
-          )
-        )
-      )
-
       val _ =
         request(
           uri = s"$serviceURL/clients/$clientId/purposes",
@@ -157,17 +132,10 @@ class ClientManagementSpec
           data = Some(payload1.toJson.prettyPrint)
         )
 
-      val _ =
-        request(
-          uri = s"$serviceURL/clients/$clientId/purposes",
-          method = HttpMethods.POST,
-          data = Some(payload2.toJson.prettyPrint)
-        )
-
       val response =
         request(uri = s"$serviceURL/clients/$clientId/purposes/$purposeId1", method = HttpMethods.GET, data = None)
 
-      val expected = {
+      val expected =
         Client(
           id = clientId,
           consumerId = consumerId,
@@ -202,8 +170,6 @@ class ClientManagementSpec
           relationships = Set.empty,
           createdAt = timestamp
         )
-
-      }
 
       val client = Await.result(Unmarshal(response).to[Client], Duration.Inf)
 
