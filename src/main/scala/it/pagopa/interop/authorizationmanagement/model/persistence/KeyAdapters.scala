@@ -3,16 +3,17 @@ package it.pagopa.interop.authorizationmanagement.model.persistence
 import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.ThumbprintCalculationError
 import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.jwk.model.Models._
-import it.pagopa.interop.authorizationmanagement.model.{ClientKey, KeyUse, Key, OtherPrimeInfo}
+import it.pagopa.interop.authorizationmanagement.model.{KeyUse, Key, OtherPrimeInfo, JWKKey}
 import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
+import it.pagopa.interop.authorizationmanagement.model.KeyUse.{ENC, SIG}
 
 object KeyAdapters {
 
   implicit class PersistentKeyWrapper(private val p: PersistentKey) extends AnyVal {
-    def toApi: Either[Throwable, ClientKey] =
+    def toApi: Either[Throwable, Key] =
       KeyConverter
         .fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)
-        .map(k => ClientKey(k.toApi, p.relationshipId, p.name, p.createdAt))
+        .map(_ => Key(p.relationshipId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
   }
 
   implicit class PersistentKeyObjectWrapper(private val p: PersistentKey.type) extends AnyVal {
@@ -44,10 +45,15 @@ object KeyAdapters {
       case Sig => JwkSig
       case Enc => JwkEnc
     }
+
+    def toApi: KeyUse = p match {
+      case Sig => SIG
+      case Enc => ENC
+    }
   }
 
   implicit class JwkKeyUseWrapper(private val p: JwkKey)                    extends AnyVal {
-    def toApi: Key = Key(
+    def toApi: JWKKey = JWKKey(
       kty = p.kty,
       keyOps = p.keyOps,
       use = p.use,

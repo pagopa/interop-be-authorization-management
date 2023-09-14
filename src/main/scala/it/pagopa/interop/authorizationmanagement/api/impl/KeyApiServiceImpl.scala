@@ -17,7 +17,7 @@ import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors._
 import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.key.PersistentKey
 import it.pagopa.interop.authorizationmanagement.model.persistence.KeyAdapters._
-import it.pagopa.interop.authorizationmanagement.model.persistence.PersistenceTypes._
+import it.pagopa.interop.authorizationmanagement.model.persistence.{PersistenceTypes => PersistType}
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
@@ -43,41 +43,46 @@ final case class KeyApiServiceImpl(
   private implicit val settings: ClusterShardingSettings = shardingSettings(entity, system)
   private implicit val implicitSharding: ClusterSharding = sharding
 
-  override def createKeys(clientId: String, key: Seq[KeySeed])(implicit
-    toEntityMarshallerKeysResponse: ToEntityMarshaller[KeysResponse],
+  override def createKeys(clientId: String, keysSeed: Seq[KeySeed])(implicit
+    toEntityMarshallerKeys: ToEntityMarshaller[Keys],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
     val operationLabel: String = s"Creating keys for client $clientId"
     logger.info(operationLabel)
 
-    val validatedPayload: ValidatedNel[InvalidKey, Seq[ValidKey]] = validateKeys(key)
+    val validatedPayload: ValidatedNel[InvalidKey, Seq[ValidKey]] = validateKeys(keysSeed)
 
-    val result: Future[KeysResponse] = for {
+    val result: Future[Keys] = for {
       validPayload   <- validatedPayload.toEither.leftMap(err => InvalidKeys(err.toList)).toFuture
       validKeys      <- validateWithCurrentKeys(validPayload, keysIdentifiers).toFuture
       persistentKeys <- validKeys.traverse(PersistentKey.toPersistentKey).toFuture
       addedKeys      <- commander(clientId).askWithStatus(ref => AddKeys(clientId, persistentKeys, ref))
       apiKeys        <- addedKeys.traverse(_.toApi).toFuture
-    } yield KeysResponse(apiKeys)
+    } yield Keys(apiKeys)
 
-    onComplete(result) { createKeysResponse[KeysResponse](operationLabel)(createKeys200) }
+    onComplete(result) { createKeysResponse[Keys](operationLabel)(createKeys200) }
   }
 
-  private def keysIdentifiers: LazyList[Kid] = {
-    val sliceSize                           = 1000
-    val commanders: Seq[EntityRef[Command]] = (0 until settings.numberOfShards).map(shard =>
+  private def keysIdentifiers: LazyList[PersistType.Kid] = {
+    val sliceSize                                 = 1000
+    val commanders: Seq[EntityRef[Command]]       = (0 until settings.numberOfShards).map(shard =>
       sharding.entityRefFor(KeyPersistentBehavior.TypeKey, shard.toString)
     )
-    val keyIdentifiers: LazyList[Kid]       = commanders.to(LazyList).flatMap(ref => slices(ref, sliceSize))
+    val keyIdentifiers: LazyList[PersistType.Kid] = commanders.to(LazyList).flatMap(ref => slices(ref, sliceSize))
 
     keyIdentifiers
   }
 
-  private def slices(commander: EntityRef[Command], sliceSize: Int): LazyList[Kid] = {
+  private def slices(commander: EntityRef[Command], sliceSize: Int): LazyList[PersistType.Kid] = {
     @tailrec
-    def readSlice(commander: EntityRef[Command], from: Int, to: Int, lazyList: LazyList[Kid]): LazyList[Kid] = {
-      lazy val slice: Seq[Kid] =
+    def readSlice(
+      commander: EntityRef[Command],
+      from: Int,
+      to: Int,
+      lazyList: LazyList[PersistType.Kid]
+    ): LazyList[PersistType.Kid] = {
+      lazy val slice: Seq[PersistType.Kid] =
         Await.result(commander.ask(ref => ListKid(from, to, ref)), Duration.Inf).getValue
       if (slice.isEmpty)
         lazyList
@@ -88,35 +93,35 @@ final case class KeyApiServiceImpl(
   }
 
   override def getClientKeyById(clientId: String, keyId: String)(implicit
-    toEntityMarshallerClientKey: ToEntityMarshaller[ClientKey],
+    toEntityMarshallerClientKey: ToEntityMarshaller[Key],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
     val operationLabel: String = s"Getting key $keyId for client $clientId"
     logger.info(operationLabel)
 
-    val result: Future[ClientKey] = for {
+    val result: Future[Key] = for {
       persistentKey <- commander(clientId).askWithStatus(ref => GetKey(clientId, keyId, ref))
       apiKey        <- persistentKey.toApi.toFuture
     } yield apiKey
 
-    onComplete(result) { getClientKeyByIdResponse[ClientKey](operationLabel)(getClientKeyById200) }
+    onComplete(result) { getClientKeyByIdResponse[Key](operationLabel)(getClientKeyById200) }
   }
 
   override def getClientKeys(clientId: String)(implicit
-    toEntityMarshallerKeysCreatedResponse: ToEntityMarshaller[KeysResponse],
+    toEntityMarshallerKeysCreatedResponse: ToEntityMarshaller[Keys],
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
     val operationLabel: String = s"Getting keys for client $clientId"
     logger.info(operationLabel)
 
-    val result: Future[KeysResponse] = for {
+    val result: Future[Keys] = for {
       persistentKeys <- commander(clientId).askWithStatus(ref => GetKeys(clientId, ref))
       apiKeys        <- persistentKeys.traverse(_.toApi.toFuture)
-    } yield KeysResponse(apiKeys)
+    } yield Keys(apiKeys)
 
-    onComplete(result) { getClientKeysResponse[KeysResponse](operationLabel)(getClientKeys200) }
+    onComplete(result) { getClientKeysResponse[Keys](operationLabel)(getClientKeys200) }
   }
 
   override def deleteClientKeyById(clientId: String, keyId: String)(implicit
@@ -131,17 +136,4 @@ final case class KeyApiServiceImpl(
     onComplete(result) { deleteClientKeyByIdResponse[Done](operationLabel)(_ => deleteClientKeyById204) }
   }
 
-  override def getEncodedClientKeyById(clientId: String, keyId: String)(implicit
-    toEntityMarshallerEncodedClientKey: ToEntityMarshaller[EncodedClientKey],
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    contexts: Seq[(String, String)]
-  ): Route = {
-    val operationLabel: String = s"Getting encoded key $keyId for client $clientId"
-    logger.info(operationLabel)
-
-    val result: Future[EncodedClientKey] =
-      commander(clientId).askWithStatus(ref => GetKey(clientId, keyId, ref)).map(k => EncodedClientKey(k.encodedPem))
-
-    onComplete(result) { getEncodedClientKeyByIdResponse[EncodedClientKey](operationLabel)(getEncodedClientKeyById200) }
-  }
 }
