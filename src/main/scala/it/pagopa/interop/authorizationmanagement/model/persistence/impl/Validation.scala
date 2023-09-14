@@ -9,7 +9,7 @@ import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 
 trait Validation {
 
-  def validateKeys(keys: Seq[KeySeed]): ValidatedNel[InvalidKey, Seq[ValidKey]] = keys.traverse(validateKey)
+  def validateKeys(keysSeed: Seq[KeySeed]): ValidatedNel[InvalidKey, Seq[ValidKey]] = keysSeed.traverse(validateKey)
 
   private def validateKey(keySeed: KeySeed): ValidatedNel[InvalidKey, ValidKey] = {
     val processedKey = for {

@@ -4,6 +4,8 @@ import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model._
 
+import java.time.{OffsetDateTime, ZoneOffset}
+
 object ClientAdapters {
 
   implicit class ClientWrapper(private val p: Client) extends AnyVal {
@@ -15,7 +17,8 @@ object ClientAdapters {
         purposes = p.purposes.map(_.toPersistent),
         description = p.description,
         relationships = p.relationships,
-        kind = PersistentClientKind.fromApi(p.kind)
+        kind = PersistentClientKind.fromApi(p.kind),
+        createdAt = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
       )
   }
 

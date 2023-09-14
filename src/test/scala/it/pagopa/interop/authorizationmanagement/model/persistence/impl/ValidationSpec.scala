@@ -78,7 +78,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
 
     "return an error since certificates are not uploadable on the platform" in {
       // given
-      val encodedPem = KeySeed(
+      val key = KeySeed(
         key = Base64Encoder.encode("""-----BEGIN CERTIFICATE-----
                                      |MIIC6jCCAdKgAwIBAgIGAXqBCekBMA0GCSqGSIb3DQEBCwUAMDYxNDAyBgNVBAMM
                                      |K1NQcEZnUzFJQzBJZzEyYkVXZDlnc1JNcGpYWGxOOE83alduWm0yYi1VQzAwHhcN
@@ -104,8 +104,8 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
         createdAt = OffsetDateTime.now()
       )
 
-      val key = KeyConverter.fromBase64encodedPEMToAPIKey("mockKID", encodedPem.key, JwkEnc, "123")
-      key.isLeft shouldBe true
+      val jwk = KeyConverter.fromBase64encodedPEMToAPIKey("mockKID", key.key, JwkEnc, "123")
+      jwk.isLeft shouldBe true
     }
 
     "return a invalid object when some of the keys are invalid" in {
