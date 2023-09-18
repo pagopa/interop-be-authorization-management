@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import it.pagopa.interop.authorizationmanagement.api.impl._
-import it.pagopa.interop.authorizationmanagement.model.{Client, KeysResponse}
+import it.pagopa.interop.authorizationmanagement.model.{Client, Keys}
 import it.pagopa.interop.authorizationmanagement.{SpecConfiguration, SpecHelper}
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -90,7 +90,7 @@ class RelationshipManagementSpec
       retrievedClient.relationships shouldBe Set(relationshipId2)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId/keys", method = HttpMethods.GET)
-      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)
+      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Keys], Duration.Inf)
       retrievedKeys.keys shouldEqual (keyOne.keys ++ keyTwo.keys)
     }
 
@@ -117,8 +117,8 @@ class RelationshipManagementSpec
       retrievedClient.relationships shouldBe Set(relationshipId)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2/keys", method = HttpMethods.GET)
-      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[KeysResponse], Duration.Inf)
-      retrievedKeys.keys shouldBe client2Keys.keys
+      val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Keys], Duration.Inf)
+      retrievedKeys shouldBe client2Keys
     }
 
   }

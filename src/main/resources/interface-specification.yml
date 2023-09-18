@@ -313,7 +313,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KeysResponse'
+                $ref: '#/components/schemas/Keys'
         '400':
           description: Missing Required Information
           content:
@@ -321,7 +321,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '404':
-          description: Clien id not found
+          description: Client id not found
           content:
             application/problem+json:
               schema:
@@ -332,7 +332,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Keys'
+              $ref: '#/components/schemas/KeysSeed'
       description: Creates one or more keys for the corresponding client.
       parameters:
         - name: clientId
@@ -362,7 +362,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/KeysResponse'
+                $ref: '#/components/schemas/Keys'
         '404':
           description: Client id not found
           content:
@@ -399,7 +399,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientKey'
+                $ref: '#/components/schemas/Key'
         '404':
           description: Key not found
           content:
@@ -430,43 +430,6 @@ paths:
         '204':
           description: the corresponding key has been deleted.
         '404':
-          description: Key not found
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/encoded/keys/{keyId}':
-    parameters:
-      - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
-    get:
-      tags:
-        - key
-      summary: Returns a base64 encoded key by client and key identifier (kid).
-      description: 'Given a client and key identifiers it returns the corresponding encoded key, if any'
-      operationId: getEncodedClientKeyById
-      parameters:
-        - name: clientId
-          in: path
-          description: ID of the client to look up
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: keyId
-          in: path
-          description: the unique identifier of the key (kid) to lookup
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: returns the corresponding base 64 encoded key
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EncodedClientKey'
-        "404":
           description: Key not found
           content:
             application/problem+json:
@@ -737,19 +700,35 @@ components:
       schema:
         type: string
   schemas:
-    KeysResponse:
+    Key:
+      description: 'Models the PersistentKey'
       type: object
       properties:
-        keys:
-          type: array
-          items:
-            $ref: '#/components/schemas/ClientKey'
+        relationshipId:
+          type: string
+          format: uuid
+          description: 'Represents the identifier of the party relationship whose platform security operator is uploading the key'
+        kid:
+          type: string
+        name:
+          type: string
+        encodedPem:
+          type: string
+        algorithm:
+          type: string
+        use:
+          $ref: '#/components/schemas/KeyUse'
+        createdAt:
+          type: string
+          format: date-time
       required:
-        - keys
-    Keys:
-      type: array
-      items:
-        $ref: '#/components/schemas/KeySeed'
+        - relationshipId
+        - kid
+        - name
+        - encodedPem
+        - algorithm
+        - use
+        - createdAt
     KeySeed:
       description: 'Models the seed for a public key to be persisted'
       type: object
@@ -779,43 +758,30 @@ components:
         - alg
         - name
         - createdAt
-    ClientKey:
+    KeysSeed:
+      type: array
+      items:
+        $ref: '#/components/schemas/KeySeed'
+    Keys:
       type: object
       properties:
-        key:
-          $ref: '#/components/schemas/Key'
-        relationshipId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/Key'
       required:
-        - key
-        - relationshipId
-        - name
-        - createdAt
+        - keys
     KeyWithClient:
       type: object
       properties:
         key:
-          $ref: '#/components/schemas/Key'
+          $ref: '#/components/schemas/JWKKey'
         client:
           $ref: '#/components/schemas/Client'
       required:
         - key
         - client
-    EncodedClientKey:
-      type: object
-      properties:
-        key:
-          type: string
-          description: 'base64 encoded key'
-      required:
-        - key
-    Key:
+    JWKKey:
       description: 'Models a JWK'
       type: object
       properties:

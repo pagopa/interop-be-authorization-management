@@ -4,6 +4,8 @@ import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapters._
 import it.pagopa.interop.authorizationmanagement.model._
 
+import java.time.{OffsetDateTime, ZoneOffset}
+
 object ClientAdapters {
 
   implicit class ClientWrapper(private val p: Client) extends AnyVal {

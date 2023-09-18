@@ -76,11 +76,12 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val consumerId     = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
 
-      val keySeed = KeySeed(
+      val keySeed = Key(
+        kid = "kid",
         relationshipId = relationshipId,
-        key = generateEncodedKey(),
+        encodedPem = generateEncodedKey(),
         use = KeyUse.SIG,
-        alg = "123",
+        algorithm = "123",
         name = "IT Key",
         createdAt = timestamp
       )
@@ -99,10 +100,10 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val expected = Seq(
         PersistentKey(
           relationshipId = relationshipId,
-          kid = keysResponse.keys.head.key.kid,
+          kid = keysResponse.head.kid,
           name = keySeed.name,
-          encodedPem = keySeed.key,
-          algorithm = keySeed.alg,
+          encodedPem = keySeed.encodedPem,
+          algorithm = keySeed.algorithm,
           use = PersistentKeyUse.fromApi(keySeed.use),
           createdAt = persistentKey.head.createdAt
         )
@@ -120,8 +121,8 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       addRelationship(clientId, relationshipId)
       val keysResponse1 = createKey(clientId, relationshipId)
       val keysResponse2 = createKey(clientId, relationshipId)
-      val kid1          = keysResponse1.keys.head.key.kid
-      val kid2          = keysResponse2.keys.head.key.kid
+      val kid1          = keysResponse1.head.kid
+      val kid2          = keysResponse2.head.kid
 
       request(uri = s"$serviceURL/clients/$clientId/keys/$kid1", method = HttpMethods.DELETE)
 

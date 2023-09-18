@@ -18,7 +18,7 @@ import it.pagopa.interop.authorizationmanagement.api._
 import it.pagopa.interop.authorizationmanagement.api.impl._
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.model.persistence.{Command, KeyPersistentBehavior}
-import it.pagopa.interop.authorizationmanagement.model.{Client, KeySeed, KeysResponse, Purpose, PurposeSeed}
+import it.pagopa.interop.authorizationmanagement.model.{Client, Key, Purpose, PurposeSeed}
 import it.pagopa.interop.authorizationmanagement.server.Controller
 import it.pagopa.interop.authorizationmanagement.server.impl.Dependencies
 import it.pagopa.interop.commons.utils.AkkaUtils.PassThroughAuthenticator
@@ -71,6 +71,7 @@ trait ItSpecHelper
     ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
   implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
   val classicSystem: actor.ActorSystem                    = httpSystem.classicSystem
+  final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
   override def startServer(): Unit = {
     val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
@@ -124,24 +125,26 @@ trait ItSpecHelper
     ActorTestKit.shutdown(httpSystem, 5.seconds)
   }
 
-  def createClient(id: UUID, consumerId: UUID): Client = {
+  def createClient(id: UUID, consumerUUID: UUID, membersIds: Seq[UUID] = Seq.empty): Client = {
     (() => mockUUIDSupplier.get()).expects().returning(id).once()
 
-    val consumerUuid = consumerId
-    val name         = s"New Client ${id.toString}"
-    val description  = s"New Client ${id.toString} description"
+    val name        = s"New Client ${id.toString}"
+    val description = s"New Client ${id.toString} description"
+    val members     = if (membersIds.isEmpty) "[]" else membersIds.map(_.toString).mkString("[\"", "\",\"", "\"]")
 
     val data =
       s"""{
-         |  "consumerId": "${consumerUuid.toString}",
+         |  "consumerId": "${consumerUUID.toString}",
          |  "name": "$name",
          |  "kind": "CONSUMER",
-         |  "description": "$description"
+         |  "description": "$description",
+         |  "createdAt": "$timestamp",
+         |  "members": ${members}
          |}""".stripMargin
 
     val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
 
-    response.status shouldBe StatusCodes.Created
+    response.status shouldBe StatusCodes.OK
 
     Await.result(Unmarshal(response).to[Client], Duration.Inf)
   }
@@ -177,17 +180,19 @@ trait ItSpecHelper
     Base64.encode(key).toString
   }
 
-  def createKey(clientId: UUID, relationshipId: UUID): KeysResponse = {
+  def createKey(clientId: UUID, relationshipId: UUID): Seq[Key] = {
 
     val data =
       s"""
          |[
          |  {
-         |    "relationshipId": "${relationshipId.toString}",
-         |    "key": "${generateEncodedKey()}",
+         |    "relationshipId": "$relationshipId",
+         |    "kid": "kid",
+         |    "encodedPem": "${generateEncodedKey()}",
          |    "name": "Test",
          |    "use": "SIG",
-         |    "alg": "123"
+         |    "algorithm": "123",
+         |    "createdAt": "$timestamp"
          |  }
          |]
          |""".stripMargin
@@ -197,10 +202,10 @@ trait ItSpecHelper
 
     response.status shouldBe StatusCodes.Created
 
-    Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
+    Await.result(Unmarshal(response).to[Seq[Key]], Duration.Inf)
   }
 
-  def createKey(clientId: UUID, keySeed: KeySeed): KeysResponse = {
+  def createKey(clientId: UUID, keySeed: Key): Seq[Key] = {
 
     val data = Seq(keySeed).toJson.compactPrint
 
@@ -209,7 +214,7 @@ trait ItSpecHelper
 
     response.status shouldBe StatusCodes.Created
 
-    Await.result(Unmarshal(response).to[KeysResponse], Duration.Inf)
+    Await.result(Unmarshal(response).to[Seq[Key]], Duration.Inf)
   }
 
   def addRelationship(clientId: UUID, relationshipId: UUID): Client = {
