@@ -12,6 +12,7 @@ import org.mongodb.scala.model._
 import org.mongodb.scala.{MongoCollection, _}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import spray.json.DefaultJsonProtocol.StringJsonFormat
 import spray.json._
 
 import scala.concurrent.ExecutionContext
@@ -26,17 +27,20 @@ object KeyCqrsProjection {
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId, eventHandler)
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
-    case KeysAdded(_, keys)    =>
+    case KeysAdded(clientId, keys) =>
+      val clientIdField: Map[String, JsValue]                 = Map("clientId" -> clientId.toJson)
       val updates: Either[Throwable, Seq[ActionWithDocument]] = keys.values.toSeq.traverse(key =>
         KeyConverter
           .fromBase64encodedPEMToAPIKey(key.kid, key.encodedPem, key.use.toJwk, key.algorithm)
-          .map(jwk =>
-            ActionWithDocument(collection.insertOne, Document(s"{ data: ${jwk.toApi.toJson.asJsObject.compactPrint}}"))
-          )
+          .map { jwk =>
+            val data: JsObject = JsObject(jwk.toApi.toJson.asJsObject.fields ++ clientIdField)
+            ActionWithDocument(collection.insertOne, Document(s"{ data: ${data.compactPrint} }"))
+          }
       )
       updates.fold(ErrorAction, MultiAction)
-    case KeyDeleted(_, kid, _) =>
+    case KeyDeleted(_, kid, _)     =>
       Action(collection.deleteOne(Filters.eq("data.kid", kid)))
-    case _                     => NoOpAction
+    case ClientDeleted(cId)        => Action(collection.deleteMany(Filters.eq("data.clientId", cId)))
+    case _                         => NoOpAction
   }
 }

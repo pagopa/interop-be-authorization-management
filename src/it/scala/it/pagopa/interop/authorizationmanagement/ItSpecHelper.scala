@@ -57,6 +57,8 @@ trait ItSpecHelper
   val purposeApiMarshaller: PurposeApiMarshaller                 = PurposeApiMarshallerImpl
   val tokenGenerationApiMarshaller: TokenGenerationApiMarshaller = TokenGenerationApiMarshallerImpl
 
+  final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
+
   var controller: Option[Controller]                 = None
   var bindServer: Option[Future[Http.ServerBinding]] = None
 
