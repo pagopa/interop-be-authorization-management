@@ -10,6 +10,7 @@ final case class PersistentClient(
   purposes: Seq[PersistentClientStatesChain],
   description: Option[String],
   relationships: Set[UUID],
+  users: Set[UUID],
   kind: PersistentClientKind,
   createdAt: OffsetDateTime
 )

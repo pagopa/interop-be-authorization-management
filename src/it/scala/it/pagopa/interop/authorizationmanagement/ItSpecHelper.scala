@@ -71,7 +71,6 @@ trait ItSpecHelper
     ActorSystem(Behaviors.ignore[Any], name = system.name, config = system.settings.config)
   implicit val executionContext: ExecutionContextExecutor = httpSystem.executionContext
   val classicSystem: actor.ActorSystem                    = httpSystem.classicSystem
-  final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
   override def startServer(): Unit = {
     val persistentEntity: Entity[Command, ShardingEnvelope[Command]] =
@@ -217,11 +216,11 @@ trait ItSpecHelper
     Await.result(Unmarshal(response).to[Seq[Key]], Duration.Inf)
   }
 
-  def addRelationship(clientId: UUID, relationshipId: UUID): Client = {
-    val requestBody = s"""{"relationshipId": "${relationshipId.toString}"}"""
+  def addUser(clientId: UUID, userId: UUID): Client = {
+    val requestBody = s"""{"userId": "${userId.toString}"}"""
 
     val response = request(
-      uri = s"$serviceURL/clients/${clientId.toString}/relationships",
+      uri = s"$serviceURL/clients/${clientId.toString}/users",
       method = HttpMethods.POST,
       data = Some(requestBody)
     )

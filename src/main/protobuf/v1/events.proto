@@ -28,14 +28,14 @@ message ClientDeletedV1 {
   required string clientId = 1;
 }
 
-message RelationshipAddedV1 {
+message UserAddedV1 {
   required PersistentClientV1 client = 1;
-  required string relationshipId = 2;
+  required string userId = 2;
 }
 
-message RelationshipRemovedV1 {
+message UserRemovedV1 {
   required string clientId = 1;
-  required string relationshipId = 2;
+  required string userId = 2;
 }
 
 message ClientPurposeAddedV1 {

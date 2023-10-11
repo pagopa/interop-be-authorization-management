@@ -24,7 +24,8 @@ object KeyAdapters {
           .left
           .map(ex => ThumbprintCalculationError(ex.getLocalizedMessage()))
       } yield PersistentKey(
-        relationshipId = validKey._1.relationshipId,
+        relationshipId = validKey._1.userId,
+        userId = Some(validKey._1.userId), // ???????
         kid = kid,
         name = validKey._1.name,
         encodedPem = validKey._1.key,

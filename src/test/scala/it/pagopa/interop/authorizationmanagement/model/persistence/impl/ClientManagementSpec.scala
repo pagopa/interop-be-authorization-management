@@ -50,9 +50,9 @@ class ClientManagementSpec
           name = name,
           purposes = Seq.empty,
           description = description,
-          relationships = Set.empty,
           kind = ClientKind.CONSUMER,
-          createdAt = timestamp
+          createdAt = timestamp,
+          users = Set.empty
         )
 
       val data =
@@ -62,7 +62,7 @@ class ClientManagementSpec
            |  "kind": "CONSUMER",
            |  "description": "${description.get}",
            |  "createdAt": "$timestamp",
-           |  "members": []
+           |  "users": []
            |}""".stripMargin
 
       val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
@@ -167,7 +167,7 @@ class ClientManagementSpec
               )
             )
           ),
-          relationships = Set.empty,
+          users = Set.empty,
           createdAt = timestamp
         )
 
@@ -237,13 +237,13 @@ class ClientManagementSpec
   "Client deletion" should {
 
     "succeed" in {
-      val clientUuid       = UUID.randomUUID()
-      val consumerUuid     = UUID.randomUUID()
-      val relationshipUuid = UUID.randomUUID()
+      val clientUuid   = UUID.randomUUID()
+      val consumerUuid = UUID.randomUUID()
+      val userUuid     = UUID.randomUUID()
 
       createClient(clientUuid, consumerUuid)
-      addRelationship(clientUuid, relationshipUuid)
-      createKey(clientUuid, relationshipUuid)
+      addUser(clientUuid, userUuid)
+      createKey(clientUuid, userUuid)
 
       val deleteResponse = request(uri = s"$serviceURL/clients/$clientUuid", method = HttpMethods.DELETE)
       deleteResponse.status shouldBe StatusCodes.NoContent
@@ -263,22 +263,22 @@ class ClientManagementSpec
   }
 
   "Client list" should {
-    "correctly filter by relationship id" in {
-      val clientId1       = UUID.randomUUID()
-      val clientId2       = UUID.randomUUID()
-      val consumerId1     = UUID.randomUUID()
-      val consumerId2     = UUID.randomUUID()
-      val relationshipId1 = UUID.randomUUID()
-      val relationshipId2 = UUID.randomUUID()
+    "correctly filter by user id" in {
+      val clientId1   = UUID.randomUUID()
+      val clientId2   = UUID.randomUUID()
+      val consumerId1 = UUID.randomUUID()
+      val consumerId2 = UUID.randomUUID()
+      val userId1     = UUID.randomUUID()
+      val userId2     = UUID.randomUUID()
 
       createClient(clientId1, consumerId1)
       createClient(clientId2, consumerId2)
 
-      addRelationship(clientId1, relationshipId1)
-      addRelationship(clientId2, relationshipId2)
+      addUser(clientId1, userId1)
+      addUser(clientId2, userId2)
 
       // List clients
-      val response = request(uri = s"$serviceURL/clients?relationshipId=$relationshipId1", method = HttpMethods.GET)
+      val response = request(uri = s"$serviceURL/clients?userId=$userId1", method = HttpMethods.GET)
 
       response.status shouldBe StatusCodes.OK
       val retrievedClients = Await.result(Unmarshal(response).to[Seq[Client]], Duration.Inf)

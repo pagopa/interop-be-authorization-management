@@ -18,8 +18,8 @@ final case class KeyDeleted(clientId: String, keyId: String, deactivationTimesta
 final case class ClientAdded(client: PersistentClient) extends Event
 final case class ClientDeleted(clientId: String)       extends Event
 
-final case class RelationshipAdded(client: PersistentClient, relationshipId: UUID) extends Event
-final case class RelationshipRemoved(clientId: String, relationshipId: String)     extends Event
+final case class UserAdded(client: PersistentClient, userId: UUID) extends Event
+final case class UserRemoved(clientId: String, userId: String)     extends Event
 
 final case class ClientPurposeAdded(clientId: String, statesChain: PersistentClientStatesChain) extends Event
 final case class ClientPurposeRemoved(clientId: String, purposeId: String)                      extends Event

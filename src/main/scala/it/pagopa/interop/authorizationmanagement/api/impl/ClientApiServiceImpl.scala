@@ -78,7 +78,7 @@ final case class ClientApiServiceImpl(
   override def listClients(
     offset: Int,
     limit: Int,
-    relationshipId: Option[String],
+    userId: Option[String],
     consumerId: Option[String],
     purposeId: Option[String],
     kind: Option[String]
@@ -88,7 +88,7 @@ final case class ClientApiServiceImpl(
     contexts: Seq[(String, String)]
   ): Route = {
     val operationLabel: String =
-      s"Listing clients for relationship $relationshipId and consumer $consumerId, purpose $purposeId and kind $kind"
+      s"Listing clients for user $userId and consumer $consumerId, purpose $purposeId and kind $kind"
     logger.info(operationLabel)
 
     val sliceSize = 1000
@@ -101,7 +101,7 @@ final case class ClientApiServiceImpl(
       )
 
     val sliced: EntityRef[Command] => Try[LazyList[PersistentClient]] =
-      ref => slices(ref, sliceSize, relationshipId, consumerId, purposeId, kindEnum)
+      ref => slices(ref, sliceSize, userId, consumerId, purposeId, kindEnum)
     val persistentClient                                              = commanders.map(sliced).sequence.map(_.flatten)
 
     val paginatedClients: Try[Seq[Client]] =
@@ -113,7 +113,7 @@ final case class ClientApiServiceImpl(
   private def slices(
     commander: EntityRef[Command],
     sliceSize: Int,
-    relationshipId: Option[String],
+    userId: Option[String],
     consumerId: Option[String],
     purposeId: Option[String],
     kind: Option[PersistentClientKind]
@@ -128,10 +128,7 @@ final case class ClientApiServiceImpl(
       lazy val slice: Try[Seq[PersistentClient]] =
         Try(
           Await
-            .result(
-              commander.ask(ref => ListClients(from, to, relationshipId, consumerId, purposeId, kind, ref)),
-              Duration.Inf
-            )
+            .result(commander.ask(ref => ListClients(from, to, userId, consumerId, purposeId, kind, ref)), Duration.Inf)
             .getValue
         )
       slice match {
@@ -144,20 +141,20 @@ final case class ClientApiServiceImpl(
     readSlice(commander, 0, sliceSize, LazyList.empty)
   }
 
-  override def addRelationship(clientId: String, relationshipSeed: PartyRelationshipSeed)(implicit
+  override def addUser(clientId: String, userSeed: UserSeed)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     toEntityMarshallerClient: ToEntityMarshaller[Client],
     contexts: Seq[(String, String)]
   ): Route = {
-    val operationLabel: String = s"Adding relationship ${relationshipSeed.relationshipId} to client $clientId"
+    val operationLabel: String = s"Adding user ${userSeed.userId} to client $clientId"
     logger.info(operationLabel)
 
     val result: Future[Client] =
       commander(clientId)
-        .askWithStatus(ref => AddRelationship(clientId, relationshipSeed.relationshipId, ref))
+        .askWithStatus(ref => AddUser(clientId, userSeed.userId, ref))
         .map(_.toApi)
 
-    onComplete(result) { addRelationshipResponse[Client](operationLabel)(addRelationship200) }
+    onComplete(result) { addUserResponse[Client](operationLabel)(addUser200) }
 
   }
 
@@ -172,17 +169,17 @@ final case class ClientApiServiceImpl(
     onComplete(result) { deleteClientResponse[Done](operationLabel)(_ => deleteClient204) }
   }
 
-  override def removeClientRelationship(clientId: String, relationshipId: String)(implicit
+  override def removeClientUser(clientId: String, userId: String)(implicit
     toEntityMarshallerProblem: ToEntityMarshaller[Problem],
     contexts: Seq[(String, String)]
   ): Route = {
-    val operationLabel: String = s"Removing relationship $relationshipId from client $clientId"
+    val operationLabel: String = s"Removing user $userId from client $clientId"
     logger.info(operationLabel)
 
     val result: Future[Done] =
-      commander(clientId).askWithStatus(ref => RemoveRelationship(clientId, relationshipId, ref))
+      commander(clientId).askWithStatus(ref => RemoveUser(clientId, userId, ref))
 
-    onComplete(result) { removeClientRelationshipResponse[Done](operationLabel)(_ => removeClientRelationship204) }
+    onComplete(result) { removeClientUserResponse[Done](operationLabel)(_ => removeClientUser204) }
   }
 
   override def getClientByPurposeId(clientId: String, purposeId: String)(implicit

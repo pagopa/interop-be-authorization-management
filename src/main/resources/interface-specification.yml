@@ -150,9 +150,9 @@ paths:
             minimum: 1
             maximum: 100
             default: 10
-        - name: relationshipId
+        - name: userId
           in: query
-          description: ID of Party Relationship that MUST be related to the Client
+          description: ID of Party User that MUST be related to the Client
           schema:
             type: string
             format: uuid
@@ -226,15 +226,15 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  '/clients/{clientId}/relationships':
+  '/clients/{clientId}/users':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - client
-      summary: Add a Party Relationship to a Client
-      operationId: addRelationship
+      summary: Add a User to a Client
+      operationId: addUser
       parameters:
         - name: clientId
           in: path
@@ -245,7 +245,7 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Relationship added
+          description: User added
           content:
             application/json:
               schema:
@@ -258,22 +258,22 @@ paths:
                 $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
-        description: An Party Relationship seed
+        description: An Party User seed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PartyRelationshipSeed'
-      description: Adds a Party Relationship to a Client
-  '/clients/{clientId}/relationships/{relationshipId}':
+              $ref: '#/components/schemas/UserSeed'
+      description: Adds a User to a Client
+  '/clients/{clientId}/users/{userId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
       - $ref: '#/components/parameters/IpAddress'
     delete:
-      description: Removes a Party Relationship from a Client
+      description: Removes a User from a Client
       tags:
         - client
-      summary: Remove a Party Relationship from a Client
-      operationId: removeClientRelationship
+      summary: Remove a User from a Client
+      operationId: removeClientUser
       parameters:
         - name: clientId
           in: path
@@ -282,18 +282,18 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: relationshipId
+        - name: userId
           in: path
-          description: The Party Relationship Id
+          description: The user Id
           required: true
           schema:
             type: string
             format: uuid
       responses:
         '204':
-          description: Party Relationship removed
+          description: User removed
         '404':
-          description: Client or Relationship not found
+          description: Client or User not found
           content:
             application/problem+json:
               schema:
@@ -704,10 +704,10 @@ components:
       description: 'Models the PersistentKey'
       type: object
       properties:
-        relationshipId:
+        userId:
           type: string
           format: uuid
-          description: 'Represents the identifier of the party relationship whose platform security operator is uploading the key'
+          description: 'Represents the identifier of the party user whose platform security operator is uploading the key'
         kid:
           type: string
         name:
@@ -722,7 +722,7 @@ components:
           type: string
           format: date-time
       required:
-        - relationshipId
+        - userId
         - kid
         - name
         - encodedPem
@@ -733,10 +733,10 @@ components:
       description: 'Models the seed for a public key to be persisted'
       type: object
       properties:
-        relationshipId:
+        userId:
           type: string
           format: uuid
-          description: 'Represents the identifier of the party relationship whose platform security operator is uploading the key'
+          description: 'Represents the identifier of the party user whose platform security operator is uploading the key'
         key:
           type: string
           description: 'Base64 UTF-8 encoding of a public key in PEM format'
@@ -752,7 +752,7 @@ components:
           type: string
           description: 'Descriptive name of this key.'
       required:
-        - relationshipId
+        - userId
         - key
         - use
         - alg
@@ -871,7 +871,7 @@ components:
           format: date-time
         kind:
           $ref: '#/components/schemas/ClientKind'
-        members:
+        users:
           items:
             type: string
             format: uuid
@@ -880,7 +880,7 @@ components:
         - name
         - kind
         - createdAt
-        - members
+        - users
     Client:
       description: Models a Client
       type: object
@@ -902,7 +902,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Purpose'
-        relationships:
+        users:
           type: array
           items:
             type: string
@@ -915,7 +915,7 @@ components:
         - consumerId
         - name
         - purposes
-        - relationships
+        - users
         - kind
         - createdAt
     Clients:
@@ -928,15 +928,15 @@ components:
       enum:
         - SIG
         - ENC
-    PartyRelationshipSeed:
-      description: Models the seed for a Party Relationship-Client correlation to be persisted
+    UserSeed:
+      description: Models the seed for a User-Client correlation to be persisted
       type: object
       properties:
-        relationshipId:
+        userId:
           type: string
           format: uuid
       required:
-        - relationshipId
+        - userId
     Purpose:
       type: object
       properties:

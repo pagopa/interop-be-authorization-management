@@ -10,22 +10,19 @@ object KeyManagementErrors {
   final case class ClientNotFoundError(clientId: String)
       extends ComponentError("0002", s"Client with id $clientId not found")
 
-  final case class PartyRelationshipNotAllowedError(errors: Set[(RelationshipId, ClientId)])
+  final case class UserNotAllowedError(errors: Set[(RelationshipId, ClientId)])
       extends ComponentError(
         "0004",
         errors
-          .map(e => s"Party Relationship ${e._1} is not allowed to add keys to client ${e._2}")
+          .map(e => s"User ${e._1} is not allowed to add keys to client ${e._2}")
           .mkString("[", ",", "]")
       )
 
   final case class ThumbprintCalculationError(message: String)
       extends ComponentError("0005", s"Error while calculating keys thumbprints: $message")
 
-  final case class PartyRelationshipNotFoundError(clientId: String, relationshipId: String)
-      extends ComponentError(
-        "0006",
-        s"Party Relationship with id $relationshipId not found in Client with id $clientId"
-      )
+  final case class UserNotFoundError(clientId: String, userId: String)
+      extends ComponentError("0006", s"User with id $userId not found in Client with id $clientId")
 
   final case class CreateKeysBadRequest(clientId: String, reasons: String)
       extends ComponentError("0007", s"Error while creating keys for client $clientId. Reason: $reasons")

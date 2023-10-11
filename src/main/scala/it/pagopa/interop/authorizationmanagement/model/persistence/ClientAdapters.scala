@@ -16,7 +16,7 @@ object ClientAdapters {
         name = p.name,
         purposes = p.purposes.map(_.toApi).map(Purpose),
         description = p.description,
-        relationships = p.relationships,
+        users = p.users,
         kind = p.kind.toApi,
         createdAt = p.createdAt
       )
@@ -30,9 +30,10 @@ object ClientAdapters {
         name = seed.name,
         purposes = Seq.empty,
         description = seed.description,
-        relationships = seed.members.toSet,
+        relationships = Set.empty,
         kind = PersistentClientKind.fromApi(seed.kind),
-        createdAt = seed.createdAt
+        createdAt = seed.createdAt,
+        users = seed.users.toSet
       )
   }
 

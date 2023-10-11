@@ -5,6 +5,7 @@ import java.util.UUID
 
 final case class PersistentKey(
   relationshipId: UUID,
+  userId: Option[UUID],
   kid: String,
   name: String,
   encodedPem: String,

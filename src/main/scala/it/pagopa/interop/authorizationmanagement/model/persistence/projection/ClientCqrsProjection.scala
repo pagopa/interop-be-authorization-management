@@ -40,13 +40,13 @@ object ClientCqrsProjection {
         collection.updateOne(Filters.eq("data.id", cId), _),
         Updates.pull("data.keys", Document(s"{ kid : \"$kId\" }"))
       )
-    case RelationshipAdded(c, rId)       =>
+    case UserAdded(c, rId)               =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", c.id.toString), _),
-        Updates.push("data.relationships", rId.toString)
+        Updates.push("data.users", rId.toString)
       )
-    case RelationshipRemoved(cId, rId)   =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.relationships", rId))
+    case UserRemoved(cId, rId)           =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.users", rId))
     case ClientPurposeAdded(cId, states) =>
       // Added as array instead of map because it is not possible to update objects without knowing their key
       ActionWithBson(

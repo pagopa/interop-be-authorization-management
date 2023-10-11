@@ -118,12 +118,12 @@ trait SpecHelper
     ActorTestKit.shutdown(httpSystem, 5.seconds)
   }
 
-  def createClient(id: UUID, consumerUUID: UUID, membersIds: Seq[UUID] = Seq.empty): Client = {
+  def createClient(id: UUID, consumerUUID: UUID, userIds: Seq[UUID] = Seq.empty): Client = {
     (() => mockUUIDSupplier.get()).expects().returning(id).once()
 
     val name        = s"New Client ${id.toString}"
     val description = s"New Client ${id.toString} description"
-    val members     = if (membersIds.isEmpty) "[]" else membersIds.map(_.toString).mkString("[\"", "\",\"", "\"]")
+    val users       = if (userIds.isEmpty) "[]" else userIds.map(_.toString).mkString("[\"", "\",\"", "\"]")
 
     val data =
       s"""{
@@ -132,7 +132,7 @@ trait SpecHelper
          |  "kind": "CONSUMER",
          |  "description": "$description",
          |  "createdAt": "$timestamp",
-         |  "members": ${members}
+         |  "users": ${users}
          |}""".stripMargin
 
     val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
@@ -178,13 +178,13 @@ trait SpecHelper
     Base64.encode(key).toString
   }
 
-  def createKey(clientId: UUID, relationshipId: UUID): Keys = {
+  def createKey(clientId: UUID, userId: UUID): Keys = {
 
     val data =
       s"""
          |[
          |  {
-         |    "relationshipId": "${relationshipId.toString}",
+         |    "userId": "${userId.toString}",
          |    "key": "${generateEncodedKey()}",
          |    "name": "Test",
          |    "use": "SIG",
@@ -202,11 +202,11 @@ trait SpecHelper
     Await.result(Unmarshal(response).to[Keys], Duration.Inf)
   }
 
-  def addRelationship(clientId: UUID, relationshipId: UUID): Client = {
-    val requestBody = s"""{"relationshipId": "${relationshipId.toString}"}"""
+  def addUser(clientId: UUID, userId: UUID): Client = {
+    val requestBody = s"""{"userId": "${userId.toString}"}"""
 
     val response = request(
-      uri = s"$serviceURL/clients/${clientId.toString}/relationships",
+      uri = s"$serviceURL/clients/${clientId.toString}/users",
       method = HttpMethods.POST,
       data = Some(requestBody)
     )

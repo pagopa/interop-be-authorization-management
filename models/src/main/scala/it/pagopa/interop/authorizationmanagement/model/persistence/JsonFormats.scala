@@ -59,16 +59,16 @@ object JsonFormats {
     jsonFormat3(PersistentClientPurposeDetails.apply)
 
   implicit val pcscFormat: RootJsonFormat[PersistentClientStatesChain] = jsonFormat4(PersistentClientStatesChain.apply)
-  implicit val pcFormat: RootJsonFormat[PersistentClient]              = jsonFormat8(PersistentClient.apply)
+  implicit val pcFormat: RootJsonFormat[PersistentClient]              = jsonFormat9(PersistentClient.apply)
 
-  implicit val pkFormat: RootJsonFormat[PersistentKey] = jsonFormat7(PersistentKey.apply)
+  implicit val pkFormat: RootJsonFormat[PersistentKey] = jsonFormat8(PersistentKey.apply)
 
   implicit val kaFormat: RootJsonFormat[KeysAdded]                            = jsonFormat2(KeysAdded.apply)
   implicit val kdFormat: RootJsonFormat[KeyDeleted]                           = jsonFormat3(KeyDeleted.apply)
   implicit val caFormat: RootJsonFormat[ClientAdded]                          = jsonFormat1(ClientAdded.apply)
   implicit val cdFormat: RootJsonFormat[ClientDeleted]                        = jsonFormat1(ClientDeleted.apply)
-  implicit val raFormat: RootJsonFormat[RelationshipAdded]                    = jsonFormat2(RelationshipAdded.apply)
-  implicit val rrFormat: RootJsonFormat[RelationshipRemoved]                  = jsonFormat2(RelationshipRemoved.apply)
+  implicit val raFormat: RootJsonFormat[UserAdded]                            = jsonFormat2(UserAdded.apply)
+  implicit val rrFormat: RootJsonFormat[UserRemoved]                          = jsonFormat2(UserRemoved.apply)
   implicit val cpaFormat: RootJsonFormat[ClientPurposeAdded]                  = jsonFormat2(ClientPurposeAdded.apply)
   implicit val cprFormat: RootJsonFormat[ClientPurposeRemoved]                = jsonFormat2(ClientPurposeRemoved.apply)
   implicit val esuFormat: RootJsonFormat[EServiceStateUpdated]                = jsonFormat5(EServiceStateUpdated.apply)

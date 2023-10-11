@@ -16,10 +16,12 @@ class StateSpec extends AnyWordSpecLike with Matchers {
     "physically delete the keys properly" in {
       // given
       val relationshipId = UUID.randomUUID()
+      val userId         = UUID.randomUUID()
       val fooBarKeys     = Map(
         "1" -> PersistentKey(
           kid = "1",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -29,6 +31,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -38,6 +41,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "3" -> PersistentKey(
           kid = "3",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -47,6 +51,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "4" -> PersistentKey(
           kid = "4",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -77,12 +82,14 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
       val consumerUuid   = UUID.randomUUID()
       val relationshipId = UUID.randomUUID()
+      val userId         = UUID.randomUUID()
 
       // given
       val client1Keys = Map(
         "kid1" -> PersistentKey(
           kid = "kid1",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -94,6 +101,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid2" -> PersistentKey(
           kid = "kid2",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -105,6 +113,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid3" -> PersistentKey(
           kid = "kid3",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -120,6 +129,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 1 desc"),
           relationships = Set.empty,
+          users = Set.empty,
           kind = Consumer,
           createdAt = OffsetDateTime.now()
         )
@@ -131,6 +141,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 2 desc"),
           relationships = Set.empty,
+          users = Set.empty,
           kind = Consumer,
           createdAt = OffsetDateTime.now()
         )
@@ -142,6 +153,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 3 desc"),
           relationships = Set.empty,
+          users = Set.empty,
           kind = Consumer,
           createdAt = OffsetDateTime.now()
         )
