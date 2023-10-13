@@ -11,6 +11,20 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     case None          => this
   }
 
+  def updateKey(event: KeyUpdated): State = keys.get(event.clientId) match {
+    case Some(entries) => {
+      entries.get(event.keyId) match {
+        case Some(key) => {
+          val updatedKey = key.copy(userId = Some(event.userId))
+          val filtered   = entries.filterNot(_._1 == updatedKey.kid)
+          copy(keys = keys + (event.clientId -> (filtered + (updatedKey.kid -> updatedKey))))
+        }
+        case None      => this
+      }
+    }
+    case None          => this
+  }
+
   def addKeys(event: KeysAdded): State = {
     keys.get(event.clientId) match {
       case Some(entries) =>

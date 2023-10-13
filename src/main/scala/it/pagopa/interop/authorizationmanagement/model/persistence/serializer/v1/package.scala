@@ -101,6 +101,16 @@ package object v1 {
       KeyDeletedV1(clientId = event.clientId, keyId = event.keyId, deactivationTimestamp = deactivationTimestamp)
     )
 
+  implicit def keyUpdatedV1PersistEventDeserializer: PersistEventDeserializer[KeyUpdatedV1, KeyUpdated] = event =>
+    for {
+      userId <- Try(UUID.fromString(event.userId)).toEither
+    } yield KeyUpdated(clientId = event.clientId, keyId = event.keyId, userId = userId)
+
+  implicit def keyUpdatedV1PersistEventSerializer: PersistEventSerializer[KeyUpdated, KeyUpdatedV1] = event =>
+    Right[Throwable, KeyUpdatedV1](
+      KeyUpdatedV1(clientId = event.clientId, keyId = event.keyId, userId = event.userId.toString)
+    )
+
   implicit def clientAddedV1PersistEventDeserializer: PersistEventDeserializer[ClientAddedV1, ClientAdded] = event =>
     protobufToClient(event.client).map(ClientAdded)
 

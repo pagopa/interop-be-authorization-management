@@ -68,6 +68,15 @@ object KeyPersistentBehavior {
           case None    => commandKeyNotFoundError(clientId, keyId, replyTo)
         }
 
+      case UpdateKey(clientId, keyId, userId, replyTo) =>
+        state.getClientKeyById(clientId, keyId) match {
+          case Some(_) =>
+            Effect
+              .persist(KeyUpdated(clientId, keyId, userId))
+              .thenRun(_ => replyTo ! StatusReply.Success(Done))
+          case None    => commandKeyNotFoundError(clientId, keyId, replyTo)
+        }
+
       case GetKeys(clientId, replyTo) =>
         state.clients.get(clientId).fold(commandError(replyTo, ClientNotFoundError(clientId))) { _ =>
           val keys: Seq[PersistentKey] = state.keys.get(clientId).map(_.values.toSeq).getOrElse(Nil)
@@ -316,6 +325,7 @@ object KeyPersistentBehavior {
     event match {
       case e: KeysAdded                         => state.addKeys(e)
       case e: KeyDeleted                        => state.deleteKey(e)
+      case e: KeyUpdated                        => state.updateKey(e)
       case e: ClientAdded                       => state.addClient(e)
       case e: ClientDeleted                     => state.deleteClient(e)
       case e: RelationshipAdded                 => state.addRelationship(e)

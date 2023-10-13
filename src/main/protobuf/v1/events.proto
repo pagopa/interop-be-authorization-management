@@ -20,6 +20,12 @@ message KeyDeletedV1 {
   required string deactivationTimestamp = 3;
 }
 
+message KeyUpdatedV1 {
+  required string clientId = 1;
+  required string keyId = 2;
+  required string userId = 3;
+}
+
 message ClientAddedV1 {
   required PersistentClientV1 client = 1;
 }

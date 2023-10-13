@@ -435,6 +435,42 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+    post:
+      tags:
+        - key
+      summary: Update an Key with an User
+      description:  Update an Key with an User
+      operationId: updateKey
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid)
+          required: true
+          schema:
+            type: string    
+      responses:
+        '204':
+          description: the corresponding key has been updated.
+        '404':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: An User seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSeed'
   '/clients/{clientId}/purposes':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'

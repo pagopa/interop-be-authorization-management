@@ -42,6 +42,15 @@ object ClientCqrsProjection {
     case KeysAdded(cId, keys)            =>
       val updates = keys.map { case (_, key) => Updates.push(s"data.keys", key.toDocument) }
       ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.combine(updates.toList: _*))
+    case KeyUpdated(cId, kId, uId)       =>
+      ActionWithBson(
+        collection.updateOne(
+          Filters.eq("data.id", cId),
+          _,
+          UpdateOptions().arrayFilters(List(Filters.eq("key.kid", kId)).asJava)
+        ),
+        Updates.set("data.keys.$[key].userId", uId.toString)
+      )
     case KeyDeleted(cId, kId, _)         =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", cId), _),

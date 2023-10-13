@@ -2,7 +2,7 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import it.pagopa.interop.authorizationmanagement.model.client.{Consumer, PersistentClient}
 import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, Sig}
-import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientDeleted, KeyDeleted, State}
+import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientDeleted, KeyDeleted, KeyUpdated, State}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -69,6 +69,77 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       // then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe None
       updatedState.keys("fooBarKeys").size shouldBe 3
+    }
+
+    "Update the keys with userId" in {
+      // given
+      val relationshipId = Some(UUID.randomUUID())
+      val userId         = UUID.randomUUID()
+      val time           = OffsetDateTime.now()
+      val fooBarKeys     = Map(
+        "1" -> PersistentKey(
+          kid = "1",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        ),
+        "2" -> PersistentKey(
+          kid = "2",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        ),
+        "3" -> PersistentKey(
+          kid = "3",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        ),
+        "4" -> PersistentKey(
+          kid = "4",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        )
+      )
+      val keys           = Map("fooBarKeys" -> fooBarKeys)
+      val state          = State(keys = keys, clients = Map.empty)
+      state.keys("fooBarKeys").size shouldBe 4
+
+      val updatedUserId = UUID.randomUUID()
+      // when
+      val updatedState  = state.updateKey(KeyUpdated("fooBarKeys", "2", updatedUserId))
+
+      // then
+      updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe Some(
+        PersistentKey(
+          kid = "2",
+          relationshipId = relationshipId,
+          userId = Some(updatedUserId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        )
+      )
+      updatedState.keys("fooBarKeys").size shouldBe 4
     }
 
     "delete a client properly" in {

@@ -14,6 +14,7 @@ sealed trait Event extends Persistable with ProjectableEvent
 
 final case class KeysAdded(clientId: String, keys: Keys)                                            extends Event
 final case class KeyDeleted(clientId: String, keyId: String, deactivationTimestamp: OffsetDateTime) extends Event
+final case class KeyUpdated(clientId: String, keyId: String, userId: UUID)                          extends Event
 
 final case class ClientAdded(client: PersistentClient) extends Event
 final case class ClientDeleted(clientId: String)       extends Event
