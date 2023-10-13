@@ -6,6 +6,7 @@ import it.pagopa.interop.authorizationmanagement.jwk.model.Models._
 import it.pagopa.interop.authorizationmanagement.model.{KeyUse, Key, OtherPrimeInfo, JWKKey}
 import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 import it.pagopa.interop.authorizationmanagement.model.KeyUse.{ENC, SIG}
+import java.util.UUID
 
 object KeyAdapters {
 
@@ -13,7 +14,9 @@ object KeyAdapters {
     def toApi: Either[Throwable, Key] =
       KeyConverter
         .fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)
-        .map(_ => Key(p.relationshipId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
+        .map(_ =>
+          Key(p.userId.getOrElse(UUID.randomUUID()), p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt)
+        )
   }
 
   implicit class PersistentKeyObjectWrapper(private val p: PersistentKey.type) extends AnyVal {
@@ -24,8 +27,8 @@ object KeyAdapters {
           .left
           .map(ex => ThumbprintCalculationError(ex.getLocalizedMessage()))
       } yield PersistentKey(
-        relationshipId = validKey._1.userId,
-        userId = Some(validKey._1.userId), // ???????
+        relationshipId = None,
+        userId = Some(validKey._1.userId),
         kid = kid,
         name = validKey._1.name,
         encodedPem = validKey._1.key,

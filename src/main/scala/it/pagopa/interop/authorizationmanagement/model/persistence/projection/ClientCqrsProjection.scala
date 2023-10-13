@@ -32,6 +32,13 @@ object ClientCqrsProjection {
       val data = JsObject(c.toJson.asJsObject.fields ++ emptyKeys)
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${data.compactPrint} }"))
     case ClientDeleted(cId)              => Action(collection.deleteOne(Filters.eq("data.id", cId)))
+    case RelationshipAdded(c, rId)       =>
+      ActionWithBson(
+        collection.updateOne(Filters.eq("data.id", c.id.toString), _),
+        Updates.push("data.relationships", rId.toString)
+      )
+    case RelationshipRemoved(cId, rId)   =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.relationships", rId))
     case KeysAdded(cId, keys)            =>
       val updates = keys.map { case (_, key) => Updates.push(s"data.keys", key.toDocument) }
       ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.combine(updates.toList: _*))

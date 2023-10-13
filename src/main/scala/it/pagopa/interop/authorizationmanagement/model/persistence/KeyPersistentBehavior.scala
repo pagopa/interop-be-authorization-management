@@ -318,6 +318,8 @@ object KeyPersistentBehavior {
       case e: KeyDeleted                        => state.deleteKey(e)
       case e: ClientAdded                       => state.addClient(e)
       case e: ClientDeleted                     => state.deleteClient(e)
+      case e: RelationshipAdded                 => state.addRelationship(e)
+      case e: RelationshipRemoved               => state.removeRelationship(e)
       case e: UserAdded                         => state.addUser(e)
       case e: UserRemoved                       => state.removeUser(e)
       case e: ClientPurposeAdded                => state.addClientPurpose(e)

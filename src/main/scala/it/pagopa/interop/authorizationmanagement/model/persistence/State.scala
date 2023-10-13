@@ -26,6 +26,22 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   def deleteClient(event: ClientDeleted): State =
     copy(clients = clients - event.clientId, keys = keys - event.clientId)
 
+  def addRelationship(event: RelationshipAdded): State = {
+    val updatedClient = event.client.copy(relationships = event.client.relationships + event.relationshipId)
+    copy(clients = clients + (event.client.id.toString -> updatedClient))
+  }
+
+  def removeRelationship(event: RelationshipRemoved): State = {
+    val updatedClients = clients.get(event.clientId) match {
+      case Some(client) =>
+        val updated = client.copy(relationships = client.relationships.filter(_.toString != event.relationshipId))
+        clients + (event.clientId -> updated)
+      case None         => clients
+    }
+
+    copy(clients = updatedClients)
+  }
+
   def addUser(event: UserAdded): State = {
     val updatedClient = event.client.copy(users = event.client.users + event.userId)
     copy(clients = clients + (event.client.id.toString -> updatedClient))

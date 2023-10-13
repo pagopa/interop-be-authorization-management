@@ -29,6 +29,32 @@ package object v1 {
 
   final val DEFAULT_CREATED_AT: OffsetDateTime = OffsetDateTime.of(2023, 4, 18, 12, 0, 0, 0, ZoneOffset.UTC)
 
+  implicit def relationshipAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
+    for {
+      client         <- protobufToClient(event.client)
+      relationshipId <- Try(UUID.fromString(event.relationshipId)).toEither
+    } yield RelationshipAdded(client = client, relationshipId = relationshipId)
+
+  implicit def relationshipAddedV1PersistEventSerializer
+    : PersistEventSerializer[RelationshipAdded, RelationshipAddedV1] = event =>
+    for {
+      client <- clientToProtobuf(event.client)
+    } yield RelationshipAddedV1(client = client, relationshipId = event.relationshipId.toString)
+
+  implicit def relationshipRemovedV1PersistEventDeserializer
+    : PersistEventDeserializer[RelationshipRemovedV1, RelationshipRemoved] =
+    event =>
+      Right[Throwable, RelationshipRemoved](
+        RelationshipRemoved(clientId = event.clientId, relationshipId = event.relationshipId)
+      )
+
+  implicit def relationshipRemovedV1PersistEventSerializer
+    : PersistEventSerializer[RelationshipRemoved, RelationshipRemovedV1] = event =>
+    Right[Throwable, RelationshipRemovedV1](
+      RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
+    )
+
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
       for {
@@ -240,7 +266,7 @@ package object v1 {
       PersistentKeyV1(
         kid = key.kid,
         name = key.name,
-        relationshipId = key.relationshipId.toString,
+        relationshipId = key.relationshipId.map(_.toString),
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
         use = persistentKeyUseToProtobuf(key.use),
@@ -389,7 +415,7 @@ package object v1 {
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
+      relationshipId <- Try(key.relationshipId.map(UUID.fromString(_))).toEither
       userId         <- Try(key.userId.map(UUID.fromString(_))).toEither
       use            <- persistentKeyUseFromProtobuf(key.use)
       createdAt      <- key.createdAt.toOffsetDateTime.toEither

@@ -15,7 +15,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
     "physically delete the keys properly" in {
       // given
-      val relationshipId = UUID.randomUUID()
+      val relationshipId = Some(UUID.randomUUID())
       val userId         = UUID.randomUUID()
       val fooBarKeys     = Map(
         "1" -> PersistentKey(
@@ -81,7 +81,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val clientId3 = clientUuid3.toString
 
       val consumerUuid   = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val relationshipId = Some(UUID.randomUUID())
       val userId         = UUID.randomUUID()
 
       // given

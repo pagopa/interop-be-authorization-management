@@ -74,7 +74,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
     "succeed for event KeysAdded" in {
       val clientId       = UUID.randomUUID()
       val consumerId     = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val relationshipId = Some(UUID.randomUUID())
       val userId         = UUID.randomUUID()
 
       val keySeed = Key(
