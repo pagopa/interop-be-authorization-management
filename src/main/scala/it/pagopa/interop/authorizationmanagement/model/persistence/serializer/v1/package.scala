@@ -123,7 +123,7 @@ package object v1 {
     Right[Throwable, RelationshipRemovedV1](
       RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
     )
-      
+
   implicit def userRemovedV1PersistEventDeserializer: PersistEventDeserializer[UserRemovedV1, UserRemoved] = event =>
     for {
       client <- protobufToClient(event.client)
