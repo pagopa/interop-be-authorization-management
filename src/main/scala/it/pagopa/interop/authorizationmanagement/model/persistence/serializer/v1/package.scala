@@ -29,32 +29,6 @@ package object v1 {
 
   final val DEFAULT_CREATED_AT: OffsetDateTime = OffsetDateTime.of(2023, 4, 18, 12, 0, 0, 0, ZoneOffset.UTC)
 
-  implicit def relationshipAddedV1PersistEventDeserializer
-    : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
-    for {
-      client         <- protobufToClient(event.client)
-      relationshipId <- Try(UUID.fromString(event.relationshipId)).toEither
-    } yield RelationshipAdded(client = client, relationshipId = relationshipId)
-
-  implicit def relationshipAddedV1PersistEventSerializer
-    : PersistEventSerializer[RelationshipAdded, RelationshipAddedV1] = event =>
-    for {
-      client <- clientToProtobuf(event.client)
-    } yield RelationshipAddedV1(client = client, relationshipId = event.relationshipId.toString)
-
-  implicit def relationshipRemovedV1PersistEventDeserializer
-    : PersistEventDeserializer[RelationshipRemovedV1, RelationshipRemoved] =
-    event =>
-      Right[Throwable, RelationshipRemoved](
-        RelationshipRemoved(clientId = event.clientId, relationshipId = event.relationshipId)
-      )
-
-  implicit def relationshipRemovedV1PersistEventSerializer
-    : PersistEventSerializer[RelationshipRemoved, RelationshipRemovedV1] = event =>
-    Right[Throwable, RelationshipRemovedV1](
-      RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
-    )
-
   implicit def stateV1PersistEventDeserializer: PersistEventDeserializer[StateV1, State] =
     state => {
       for {
@@ -101,16 +75,6 @@ package object v1 {
       KeyDeletedV1(clientId = event.clientId, keyId = event.keyId, deactivationTimestamp = deactivationTimestamp)
     )
 
-  implicit def keyUpdatedV1PersistEventDeserializer: PersistEventDeserializer[KeyUpdatedV1, KeyUpdated] = event =>
-    for {
-      userId <- Try(UUID.fromString(event.userId)).toEither
-    } yield KeyUpdated(clientId = event.clientId, keyId = event.keyId, userId = userId)
-
-  implicit def keyUpdatedV1PersistEventSerializer: PersistEventSerializer[KeyUpdated, KeyUpdatedV1] = event =>
-    Right[Throwable, KeyUpdatedV1](
-      KeyUpdatedV1(clientId = event.clientId, keyId = event.keyId, userId = event.userId.toString)
-    )
-
   implicit def clientAddedV1PersistEventDeserializer: PersistEventDeserializer[ClientAddedV1, ClientAdded] = event =>
     protobufToClient(event.client).map(ClientAdded)
 
@@ -134,11 +98,54 @@ package object v1 {
       client <- clientToProtobuf(event.client)
     } yield UserAddedV1(client = client, userId = event.userId.toString)
 
-  implicit def userRemovedV1PersistEventDeserializer: PersistEventDeserializer[UserRemovedV1, UserRemoved] =
-    event => Right[Throwable, UserRemoved](UserRemoved(clientId = event.clientId, userId = event.userId))
+  implicit def relationshipAddedV1PersistEventDeserializer
+    : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
+    for {
+      client         <- protobufToClient(event.client)
+      relationshipId <- Try(UUID.fromString(event.relationshipId)).toEither
+    } yield RelationshipAdded(client = client, relationshipId = relationshipId)
+
+  implicit def relationshipAddedV1PersistEventSerializer
+    : PersistEventSerializer[RelationshipAdded, RelationshipAddedV1] = event =>
+    for {
+      client <- clientToProtobuf(event.client)
+    } yield RelationshipAddedV1(client = client, relationshipId = event.relationshipId.toString)
+
+  implicit def relationshipRemovedV1PersistEventDeserializer
+    : PersistEventDeserializer[RelationshipRemovedV1, RelationshipRemoved] =
+    event =>
+      Right[Throwable, RelationshipRemoved](
+        RelationshipRemoved(clientId = event.clientId, relationshipId = event.relationshipId)
+      )
+
+  implicit def relationshipRemovedV1PersistEventSerializer
+    : PersistEventSerializer[RelationshipRemoved, RelationshipRemovedV1] = event =>
+    Right[Throwable, RelationshipRemovedV1](
+      RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
+    )
+      
+  implicit def userRemovedV1PersistEventDeserializer: PersistEventDeserializer[UserRemovedV1, UserRemoved] = event =>
+    for {
+      client <- protobufToClient(event.client)
+      userId <- Try(UUID.fromString(event.userId)).toEither
+    } yield UserRemoved(client = client, userId = userId)
 
   implicit def userRemovedV1PersistEventSerializer: PersistEventSerializer[UserRemoved, UserRemovedV1] = event =>
-    Right[Throwable, UserRemovedV1](UserRemovedV1(clientId = event.clientId, userId = event.userId))
+    for {
+      client <- clientToProtobuf(event.client)
+    } yield UserRemovedV1(client = client, userId = event.userId.toString)
+
+  implicit def keyRelationshipToUserMigratedV1PersistEventDeserializer
+    : PersistEventDeserializer[KeyRelationshipToUserMigratedV1, KeyRelationshipToUserMigrated] = event =>
+    for {
+      userId <- Try(UUID.fromString(event.userId)).toEither
+    } yield KeyRelationshipToUserMigrated(clientId = event.clientId, keyId = event.keyId, userId = userId)
+
+  implicit def keyUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1] = event =>
+    Right[Throwable, KeyRelationshipToUserMigratedV1](
+      KeyRelationshipToUserMigratedV1(clientId = event.clientId, keyId = event.keyId, userId = event.userId.toString)
+    )
 
   implicit def clientPurposeAddedV1PersistEventDeserializer
     : PersistEventDeserializer[ClientPurposeAddedV1, ClientPurposeAdded] =

@@ -11,13 +11,12 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
     case None          => this
   }
 
-  def updateKey(event: KeyUpdated): State = keys.get(event.clientId) match {
+  def migrateKeyRelationshipToUser(event: KeyRelationshipToUserMigrated): State = keys.get(event.clientId) match {
     case Some(entries) => {
       entries.get(event.keyId) match {
         case Some(key) => {
           val updatedKey = key.copy(userId = Some(event.userId))
-          val filtered   = entries.filterNot(_._1 == updatedKey.kid)
-          copy(keys = keys + (event.clientId -> (filtered + (updatedKey.kid -> updatedKey))))
+          copy(keys = keys + (event.clientId -> (entries + (updatedKey.kid -> updatedKey))))
         }
         case None      => this
       }
@@ -62,15 +61,8 @@ final case class State(keys: Map[ClientId, Keys], clients: Map[ClientId, Persist
   }
 
   def removeUser(event: UserRemoved): State = {
-    val updatedClients = clients.get(event.clientId) match {
-      case Some(client) =>
-        val updated = client.copy(users = client.users.filter(_.toString != event.userId))
-        clients + (event.clientId -> updated)
-      case None         =>
-        clients
-    }
-
-    copy(clients = updatedClients)
+    val updatedClient = event.client.copy(users = event.client.users.filterNot(_ == event.userId))
+    copy(clients = clients + (event.client.id.toString -> updatedClient))
   }
 
   def getClientKeyById(clientId: String, keyId: String): Option[PersistentKey] =

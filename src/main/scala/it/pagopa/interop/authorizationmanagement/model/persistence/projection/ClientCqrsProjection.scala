@@ -28,21 +28,14 @@ object ClientCqrsProjection {
     CqrsProjection[Event](offsetDbConfig, mongoDbConfig, projectionId, eventHandler)
 
   private def eventHandler(collection: MongoCollection[Document], event: Event): PartialMongoAction = event match {
-    case ClientAdded(c)                  =>
+    case ClientAdded(c)                               =>
       val data = JsObject(c.toJson.asJsObject.fields ++ emptyKeys)
       ActionWithDocument(collection.insertOne, Document(s"{ data: ${data.compactPrint} }"))
-    case ClientDeleted(cId)              => Action(collection.deleteOne(Filters.eq("data.id", cId)))
-    case RelationshipAdded(c, rId)       =>
-      ActionWithBson(
-        collection.updateOne(Filters.eq("data.id", c.id.toString), _),
-        Updates.push("data.relationships", rId.toString)
-      )
-    case RelationshipRemoved(cId, rId)   =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.relationships", rId))
-    case KeysAdded(cId, keys)            =>
+    case ClientDeleted(cId)                           => Action(collection.deleteOne(Filters.eq("data.id", cId)))
+    case KeysAdded(cId, keys)                         =>
       val updates = keys.map { case (_, key) => Updates.push(s"data.keys", key.toDocument) }
       ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.combine(updates.toList: _*))
-    case KeyUpdated(cId, kId, uId)       =>
+    case KeyRelationshipToUserMigrated(cId, kId, uId) =>
       ActionWithBson(
         collection.updateOne(
           Filters.eq("data.id", cId),
@@ -51,25 +44,32 @@ object ClientCqrsProjection {
         ),
         Updates.set("data.keys.$[key].userId", uId.toString)
       )
-    case KeyDeleted(cId, kId, _)         =>
+    case KeyDeleted(cId, kId, _)                      =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", cId), _),
         Updates.pull("data.keys", Document(s"{ kid : \"$kId\" }"))
       )
-    case UserAdded(c, rId)               =>
+    case RelationshipAdded(c, rId)                    =>
+      ActionWithBson(
+        collection.updateOne(Filters.eq("data.id", c.id.toString), _),
+        Updates.push("data.relationships", rId.toString)
+      )
+    case RelationshipRemoved(cId, rId)                =>
+      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.relationships", rId))
+    case UserAdded(c, rId)                            =>
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", c.id.toString), _),
         Updates.push("data.users", rId.toString)
       )
-    case UserRemoved(cId, rId)           =>
+    case UserRemoved(cId, rId)                        =>
       ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.users", rId))
-    case ClientPurposeAdded(cId, states) =>
+    case ClientPurposeAdded(cId, states)              =>
       // Added as array instead of map because it is not possible to update objects without knowing their key
       ActionWithBson(
         collection.updateOne(Filters.eq("data.id", cId), _),
         Updates.push(s"data.purposes", states.toDocument)
       )
-    case ClientPurposeRemoved(cId, pId)  =>
+    case ClientPurposeRemoved(cId, pId)               =>
       // Note: Due to DocumentDB limitations, it is not possible, in a single instruction, to pull
       //   data from an array of objects filtering by a nested field of the object.
       //   e.g: { bar: [ { id: 1, v: { vv: "foo" } } ] }

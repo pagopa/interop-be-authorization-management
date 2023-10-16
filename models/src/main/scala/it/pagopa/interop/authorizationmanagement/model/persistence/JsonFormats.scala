@@ -78,7 +78,9 @@ object JsonFormats {
   implicit val aaesuFormat: RootJsonFormat[AgreementAndEServiceStatesUpdated] = jsonFormat8(
     AgreementAndEServiceStatesUpdated.apply
   )
-  implicit val kuFormat: RootJsonFormat[KeyUpdated]                           = jsonFormat3(KeyUpdated.apply)
+  implicit val kuFormat: RootJsonFormat[KeyRelationshipToUserMigrated]        = jsonFormat3(
+    KeyRelationshipToUserMigrated.apply
+  )
   implicit val psuFormat: RootJsonFormat[PurposeStateUpdated]                 = jsonFormat3(PurposeStateUpdated.apply)
 
 }

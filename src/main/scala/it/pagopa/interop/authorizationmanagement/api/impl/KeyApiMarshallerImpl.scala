@@ -14,8 +14,4 @@ object KeyApiMarshallerImpl extends KeyApiMarshaller with SprayJsonSupport with 
     sprayJsonMarshaller[Keys]
   override implicit def toEntityMarshallerProblem: ToEntityMarshaller[Problem] = entityMarshallerProblem
   override implicit def toEntityMarshallerKey: ToEntityMarshaller[Key]         = sprayJsonMarshaller[Key]
-
-  override implicit def fromEntityUnmarshallerUserSeed: FromEntityUnmarshaller[UserSeed] =
-    sprayJsonUnmarshaller[UserSeed]
-
 }

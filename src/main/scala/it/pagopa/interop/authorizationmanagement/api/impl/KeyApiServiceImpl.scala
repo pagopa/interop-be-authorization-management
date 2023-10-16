@@ -135,16 +135,4 @@ final case class KeyApiServiceImpl(
 
     onComplete(result) { deleteClientKeyByIdResponse[Done](operationLabel)(_ => deleteClientKeyById204) }
   }
-
-  override def updateKey(clientId: String, keyId: String, seed: UserSeed)(implicit
-    toEntityMarshallerProblem: ToEntityMarshaller[Problem],
-    contexts: Seq[(String, String)]
-  ): Route = {
-    val operationLabel: String = s"Updating key $keyId of client $clientId with user ${seed.userId}"
-    logger.info(operationLabel)
-
-    val result: Future[Done] = commander(clientId).askWithStatus(ref => UpdateKey(clientId, keyId, seed.userId, ref))
-
-    onComplete(result) { updateClientKeyByIdResponse[Done](operationLabel)(_ => updateKey204) }
-  }
 }

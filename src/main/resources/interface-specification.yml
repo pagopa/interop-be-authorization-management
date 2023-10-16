@@ -16,6 +16,8 @@ servers:
 tags:
   - name: key
     description: Operations on keys persistence
+  - name: migrate
+    description: Operations for migration purposes
   - name: client
     description: Operations on clients persistence
   - name: tokenGeneration
@@ -39,6 +41,47 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+  
+  '/migrate/clients/{clientId}/keys/{keyId}':
+    parameters:
+      - $ref: '#/components/parameters/CorrelationIdHeader'
+      - $ref: '#/components/parameters/IpAddress'
+    post:
+      tags:
+        - migrate
+      summary: Migrate a Key Relationship to an User
+      description:  Migrate a Key Relationship to an User
+      operationId: migrateKeyRelationshipToUser  
+      parameters:
+        - name: clientId
+          in: path
+          description: The Client id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: keyId
+          in: path
+          description: the unique identifier of the key (kid)
+          required: true
+          schema:
+            type: string    
+      responses:
+        '204':
+          description: the corresponding key has been updated.
+        '404':
+          description: Missing Required Information
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      requestBody:
+        required: true
+        description: An User seed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSeed'              
   '/clients/{clientId}/keys/{keyId}/bundle':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -152,7 +195,7 @@ paths:
             default: 10
         - name: userId
           in: query
-          description: ID of Party User that MUST be related to the Client
+          description: ID of User that MUST be related to the Client
           schema:
             type: string
             format: uuid
@@ -258,7 +301,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
       requestBody:
         required: true
-        description: An Party User seed
+        description: An User seed
         content:
           application/json:
             schema:
@@ -435,42 +478,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-    post:
-      tags:
-        - key
-      summary: Update an Key with an User
-      description:  Update an Key with an User
-      operationId: updateKey
-      parameters:
-        - name: clientId
-          in: path
-          description: The Client id
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: keyId
-          in: path
-          description: the unique identifier of the key (kid)
-          required: true
-          schema:
-            type: string    
-      responses:
-        '204':
-          description: the corresponding key has been updated.
-        '404':
-          description: Missing Required Information
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-      requestBody:
-        required: true
-        description: An User seed
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserSeed'
   '/clients/{clientId}/purposes':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
@@ -743,7 +750,7 @@ components:
         userId:
           type: string
           format: uuid
-          description: 'Represents the identifier of the party user whose platform security operator is uploading the key'
+          description: 'Represents the identifier of the user whose platform security operator is uploading the key'
         kid:
           type: string
         name:
@@ -772,7 +779,7 @@ components:
         userId:
           type: string
           format: uuid
-          description: 'Represents the identifier of the party user whose platform security operator is uploading the key'
+          description: 'Represents the identifier of the user whose platform security operator is uploading the key'  
         key:
           type: string
           description: 'Base64 UTF-8 encoding of a public key in PEM format'

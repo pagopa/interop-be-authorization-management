@@ -32,7 +32,7 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   serdeCheck[State, StateV1](stateGenWithCreatedAt, _.sorted)
   serdeCheck[KeysAdded, KeysAddedV1](keysAddedGen, _.sorted)
   serdeCheck[KeyDeleted, KeyDeletedV1](keyDeletedGen)
-  serdeCheck[KeyUpdated, KeyUpdatedV1](keyUpdatedGen)
+  serdeCheck[KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1](keyRelationshipToUserMigratedGen)
   serdeCheck[ClientAdded, ClientAddedV1](clientAddedGenWithCreatedAt)
   serdeCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGenWithCreatedAt)
   serdeCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
@@ -52,7 +52,7 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[State, StateV1](stateGenNoCreatedAt)
   deserCheck[KeysAdded, KeysAddedV1](keysAddedGen)
   deserCheck[KeyDeleted, KeyDeletedV1](keyDeletedGen)
-  deserCheck[KeyUpdated, KeyUpdatedV1](keyUpdatedGen)
+  deserCheck[KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1](keyRelationshipToUserMigratedGen)
   deserCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGenWithCreatedAt)
   deserCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGenNoCreatedAt)
   deserCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
@@ -315,11 +315,14 @@ object PersistentSerializationSpec {
     (pKeys, pKeysV1) <- sizedKeysGenerator(cardinality)
   } yield (KeysAdded(clientId, pKeys), KeysAddedV1(clientId, pKeysV1))
 
-  val keyUpdatedGen: Gen[(KeyUpdated, KeyUpdatedV1)] = for {
+  val keyRelationshipToUserMigratedGen: Gen[(KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1)] = for {
     clientId <- stringGen
     keyId    <- stringGen
     userId   <- Gen.uuid
-  } yield (KeyUpdated(clientId, keyId, userId), KeyUpdatedV1(clientId, keyId, userId.toString))
+  } yield (
+    KeyRelationshipToUserMigrated(clientId, keyId, userId),
+    KeyRelationshipToUserMigratedV1(clientId, keyId, userId.toString)
+  )
 
   val keyDeletedGen: Gen[(KeyDeleted, KeyDeletedV1)] = for {
     clientId      <- stringGen
@@ -366,9 +369,9 @@ object PersistentSerializationSpec {
   } yield (UserAdded(pc, uuid), UserAddedV1(pcv1, uuid.toString))
 
   val userRemovedGen: Gen[(UserRemoved, UserRemovedV1)] = for {
-    clientId <- stringGen
-    userId   <- stringGen
-  } yield (UserRemoved(clientId, userId), UserRemovedV1(clientId, userId))
+    (pc, pcv1) <- persistentClientGenWithCreatedAt
+    uuid       <- Gen.uuid
+  } yield (UserRemoved(pc, uuid), UserRemovedV1(pcv1, uuid.toString))
 
   val clientPurposeAddedGen: Gen[(ClientPurposeAdded, ClientPurposeAddedV1)] = for {
     clientId         <- stringGen

@@ -57,13 +57,4 @@ object KeyApiResponseHandlers extends AkkaResponses {
       case Failure(ex: KeysAlreadyExist)     => conflict(ex, logMessage)
       case Failure(ex)                       => internalServerError(ex, logMessage)
     }
-
-  def updateClientKeyByIdResponse[T](logMessage: String)(
-    success: T => Route
-  )(result: Try[T])(implicit contexts: Seq[(String, String)], logger: LoggerTakingImplicit[ContextFieldsToLog]): Route =
-    result match {
-      case Success(s)                     => success(s)
-      case Failure(ex: ClientKeyNotFound) => notFound(ex, logMessage)
-      case Failure(ex)                    => internalServerError(ex, logMessage)
-    }
 }

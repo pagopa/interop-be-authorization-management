@@ -21,7 +21,7 @@ object AuthorizationEventsSerde {
     case x: ClientDeleted                     => x.toJson
     case x: KeysAdded                         => x.toJson
     case x: EServiceStateUpdated              => x.toJson
-    case x: KeyUpdated                        => x.toJson
+    case x: KeyRelationshipToUserMigrated     => x.toJson
   }
 
   private val purposeStateUpdated: String               = "purpose-state-updated"
@@ -38,7 +38,7 @@ object AuthorizationEventsSerde {
   private val clientDeleted: String                     = "client-deleted"
   private val keysAdded: String                         = "keys-added"
   private val eServiceStateUpdated: String              = "e-service-state-updated"
-  private val keyUpdated: String                        = "key-updated"
+  private val keyRelationshipToUserMigrated: String     = "key-relationship-to-user-migrated"
 
   val jsonToAuth: PartialFunction[String, JsValue => ProjectableEvent] = {
     case `purposeStateUpdated`               => _.convertTo[PurposeStateUpdated]
@@ -55,7 +55,7 @@ object AuthorizationEventsSerde {
     case `clientDeleted`                     => _.convertTo[ClientDeleted]
     case `keysAdded`                         => _.convertTo[KeysAdded]
     case `eServiceStateUpdated`              => _.convertTo[EServiceStateUpdated]
-    case `keyUpdated`                        => _.convertTo[KeyUpdated]
+    case `keyRelationshipToUserMigrated`     => _.convertTo[KeyRelationshipToUserMigrated]
   }
 
   def getKind(e: Event): String = e match {
@@ -73,7 +73,7 @@ object AuthorizationEventsSerde {
     case _: ClientDeleted                     => clientDeleted
     case _: KeysAdded                         => keysAdded
     case _: EServiceStateUpdated              => eServiceStateUpdated
-    case _: KeyUpdated                        => keyUpdated
+    case _: KeyRelationshipToUserMigrated     => keyRelationshipToUserMigrated
   }
 
 }

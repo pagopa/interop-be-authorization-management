@@ -1,12 +1,12 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence.serializer
 
 import akka.serialization.SerializerWithStringManifest
-import it.pagopa.interop.authorizationmanagement.model.persistence.KeyUpdated
+import it.pagopa.interop.authorizationmanagement.model.persistence.KeyRelationshipToUserMigrated
 import it.pagopa.interop.authorizationmanagement.model.persistence.serializer.v1._
 
 import java.io.NotSerializableException
 
-class KeyUpdatedSerializer extends SerializerWithStringManifest {
+class KeyRelationshipToUserMigratedSerializer extends SerializerWithStringManifest {
 
   final val version1: String = "1"
 
@@ -16,12 +16,12 @@ class KeyUpdatedSerializer extends SerializerWithStringManifest {
 
   override def manifest(o: AnyRef): String = s"${o.getClass.getName}|$currentVersion"
 
-  final val className: String = classOf[KeyUpdated].getName
+  final val className: String = classOf[KeyRelationshipToUserMigrated].getName
 
   override def toBinary(o: AnyRef): Array[Byte] = o match {
-    case event: KeyUpdated =>
+    case event: KeyRelationshipToUserMigrated =>
       serialize(event, className, currentVersion)
-    case _                 =>
+    case _                                    =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[${manifest(o)}]], currentVersion: [[$currentVersion]] "
       )
@@ -29,7 +29,7 @@ class KeyUpdatedSerializer extends SerializerWithStringManifest {
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = manifest.split('|').toList match {
     case `className` :: `version1` :: Nil =>
-      deserialize(v1.events.KeyUpdatedV1, bytes, manifest, currentVersion)
+      deserialize(v1.events.KeyRelationshipToUserMigratedV1, bytes, manifest, currentVersion)
     case _                                =>
       throw new NotSerializableException(
         s"Unable to handle manifest: [[$manifest]], currentVersion: [[$currentVersion]] "

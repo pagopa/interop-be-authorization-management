@@ -2,7 +2,12 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import it.pagopa.interop.authorizationmanagement.model.client.{Consumer, PersistentClient}
 import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, Sig}
-import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientDeleted, KeyDeleted, KeyUpdated, State}
+import it.pagopa.interop.authorizationmanagement.model.persistence.{
+  ClientDeleted,
+  KeyDeleted,
+  KeyRelationshipToUserMigrated,
+  State
+}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -124,7 +129,8 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
       val updatedUserId = UUID.randomUUID()
       // when
-      val updatedState  = state.updateKey(KeyUpdated("fooBarKeys", "2", updatedUserId))
+      val updatedState  =
+        state.migrateKeyRelationshipToUser(KeyRelationshipToUserMigrated("fooBarKeys", "2", updatedUserId))
 
       // then
       updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe Some(

@@ -18,6 +18,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.commons.utils.TypeConversions._
 import cats.syntax.all._
 
 import scala.annotation.tailrec
@@ -176,8 +177,10 @@ final case class ClientApiServiceImpl(
     val operationLabel: String = s"Removing user $userId from client $clientId"
     logger.info(operationLabel)
 
-    val result: Future[Done] =
-      commander(clientId).askWithStatus(ref => RemoveUser(clientId, userId, ref))
+    val result: Future[Done] = for {
+      userId <- userId.toFutureUUID
+      done   <- commander(clientId).askWithStatus(ref => RemoveUser(clientId, userId, ref))
+    } yield done
 
     onComplete(result) { removeClientUserResponse[Done](operationLabel)(_ => removeClientUser204) }
   }

@@ -80,6 +80,10 @@ class RelationshipManagementSpec
       val keyOne = createKey(clientId, userId1)
       val keyTwo = createKey(clientId, userId2)
 
+      val clientRetrieveResponse1 = request(uri = s"$serviceURL/clients/$clientId", method = HttpMethods.GET)
+      val retrievedClient1        = Await.result(Unmarshal(clientRetrieveResponse1).to[Client], Duration.Inf)
+      retrievedClient1.users shouldBe Set(userId1, userId2)
+
       val response =
         request(uri = s"$serviceURL/clients/$clientId/users/$userId1", method = HttpMethods.DELETE)
 

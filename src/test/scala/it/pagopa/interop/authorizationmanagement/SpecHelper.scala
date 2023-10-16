@@ -75,6 +75,9 @@ trait SpecHelper
     Cluster(system).manager ! Join(Cluster(system).selfMember.address)
     sharding.init(persistentEntity)
 
+    val migrateApi =
+      new MigrateApi(MigrateApiServiceImpl(system, sharding, persistentEntity), migrateApiMarshaller, wrappingDirective)
+
     val keyApi =
       new KeyApi(
         KeyApiServiceImpl(system, sharding, persistentEntity, mockDateTimeSupplier),
@@ -100,7 +103,9 @@ trait SpecHelper
       SecurityDirectives.authenticateOAuth2("SecurityRealm", PassThroughAuthenticator)
     )
 
-    controller = Some(new Controller(clientApi, healthApiMock, keyApi, purposeApi, tokenGenerationApi)(classicSystem))
+    controller = Some(
+      new Controller(clientApi, healthApiMock, keyApi, migrateApi, purposeApi, tokenGenerationApi)(classicSystem)
+    )
 
     controller foreach { controller =>
       bindServer = Some(

@@ -26,8 +26,12 @@ final case class GetKeyWithClient(
   replyTo: ActorRef[StatusReply[(PersistentClient, PersistentKey)]]
 ) extends Command
 final case class DeleteKey(clientId: String, keyId: String, replyTo: ActorRef[StatusReply[Done]])       extends Command
-final case class UpdateKey(clientId: String, keyId: String, userId: UUID, replyTo: ActorRef[StatusReply[Done]])
-    extends Command
+final case class MigrateKeyRelationshipToUser(
+  clientId: String,
+  keyId: String,
+  userId: UUID,
+  replyTo: ActorRef[StatusReply[Done]]
+) extends Command
 final case class ListKid(from: Int, until: Int, replyTo: ActorRef[StatusReply[Seq[Kid]]])               extends Command
 
 final case class AddClient(client: PersistentClient, replyTo: ActorRef[StatusReply[PersistentClient]]) extends Command
@@ -50,7 +54,7 @@ final case class AddUser(clientId: String, userId: UUID, replyTo: ActorRef[Statu
     extends Command
 final case class DeleteClient(clientId: String, replyTo: ActorRef[StatusReply[Done]])                  extends Command
 
-final case class RemoveUser(clientId: String, userId: String, replyTo: ActorRef[StatusReply[Done]]) extends Command
+final case class RemoveUser(clientId: String, userId: UUID, replyTo: ActorRef[StatusReply[Done]]) extends Command
 
 final case class AddClientPurpose(
   clientId: String,

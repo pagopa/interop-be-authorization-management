@@ -68,11 +68,11 @@ object KeyPersistentBehavior {
           case None    => commandKeyNotFoundError(clientId, keyId, replyTo)
         }
 
-      case UpdateKey(clientId, keyId, userId, replyTo) =>
+      case MigrateKeyRelationshipToUser(clientId, keyId, userId, replyTo) =>
         state.getClientKeyById(clientId, keyId) match {
           case Some(_) =>
             Effect
-              .persist(KeyUpdated(clientId, keyId, userId))
+              .persist(KeyRelationshipToUserMigrated(clientId, keyId, userId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           case None    => commandKeyNotFoundError(clientId, keyId, replyTo)
         }
@@ -168,16 +168,16 @@ object KeyPersistentBehavior {
         val validations: Either[Throwable, PersistentClient] = for {
           persistentClient <- client.toRight(ClientNotFoundError(clientId))
           _                <- persistentClient.users
-            .find(_.toString == userId)
-            .toRight(UserNotFoundError(clientId, userId))
+            .find(_ == userId)
+            .toRight(UserNotFoundError(clientId, userId.toString))
         } yield persistentClient
 
         validations
           .fold(
             error => commandError(replyTo, error),
-            { _ =>
+            { c =>
               Effect
-                .persist(UserRemoved(clientId, userId))
+                .persist(UserRemoved(c, userId))
                 .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
 
             }
@@ -325,7 +325,7 @@ object KeyPersistentBehavior {
     event match {
       case e: KeysAdded                         => state.addKeys(e)
       case e: KeyDeleted                        => state.deleteKey(e)
-      case e: KeyUpdated                        => state.updateKey(e)
+      case e: KeyRelationshipToUserMigrated     => state.migrateKeyRelationshipToUser(e)
       case e: ClientAdded                       => state.addClient(e)
       case e: ClientDeleted                     => state.deleteClient(e)
       case e: RelationshipAdded                 => state.addRelationship(e)
