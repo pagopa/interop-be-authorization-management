@@ -13,12 +13,15 @@ object KeyAdapters {
   implicit class PersistentKeyWrapper(private val p: PersistentKey) extends AnyVal {
     def toApi: Either[Throwable, Key] = {
       val apiKey = KeyConverter.fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)
-       p.userId match { 
-        case Some(userId) => apiKey.map(_ => Key(userId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
-        case None => p.relationshipId match {
-          case Some(relationshipId) => apiKey.map(_ => Key(relationshipId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
-          case None => InvalidKey(p.kid, s"User Id and Relationship Id not found on key ${p.kid}").asLeft[Key]
-        }
+      p.userId match {
+        case Some(userId) =>
+          apiKey.map(_ => Key(userId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
+        case None         =>
+          p.relationshipId match {
+            case Some(relationshipId) =>
+              apiKey.map(_ => Key(relationshipId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
+            case None => InvalidKey(p.kid, s"User Id and Relationship Id not found on key ${p.kid}").asLeft[Key]
+          }
       }
     }
   }
