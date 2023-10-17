@@ -1,29 +1,19 @@
 package it.pagopa.interop.authorizationmanagement.model.persistence
 
-import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.{InvalidKey, ThumbprintCalculationError}
+import it.pagopa.interop.authorizationmanagement.errors.KeyManagementErrors.{MissingUserId, ThumbprintCalculationError}
 import it.pagopa.interop.authorizationmanagement.model.key.{Enc, PersistentKey, PersistentKeyUse, Sig}
 import it.pagopa.interop.authorizationmanagement.jwk.model.Models._
 import it.pagopa.interop.authorizationmanagement.model.{KeyUse, Key, OtherPrimeInfo, JWKKey}
 import it.pagopa.interop.authorizationmanagement.jwk.converter.KeyConverter
 import it.pagopa.interop.authorizationmanagement.model.KeyUse.{ENC, SIG}
-import cats.syntax.all._
 
 object KeyAdapters {
 
   implicit class PersistentKeyWrapper(private val p: PersistentKey) extends AnyVal {
-    def toApi: Either[Throwable, Key] = {
-      val apiKey = KeyConverter.fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)
-      p.userId match {
-        case Some(userId) =>
-          apiKey.map(_ => Key(userId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
-        case None         =>
-          p.relationshipId match {
-            case Some(relationshipId) =>
-              apiKey.map(_ => Key(relationshipId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt))
-            case None => InvalidKey(p.kid, s"User Id and Relationship Id not found on key ${p.kid}").asLeft[Key]
-          }
-      }
-    }
+    def toApi: Either[Throwable, Key] = for {  
+        userId <- p.userId.toRight(MissingUserId(p.kid))
+        _ <- KeyConverter.fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)  
+      } yield Key(userId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt)  
   }
 
   implicit class PersistentKeyObjectWrapper(private val p: PersistentKey.type) extends AnyVal {
