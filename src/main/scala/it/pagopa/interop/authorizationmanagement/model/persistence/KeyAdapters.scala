@@ -10,10 +10,10 @@ import it.pagopa.interop.authorizationmanagement.model.KeyUse.{ENC, SIG}
 object KeyAdapters {
 
   implicit class PersistentKeyWrapper(private val p: PersistentKey) extends AnyVal {
-    def toApi: Either[Throwable, Key] = for {  
-        userId <- p.userId.toRight(MissingUserId(p.kid))
-        _ <- KeyConverter.fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)  
-      } yield Key(userId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt)  
+    def toApi: Either[Throwable, Key] = for {
+      userId <- p.userId.toRight(MissingUserId(p.kid))
+      _      <- KeyConverter.fromBase64encodedPEMToAPIKey(p.kid, p.encodedPem, p.use.toJwk, p.algorithm)
+    } yield Key(userId, p.kid, p.name, p.encodedPem, p.algorithm, p.use.toApi, p.createdAt)
   }
 
   implicit class PersistentKeyObjectWrapper(private val p: PersistentKey.type) extends AnyVal {

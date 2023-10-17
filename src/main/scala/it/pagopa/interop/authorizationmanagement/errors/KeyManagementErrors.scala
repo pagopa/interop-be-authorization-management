@@ -46,8 +46,7 @@ object KeyManagementErrors {
       extends ComponentError("0031", s"Key $kid is invalid. Reason: $reason")
 
   final case class InvalidKeys(errors: List[InvalidKey]) extends ComponentError("0032", errors.mkString("[", ",", "]"))
-  
-  final case class MissingUserId(kid: String)
-      extends ComponentError("0033", s"Key $kid has not userId")
+
+  final case class MissingUserId(kid: String) extends ComponentError("0033", s"Key $kid has not userId")
 
 }
