@@ -42,7 +42,6 @@ paths:
   '/clients/{clientId}/keys/{keyId}/bundle':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     get:
       security: []
       tags:
@@ -80,7 +79,6 @@ paths:
   '/clients':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - client
@@ -176,7 +174,6 @@ paths:
   /clients/{clientId}:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     get:
       description: Retrieves a Client
       tags:
@@ -229,7 +226,6 @@ paths:
   '/clients/{clientId}/relationships':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - client
@@ -267,7 +263,6 @@ paths:
   '/clients/{clientId}/relationships/{relationshipId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     delete:
       description: Removes a Party Relationship from a Client
       tags:
@@ -301,7 +296,6 @@ paths:
   '/clients/{clientId}/keys':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - key
@@ -372,7 +366,6 @@ paths:
   '/clients/{clientId}/keys/{keyId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     get:
       tags:
         - key
@@ -438,7 +431,6 @@ paths:
   '/clients/{clientId}/purposes':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -475,7 +467,6 @@ paths:
   '/clients/{clientId}/purposes/{purposeId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     get:
       description: Retrieves a Client related to a purpose id
       tags:
@@ -543,7 +534,6 @@ paths:
   /bulk/eservices/{eserviceId}/state:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -576,7 +566,6 @@ paths:
   /bulk/agreements/eserviceId/{eserviceId}/consumerId/{consumerId}/state:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -616,7 +605,6 @@ paths:
   /bulk/agreements/eservices/eserviceId/{eserviceId}/consumerId/{consumerId}/state:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -656,7 +644,6 @@ paths:
   /bulk/purposes/{purposeId}/state:
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - purpose
@@ -692,11 +679,6 @@ components:
       in: header
       name: X-Correlation-Id
       required: true
-      schema:
-        type: string
-    IpAddress:
-      in: header
-      name: X-Forwarded-For
       schema:
         type: string
   schemas:
