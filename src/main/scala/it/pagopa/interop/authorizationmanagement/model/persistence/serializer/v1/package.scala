@@ -87,6 +87,17 @@ package object v1 {
   implicit def clientDeletedV1PersistEventSerializer: PersistEventSerializer[ClientDeleted, ClientDeletedV1] = event =>
     Right[Throwable, ClientDeletedV1](ClientDeletedV1(clientId = event.clientId))
 
+  implicit def userAddedV1PersistEventDeserializer: PersistEventDeserializer[UserAddedV1, UserAdded] = event =>
+    for {
+      client <- protobufToClient(event.client)
+      userId <- Try(UUID.fromString(event.userId)).toEither
+    } yield UserAdded(client = client, userId = userId)
+
+  implicit def userAddedV1PersistEventSerializer: PersistEventSerializer[UserAdded, UserAddedV1] = event =>
+    for {
+      client <- clientToProtobuf(event.client)
+    } yield UserAddedV1(client = client, userId = event.userId.toString)
+
   implicit def relationshipAddedV1PersistEventDeserializer
     : PersistEventDeserializer[RelationshipAddedV1, RelationshipAdded] = event =>
     for {
@@ -111,6 +122,29 @@ package object v1 {
     : PersistEventSerializer[RelationshipRemoved, RelationshipRemovedV1] = event =>
     Right[Throwable, RelationshipRemovedV1](
       RelationshipRemovedV1(clientId = event.clientId, relationshipId = event.relationshipId)
+    )
+
+  implicit def userRemovedV1PersistEventDeserializer: PersistEventDeserializer[UserRemovedV1, UserRemoved] = event =>
+    for {
+      client <- protobufToClient(event.client)
+      userId <- Try(UUID.fromString(event.userId)).toEither
+    } yield UserRemoved(client = client, userId = userId)
+
+  implicit def userRemovedV1PersistEventSerializer: PersistEventSerializer[UserRemoved, UserRemovedV1] = event =>
+    for {
+      client <- clientToProtobuf(event.client)
+    } yield UserRemovedV1(client = client, userId = event.userId.toString)
+
+  implicit def keyRelationshipToUserMigratedV1PersistEventDeserializer
+    : PersistEventDeserializer[KeyRelationshipToUserMigratedV1, KeyRelationshipToUserMigrated] = event =>
+    for {
+      userId <- Try(UUID.fromString(event.userId)).toEither
+    } yield KeyRelationshipToUserMigrated(clientId = event.clientId, keyId = event.keyId, userId = userId)
+
+  implicit def keyUpdatedV1PersistEventSerializer
+    : PersistEventSerializer[KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1] = event =>
+    Right[Throwable, KeyRelationshipToUserMigratedV1](
+      KeyRelationshipToUserMigratedV1(clientId = event.clientId, keyId = event.keyId, userId = event.userId.toString)
     )
 
   implicit def clientPurposeAddedV1PersistEventDeserializer
@@ -249,11 +283,12 @@ package object v1 {
       PersistentKeyV1(
         kid = key.kid,
         name = key.name,
-        relationshipId = key.relationshipId.toString,
+        relationshipId = key.relationshipId.map(_.toString),
         encodedPem = key.encodedPem,
         algorithm = key.algorithm,
         use = persistentKeyUseToProtobuf(key.use),
-        createdAt = createdAt
+        createdAt = createdAt,
+        userId = key.userId.map(_.toString)
       )
     )
 
@@ -267,7 +302,8 @@ package object v1 {
         description = client.description,
         relationships = client.relationships.map(_.toString).toSeq,
         kind = clientKindToProtobufV1(client.kind),
-        createdAt = Option(client.createdAt.toMillis)
+        createdAt = Option(client.createdAt.toMillis),
+        users = client.users.map(_.toString).toSeq
       )
     )
 
@@ -321,6 +357,7 @@ package object v1 {
       consumerId    <- client.consumerId.toUUID.toEither
       purposes      <- protobufToPurposesEntry(client.purposes)
       relationships <- client.relationships.traverse(_.toUUID).toEither
+      users         <- client.users.traverse(_.toUUID).toEither
       kind          <- clientKindFromProtobufV1(client.kind)
       createdAt     <- client.createdAt.traverse(_.toOffsetDateTime).toEither
     } yield PersistentClient(
@@ -331,7 +368,8 @@ package object v1 {
       description = client.description,
       relationships = relationships.toSet,
       kind = kind,
-      createdAt = createdAt.getOrElse(DEFAULT_CREATED_AT)
+      createdAt = createdAt.getOrElse(DEFAULT_CREATED_AT),
+      users = users.toSet
     )
   }
 
@@ -394,13 +432,15 @@ package object v1 {
 
   private def protobufToKey(key: PersistentKeyV1): ErrorOr[PersistentKey] =
     for {
-      relationshipId <- Try(UUID.fromString(key.relationshipId)).toEither
+      relationshipId <- Try(key.relationshipId.map(UUID.fromString(_))).toEither
+      userId         <- Try(key.userId.map(UUID.fromString(_))).toEither
       use            <- persistentKeyUseFromProtobuf(key.use)
       createdAt      <- key.createdAt.toOffsetDateTime.toEither
     } yield PersistentKey(
       kid = key.kid,
       name = key.name,
       relationshipId = relationshipId,
+      userId = userId,
       encodedPem = key.encodedPem,
       algorithm = key.algorithm,
       use = use,

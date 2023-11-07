@@ -20,6 +20,12 @@ message KeyDeletedV1 {
   required string deactivationTimestamp = 3;
 }
 
+message KeyRelationshipToUserMigratedV1 {
+  required string clientId = 1;
+  required string keyId = 2;
+  required string userId = 3;
+}
+
 message ClientAddedV1 {
   required PersistentClientV1 client = 1;
 }
@@ -36,6 +42,16 @@ message RelationshipAddedV1 {
 message RelationshipRemovedV1 {
   required string clientId = 1;
   required string relationshipId = 2;
+}
+
+message UserAddedV1 {
+  required PersistentClientV1 client = 1;
+  required string userId = 2;
+}
+
+message UserRemovedV1 {
+  required PersistentClientV1 client = 1;
+  required string userId = 2;
 }
 
 message ClientPurposeAddedV1 {

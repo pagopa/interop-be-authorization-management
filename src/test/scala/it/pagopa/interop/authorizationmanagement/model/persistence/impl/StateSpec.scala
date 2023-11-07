@@ -2,7 +2,12 @@ package it.pagopa.interop.authorizationmanagement.model.persistence.impl
 
 import it.pagopa.interop.authorizationmanagement.model.client.{Consumer, PersistentClient}
 import it.pagopa.interop.authorizationmanagement.model.key.{PersistentKey, Sig}
-import it.pagopa.interop.authorizationmanagement.model.persistence.{ClientDeleted, KeyDeleted, State}
+import it.pagopa.interop.authorizationmanagement.model.persistence.{
+  ClientDeleted,
+  KeyDeleted,
+  KeyRelationshipToUserMigrated,
+  State
+}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -15,11 +20,13 @@ class StateSpec extends AnyWordSpecLike with Matchers {
 
     "physically delete the keys properly" in {
       // given
-      val relationshipId = UUID.randomUUID()
+      val relationshipId = Some(UUID.randomUUID())
+      val userId         = UUID.randomUUID()
       val fooBarKeys     = Map(
         "1" -> PersistentKey(
           kid = "1",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -29,6 +36,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "2" -> PersistentKey(
           kid = "2",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -38,6 +46,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "3" -> PersistentKey(
           kid = "3",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -47,6 +56,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "4" -> PersistentKey(
           kid = "4",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -66,6 +76,78 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       updatedState.keys("fooBarKeys").size shouldBe 3
     }
 
+    "Update the keys with userId" in {
+      // given
+      val relationshipId = Some(UUID.randomUUID())
+      val userId         = UUID.randomUUID()
+      val time           = OffsetDateTime.now()
+      val fooBarKeys     = Map(
+        "1" -> PersistentKey(
+          kid = "1",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        ),
+        "2" -> PersistentKey(
+          kid = "2",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        ),
+        "3" -> PersistentKey(
+          kid = "3",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        ),
+        "4" -> PersistentKey(
+          kid = "4",
+          relationshipId = relationshipId,
+          userId = Some(userId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        )
+      )
+      val keys           = Map("fooBarKeys" -> fooBarKeys)
+      val state          = State(keys = keys, clients = Map.empty)
+      state.keys("fooBarKeys").size shouldBe 4
+
+      val updatedUserId = UUID.randomUUID()
+      // when
+      val updatedState  =
+        state.migrateKeyRelationshipToUser(KeyRelationshipToUserMigrated("fooBarKeys", "2", updatedUserId))
+
+      // then
+      updatedState.keys.get("fooBarKeys").flatMap(_.get("2")) shouldBe Some(
+        PersistentKey(
+          kid = "2",
+          relationshipId = relationshipId,
+          userId = Some(updatedUserId),
+          name = "Random Key",
+          encodedPem = "123",
+          use = Sig,
+          algorithm = "sha",
+          createdAt = time
+        )
+      )
+      updatedState.keys("fooBarKeys").size shouldBe 4
+    }
+
     "delete a client properly" in {
       val clientUuid1 = UUID.randomUUID()
       val clientUuid2 = UUID.randomUUID()
@@ -76,13 +158,15 @@ class StateSpec extends AnyWordSpecLike with Matchers {
       val clientId3 = clientUuid3.toString
 
       val consumerUuid   = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val relationshipId = Some(UUID.randomUUID())
+      val userId         = UUID.randomUUID()
 
       // given
       val client1Keys = Map(
         "kid1" -> PersistentKey(
           kid = "kid1",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -94,6 +178,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid2" -> PersistentKey(
           kid = "kid2",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -105,6 +190,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
         "kid3" -> PersistentKey(
           kid = "kid3",
           relationshipId = relationshipId,
+          userId = Some(userId),
           name = "Random Key",
           encodedPem = "123",
           use = Sig,
@@ -120,6 +206,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 1 desc"),
           relationships = Set.empty,
+          users = Set.empty,
           kind = Consumer,
           createdAt = OffsetDateTime.now()
         )
@@ -131,6 +218,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 2 desc"),
           relationships = Set.empty,
+          users = Set.empty,
           kind = Consumer,
           createdAt = OffsetDateTime.now()
         )
@@ -142,6 +230,7 @@ class StateSpec extends AnyWordSpecLike with Matchers {
           purposes = Seq.empty,
           description = Some("client 3 desc"),
           relationships = Set.empty,
+          users = Set.empty,
           kind = Consumer,
           createdAt = OffsetDateTime.now()
         )

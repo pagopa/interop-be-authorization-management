@@ -135,5 +135,4 @@ final case class KeyApiServiceImpl(
 
     onComplete(result) { deleteClientKeyByIdResponse[Done](operationLabel)(_ => deleteClientKeyById204) }
   }
-
 }

@@ -4,7 +4,8 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 final case class PersistentKey(
-  relationshipId: UUID,
+  relationshipId: Option[UUID],
+  userId: Option[UUID],
   kid: String,
   name: String,
   encodedPem: String,

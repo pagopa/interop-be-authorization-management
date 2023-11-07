@@ -38,7 +38,7 @@ class KeyManagementSpec
         s"""
            |[
            |  {
-           |    "relationshipId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+           |    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
            |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
            |    "use": "SIG",
            |    "name": "Devedeset devet",
@@ -53,7 +53,7 @@ class KeyManagementSpec
       response.status shouldBe StatusCodes.BadRequest
     }
 
-    "fail if key relationship has not been added to client" in {
+    "fail if key user has not been added to client" in {
       val clientId   = UUID.randomUUID()
       val consumerId = UUID.randomUUID()
 
@@ -63,7 +63,7 @@ class KeyManagementSpec
         s"""
            |[
            |  {
-           |    "relationshipId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+           |    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
            |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
            |    "use": "SIG",
            |    "name": "Devedeset devet",
@@ -80,18 +80,18 @@ class KeyManagementSpec
 
     "fail if key is not a valid PEM" in {
 
-      val clientId       = UUID.randomUUID()
-      val consumerId     = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val userId     = UUID.randomUUID()
 
-      createClient(clientId, consumerId, Seq(relationshipId))
-      addRelationship(clientId, relationshipId)
+      createClient(clientId, consumerId, Seq(userId))
+      addUser(clientId, userId)
 
       val data =
         s"""
            |[
            |  {
-           |    "relationshipId": "$relationshipId",
+           |    "userId": "$userId",
            |    "key": "LS0tLS1CRUdJ",
            |    "use": "SIG",
            |    "name": "Devet",
@@ -108,18 +108,18 @@ class KeyManagementSpec
     }
 
     "succeed" in {
-      val clientId       = UUID.randomUUID()
-      val consumerId     = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val userId     = UUID.randomUUID()
 
-      createClient(clientId, consumerId, Seq(relationshipId))
-      addRelationship(clientId, relationshipId)
+      createClient(clientId, consumerId, Seq(userId))
+      addUser(clientId, userId)
 
       val data =
         s"""
            |[
            |  {
-           |    "relationshipId": "$relationshipId",
+           |    "userId": "$userId",
            |    "key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF0WGxFTVAwUmEvY0dST050UmliWgppa1FhclUvY2pqaUpDTmNjMFN1dUtYUll2TGRDSkVycEt1UWNSZVhLVzBITGNCd3RibmRXcDhWU25RbkhUY0FpCm9rL0srSzhLblE3K3pEVHlSaTZXY3JhK2dtQi9KanhYeG9ZbjlEbFpBc2tjOGtDYkEvdGNnc1lsL3BmdDJ1YzAKUnNRdEZMbWY3cWVIYzQxa2dpOHNKTjdBbDJuYmVDb3EzWGt0YnBnQkVPcnZxRmttMkNlbG9PKzdPN0l2T3dzeQpjSmFiZ1p2Z01aSm4zeWFMeGxwVGlNanFtQjc5QnJwZENMSHZFaDhqZ2l5djJ2YmdwWE1QTlY1YXhaWmNrTnpRCnhNUWhwRzh5Y2QzaGJrV0s1b2ZkdXMwNEJ0T0c3ejBmbDNnVFp4czdOWDJDVDYzT0RkcnZKSFpwYUlqbks1NVQKbFFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0t",
            |    "use": "SIG",
            |    "name": "Devet",
@@ -138,13 +138,13 @@ class KeyManagementSpec
 
   "Key retrieve" should {
     "return existing keys" in {
-      val clientUuid       = UUID.randomUUID()
-      val consumerUuid     = UUID.randomUUID()
-      val relationshipUuid = UUID.randomUUID()
+      val clientUuid   = UUID.randomUUID()
+      val consumerUuid = UUID.randomUUID()
+      val userUuid     = UUID.randomUUID()
 
-      createClient(clientUuid, consumerUuid, Seq(relationshipUuid))
-      addRelationship(clientUuid, relationshipUuid)
-      createKey(clientUuid, relationshipUuid)
+      createClient(clientUuid, consumerUuid, Seq(userUuid))
+      addUser(clientUuid, userUuid)
+      createKey(clientUuid, userUuid)
 
       val response = request(uri = s"$serviceURL/clients/$clientUuid/keys", method = HttpMethods.GET)
       response.status shouldBe StatusCodes.OK

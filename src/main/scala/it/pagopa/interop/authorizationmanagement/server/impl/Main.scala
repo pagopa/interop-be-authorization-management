@@ -62,6 +62,7 @@ object Main extends App with Dependencies {
           clientApi(jwtValidator, sharding),
           healthApi,
           keyApi(jwtValidator, sharding),
+          migrateApi(jwtValidator, sharding),
           purposeApi(jwtValidator, sharding),
           tokenGenerationApi(sharding),
           validationExceptionToRoute.some

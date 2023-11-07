@@ -10,11 +10,12 @@ object ClientAdapters {
     def toPersistent: PersistentClient =
       PersistentClient(
         id = p.id,
+        users = p.users,
         consumerId = p.consumerId,
         name = p.name,
         purposes = p.purposes.map(_.toPersistent),
         description = p.description,
-        relationships = p.relationships,
+        relationships = Set.empty,
         kind = PersistentClientKind.fromApi(p.kind),
         createdAt = p.createdAt
       )

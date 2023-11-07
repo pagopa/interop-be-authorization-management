@@ -59,14 +59,16 @@ object JsonFormats {
     jsonFormat3(PersistentClientPurposeDetails.apply)
 
   implicit val pcscFormat: RootJsonFormat[PersistentClientStatesChain] = jsonFormat4(PersistentClientStatesChain.apply)
-  implicit val pcFormat: RootJsonFormat[PersistentClient]              = jsonFormat8(PersistentClient.apply)
+  implicit val pcFormat: RootJsonFormat[PersistentClient]              = jsonFormat9(PersistentClient.apply)
 
-  implicit val pkFormat: RootJsonFormat[PersistentKey] = jsonFormat7(PersistentKey.apply)
+  implicit val pkFormat: RootJsonFormat[PersistentKey] = jsonFormat8(PersistentKey.apply)
 
   implicit val kaFormat: RootJsonFormat[KeysAdded]                            = jsonFormat2(KeysAdded.apply)
   implicit val kdFormat: RootJsonFormat[KeyDeleted]                           = jsonFormat3(KeyDeleted.apply)
   implicit val caFormat: RootJsonFormat[ClientAdded]                          = jsonFormat1(ClientAdded.apply)
   implicit val cdFormat: RootJsonFormat[ClientDeleted]                        = jsonFormat1(ClientDeleted.apply)
+  implicit val uaFormat: RootJsonFormat[UserAdded]                            = jsonFormat2(UserAdded.apply)
+  implicit val urFormat: RootJsonFormat[UserRemoved]                          = jsonFormat2(UserRemoved.apply)
   implicit val raFormat: RootJsonFormat[RelationshipAdded]                    = jsonFormat2(RelationshipAdded.apply)
   implicit val rrFormat: RootJsonFormat[RelationshipRemoved]                  = jsonFormat2(RelationshipRemoved.apply)
   implicit val cpaFormat: RootJsonFormat[ClientPurposeAdded]                  = jsonFormat2(ClientPurposeAdded.apply)
@@ -75,6 +77,9 @@ object JsonFormats {
   implicit val asuFormat: RootJsonFormat[AgreementStateUpdated]               = jsonFormat4(AgreementStateUpdated.apply)
   implicit val aaesuFormat: RootJsonFormat[AgreementAndEServiceStatesUpdated] = jsonFormat8(
     AgreementAndEServiceStatesUpdated.apply
+  )
+  implicit val kuFormat: RootJsonFormat[KeyRelationshipToUserMigrated]        = jsonFormat3(
+    KeyRelationshipToUserMigrated.apply
   )
   implicit val psuFormat: RootJsonFormat[PurposeStateUpdated]                 = jsonFormat3(PurposeStateUpdated.apply)
 

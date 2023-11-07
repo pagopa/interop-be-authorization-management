@@ -50,12 +50,11 @@ object KeyApiResponseHandlers extends AkkaResponses {
     success: T => Route
   )(result: Try[T])(implicit contexts: Seq[(String, String)], logger: LoggerTakingImplicit[ContextFieldsToLog]): Route =
     result match {
-      case Success(s)                                    => success(s)
-      case Failure(ex: CreateKeysBadRequest)             => badRequest(ex, logMessage)
-      case Failure(ex: PartyRelationshipNotAllowedError) => badRequest(ex, logMessage)
-      case Failure(ex: InvalidKeys)                      => badRequest(ex, logMessage)
-      case Failure(ex: KeysAlreadyExist)                 => conflict(ex, logMessage)
-      case Failure(ex)                                   => internalServerError(ex, logMessage)
+      case Success(s)                        => success(s)
+      case Failure(ex: CreateKeysBadRequest) => badRequest(ex, logMessage)
+      case Failure(ex: UserNotAllowedError)  => badRequest(ex, logMessage)
+      case Failure(ex: InvalidKeys)          => badRequest(ex, logMessage)
+      case Failure(ex: KeysAlreadyExist)     => conflict(ex, logMessage)
+      case Failure(ex)                       => internalServerError(ex, logMessage)
     }
-
 }

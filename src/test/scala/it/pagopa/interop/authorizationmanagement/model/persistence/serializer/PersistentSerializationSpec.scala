@@ -32,10 +32,13 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   serdeCheck[State, StateV1](stateGenWithCreatedAt, _.sorted)
   serdeCheck[KeysAdded, KeysAddedV1](keysAddedGen, _.sorted)
   serdeCheck[KeyDeleted, KeyDeletedV1](keyDeletedGen)
+  serdeCheck[KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1](keyRelationshipToUserMigratedGen)
   serdeCheck[ClientAdded, ClientAddedV1](clientAddedGenWithCreatedAt)
-  serdeCheck[ClientDeleted, ClientDeletedV1](clientDeletedGen)
   serdeCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGenWithCreatedAt)
   serdeCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
+  serdeCheck[ClientDeleted, ClientDeletedV1](clientDeletedGen)
+  serdeCheck[UserAdded, UserAddedV1](userAddedGenWithCreatedAt)
+  serdeCheck[UserRemoved, UserRemovedV1](userRemovedGen)
   serdeCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
   serdeCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
   serdeCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
@@ -49,12 +52,16 @@ class PersistentSerializationSpec extends ScalaCheckSuite with DiffxAssertions {
   deserCheck[State, StateV1](stateGenNoCreatedAt)
   deserCheck[KeysAdded, KeysAddedV1](keysAddedGen)
   deserCheck[KeyDeleted, KeyDeletedV1](keyDeletedGen)
-  deserCheck[ClientAdded, ClientAddedV1](clientAddedGenWithCreatedAt)
-  deserCheck[ClientAdded, ClientAddedV1](clientAddedGenNoCreatedAt)
-  deserCheck[ClientDeleted, ClientDeletedV1](clientDeletedGen)
+  deserCheck[KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1](keyRelationshipToUserMigratedGen)
   deserCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGenWithCreatedAt)
   deserCheck[RelationshipAdded, RelationshipAddedV1](relationshipAddedGenNoCreatedAt)
   deserCheck[RelationshipRemoved, RelationshipRemovedV1](relationshipRemovedGen)
+  deserCheck[ClientAdded, ClientAddedV1](clientAddedGenWithCreatedAt)
+  deserCheck[ClientAdded, ClientAddedV1](clientAddedGenNoCreatedAt)
+  deserCheck[ClientDeleted, ClientDeletedV1](clientDeletedGen)
+  deserCheck[UserAdded, UserAddedV1](userAddedGenWithCreatedAt)
+  deserCheck[UserAdded, UserAddedV1](userAddedGenNoCreatedAt)
+  deserCheck[UserRemoved, UserRemovedV1](userRemovedGen)
   deserCheck[ClientPurposeAdded, ClientPurposeAddedV1](clientPurposeAddedGen)
   deserCheck[ClientPurposeRemoved, ClientPurposeRemovedV1](clientPurposeRemovedGen)
   deserCheck[EServiceStateUpdated, EServiceStateUpdatedV1](eServiceStateUpdatedGen)
@@ -118,6 +125,7 @@ object PersistentSerializationSpec {
 
   val persistentKeyGen: Gen[(PersistentKey, PersistentKeyV1)] = for {
     relationshipId               <- Gen.uuid
+    userId                       <- Gen.uuid
     kid                          <- stringGen
     name                         <- stringGen
     encodedPem                   <- stringGen
@@ -126,7 +134,8 @@ object PersistentSerializationSpec {
     (createdAt, createdAtString) <- offsetDatetimeGen
   } yield (
     PersistentKey(
-      relationshipId = relationshipId,
+      relationshipId = relationshipId.some,
+      userId = userId.some,
       kid = kid,
       name = name,
       encodedPem = encodedPem,
@@ -135,7 +144,8 @@ object PersistentSerializationSpec {
       createdAt = createdAt
     ),
     PersistentKeyV1(
-      relationshipId = relationshipId.toString(),
+      relationshipId = relationshipId.toString.some,
+      userId = userId.toString.some,
       kid = kid,
       encodedPem = encodedPem,
       use = usev1,
@@ -216,16 +226,18 @@ object PersistentSerializationSpec {
     (ppurposesC, purposeCV1)   <- persistentClientPurposesGen
     description                <- stringGen.map(Option(_).filter(_.nonEmpty))
     relations                  <- Gen.containerOf[Set, UUID](Gen.uuid)
+    users                      <- Gen.containerOf[Set, UUID](Gen.uuid)
     (pkind, kindV1)            <- persistentClientKindGen
     (createdAt, createdAtLong) <- offsetDatetimeLongGen.map { case (x, y) => (x, y.some) }
   } yield (
-    PersistentClient(id, consumerId, name, ppurposesC, description, relations, pkind, createdAt),
+    PersistentClient(id, consumerId, name, ppurposesC, description, relations, users, pkind, createdAt),
     PersistentClientV1(
       id = id.toString,
       consumerId = consumerId.toString,
       name = name,
       description = description,
       relationships = relations.map(_.toString()).toSeq,
+      users = users.map(_.toString()).toSeq,
       purposes = purposeCV1,
       kind = kindV1,
       createdAt = createdAtLong
@@ -239,15 +251,17 @@ object PersistentSerializationSpec {
     (ppurposesC, purposeCV1) <- persistentClientPurposesGen
     description              <- stringGen.map(Option(_).filter(_.nonEmpty))
     relations                <- Gen.containerOf[Set, UUID](Gen.uuid)
+    users                    <- Gen.containerOf[Set, UUID](Gen.uuid)
     (pkind, kindV1)          <- persistentClientKindGen
   } yield (
-    PersistentClient(id, consumerId, name, ppurposesC, description, relations, pkind, defaultCreatedAt),
+    PersistentClient(id, consumerId, name, ppurposesC, description, relations, users, pkind, defaultCreatedAt),
     PersistentClientV1(
       id = id.toString,
       consumerId = consumerId.toString,
       name = name,
       description = description,
       relationships = relations.map(_.toString()).toSeq,
+      users = users.map(_.toString()).toSeq,
       purposes = purposeCV1,
       kind = kindV1,
       createdAt = None
@@ -301,6 +315,15 @@ object PersistentSerializationSpec {
     (pKeys, pKeysV1) <- sizedKeysGenerator(cardinality)
   } yield (KeysAdded(clientId, pKeys), KeysAddedV1(clientId, pKeysV1))
 
+  val keyRelationshipToUserMigratedGen: Gen[(KeyRelationshipToUserMigrated, KeyRelationshipToUserMigratedV1)] = for {
+    clientId <- stringGen
+    keyId    <- stringGen
+    userId   <- Gen.uuid
+  } yield (
+    KeyRelationshipToUserMigrated(clientId, keyId, userId),
+    KeyRelationshipToUserMigratedV1(clientId, keyId, userId.toString)
+  )
+
   val keyDeletedGen: Gen[(KeyDeleted, KeyDeletedV1)] = for {
     clientId      <- stringGen
     keyId         <- stringGen
@@ -334,6 +357,21 @@ object PersistentSerializationSpec {
     clientId       <- stringGen
     relationshipId <- stringGen
   } yield (RelationshipRemoved(clientId, relationshipId), RelationshipRemovedV1(clientId, relationshipId))
+
+  val userAddedGenWithCreatedAt: Gen[(UserAdded, UserAddedV1)] = for {
+    (pc, pcv1) <- persistentClientGenWithCreatedAt
+    uuid       <- Gen.uuid
+  } yield (UserAdded(pc, uuid), UserAddedV1(pcv1, uuid.toString))
+
+  val userAddedGenNoCreatedAt: Gen[(UserAdded, UserAddedV1)] = for {
+    (pc, pcv1) <- persistentClientGenNoCreatedAt
+    uuid       <- Gen.uuid
+  } yield (UserAdded(pc, uuid), UserAddedV1(pcv1, uuid.toString))
+
+  val userRemovedGen: Gen[(UserRemoved, UserRemovedV1)] = for {
+    (pc, pcv1) <- persistentClientGenWithCreatedAt
+    uuid       <- Gen.uuid
+  } yield (UserRemoved(pc, uuid), UserRemovedV1(pcv1, uuid.toString))
 
   val clientPurposeAddedGen: Gen[(ClientPurposeAdded, ClientPurposeAddedV1)] = for {
     clientId         <- stringGen

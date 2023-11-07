@@ -36,7 +36,7 @@ object ClientApiResponseHandlers extends AkkaResponses {
       case Failure(ex) => internalServerError(ex, logMessage)
     }
 
-  def addRelationshipResponse[T](logMessage: String)(
+  def addUserResponse[T](logMessage: String)(
     success: T => Route
   )(result: Try[T])(implicit contexts: Seq[(String, String)], logger: LoggerTakingImplicit[ContextFieldsToLog]): Route =
     result match {
@@ -54,14 +54,14 @@ object ClientApiResponseHandlers extends AkkaResponses {
       case Failure(ex)                      => internalServerError(ex, logMessage)
     }
 
-  def removeClientRelationshipResponse[T](logMessage: String)(
+  def removeClientUserResponse[T](logMessage: String)(
     success: T => Route
   )(result: Try[T])(implicit contexts: Seq[(String, String)], logger: LoggerTakingImplicit[ContextFieldsToLog]): Route =
     result match {
-      case Success(s)                                  => success(s)
-      case Failure(ex: ClientNotFoundError)            => notFound(ex, logMessage)
-      case Failure(ex: PartyRelationshipNotFoundError) => notFound(ex, logMessage)
-      case Failure(ex)                                 => internalServerError(ex, logMessage)
+      case Success(s)                       => success(s)
+      case Failure(ex: ClientNotFoundError) => notFound(ex, logMessage)
+      case Failure(ex: UserNotFoundError)   => notFound(ex, logMessage)
+      case Failure(ex)                      => internalServerError(ex, logMessage)
     }
 
   def getClientByPurposeIdResponse[T](logMessage: String)(

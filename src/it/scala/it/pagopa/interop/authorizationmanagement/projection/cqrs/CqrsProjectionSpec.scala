@@ -48,7 +48,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val relationshipId = UUID.randomUUID()
 
       createClient(clientId, consumerId)
-      val client = addRelationship(clientId, relationshipId)
+      val client = addUser(clientId, relationshipId)
 
       val expectedData = client.toPersistent
 
@@ -63,7 +63,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val relationshipId = UUID.randomUUID()
 
       createClient(clientId, consumerId)
-      addRelationship(clientId, relationshipId)
+      addUser(clientId, relationshipId)
       request(uri = s"$serviceURL/clients/$clientId/relationships/$relationshipId", method = HttpMethods.DELETE)
 
       val persisted = findOne[PersistentClient](clientId.toString).futureValue
@@ -74,11 +74,12 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
     "succeed for event KeysAdded" in {
       val clientId       = UUID.randomUUID()
       val consumerId     = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val relationshipId = Some(UUID.randomUUID())
+      val userId         = UUID.randomUUID()
 
       val keySeed = Key(
         kid = "kid",
-        relationshipId = relationshipId,
+        userId = userId,
         encodedPem = generateEncodedKey(),
         use = KeyUse.SIG,
         algorithm = "123",
@@ -87,7 +88,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       )
 
       createClient(clientId, consumerId)
-      addRelationship(clientId, relationshipId)
+      addUser(clientId, userId)
       val keysResponse = createKey(clientId, keySeed)
 
       val persistedClient = findOne[JsObject](clientId.toString).futureValue
@@ -100,6 +101,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val expected = Seq(
         PersistentKey(
           relationshipId = relationshipId,
+          userId = Some(userId),
           kid = keysResponse.head.kid,
           name = keySeed.name,
           encodedPem = keySeed.encodedPem,
@@ -118,7 +120,7 @@ class CqrsProjectionSpec extends ScalaTestWithActorTestKit(ItSpecConfiguration.c
       val relationshipId = UUID.randomUUID()
 
       createClient(clientId, consumerId)
-      addRelationship(clientId, relationshipId)
+      addUser(clientId, relationshipId)
       val keysResponse1 = createKey(clientId, relationshipId)
       val keysResponse2 = createKey(clientId, relationshipId)
       val kid1          = keysResponse1.head.kid

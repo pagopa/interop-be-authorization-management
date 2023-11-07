@@ -31,7 +31,7 @@ object KeyPersistentBehavior {
       case AddKeys(clientId, validKeys, replyTo) =>
         state.clients.get(clientId) match {
           case Some(client) =>
-            validateRelationships(client, validKeys)
+            validateUsers(client, validKeys)
               .fold(error => commandError(replyTo, error), _ => addKeys(replyTo, clientId, validKeys))
 
           case None => commandError(replyTo, ClientNotFoundError(clientId))
@@ -64,6 +64,15 @@ object KeyPersistentBehavior {
           case Some(_) =>
             Effect
               .persist(KeyDeleted(clientId, keyId, dateTimeSupplier.get()))
+              .thenRun(_ => replyTo ! StatusReply.Success(Done))
+          case None    => commandKeyNotFoundError(clientId, keyId, replyTo)
+        }
+
+      case MigrateKeyRelationshipToUser(clientId, keyId, userId, replyTo) =>
+        state.getClientKeyById(clientId, keyId) match {
+          case Some(_) =>
+            Effect
+              .persist(KeyRelationshipToUserMigrated(clientId, keyId, userId))
               .thenRun(_ => replyTo ! StatusReply.Success(Done))
           case None    => commandKeyNotFoundError(clientId, keyId, replyTo)
         }
@@ -109,13 +118,13 @@ object KeyPersistentBehavior {
           case None         => commandError(replyTo, ClientWithPurposeNotFoundError(clientId, purposeId))
         }
 
-      case ListClients(from, to, relationshipId, consumerId, purposeId, kind, replyTo) =>
+      case ListClients(from, to, userId, consumerId, purposeId, kind, replyTo) =>
         val clientsByKind: Seq[PersistentClient] = kind
           .fold(state.clients.values)(k => state.clients.values.filter(_.kind == k))
           .toSeq
 
         val filteredClients: Seq[PersistentClient] = clientsByKind.filter { client =>
-          relationshipId.forall(relationship => client.relationships.map(_.toString).contains(relationship)) &&
+          userId.forall(users => client.users.map(_.toString).contains(users)) &&
           consumerId.forall(_ == client.consumerId.toString) &&
           purposeId.forall(pId => client.purposes.exists(_.purpose.purposeId.toString == pId))
         }
@@ -135,7 +144,7 @@ object KeyPersistentBehavior {
               .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
           )
 
-      case AddRelationship(clientId, relationshipId, replyTo) =>
+      case AddUser(clientId, userId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
         client
@@ -143,32 +152,32 @@ object KeyPersistentBehavior {
             commandError(replyTo, ClientNotFoundError(clientId))
           } { c =>
             Effect
-              .persist(RelationshipAdded(c, relationshipId))
+              .persist(UserAdded(c, userId))
               .thenRun((s: State) =>
                 replyTo ! s.clients
                   .get(clientId)
                   .fold[StatusReply[PersistentClient]](
-                    StatusReply.Error(new RuntimeException(s"Client $clientId not found after add relationship action"))
+                    StatusReply.Error(new RuntimeException(s"Client $clientId not found after add user action"))
                   )(updatedClient => StatusReply.Success(updatedClient))
               )
           }
 
-      case RemoveRelationship(clientId, relationshipId, replyTo) =>
+      case RemoveUser(clientId, userId, replyTo) =>
         val client: Option[PersistentClient] = state.clients.get(clientId)
 
         val validations: Either[Throwable, PersistentClient] = for {
           persistentClient <- client.toRight(ClientNotFoundError(clientId))
-          _                <- persistentClient.relationships
-            .find(_.toString == relationshipId)
-            .toRight(PartyRelationshipNotFoundError(clientId, relationshipId))
+          _                <- persistentClient.users
+            .find(_ == userId)
+            .toRight(UserNotFoundError(clientId, userId.toString))
         } yield persistentClient
 
         validations
           .fold(
             error => commandError(replyTo, error),
-            { _ =>
+            { c =>
               Effect
-                .persist(RelationshipRemoved(clientId, relationshipId))
+                .persist(UserRemoved(c, userId))
                 .thenRun((_: State) => replyTo ! StatusReply.Success(Done))
 
             }
@@ -262,18 +271,13 @@ object KeyPersistentBehavior {
     }
   }
 
-  private def validateRelationships(
-    client: PersistentClient,
-    keys: Seq[PersistentKey]
-  ): Either[PartyRelationshipNotAllowedError, Unit] = {
-    val relationshipsNotInClient = keys.map(_.relationshipId).toSet -- client.relationships
+  private def validateUsers(client: PersistentClient, keys: Seq[PersistentKey]): Either[UserNotAllowedError, Unit] = {
+    val usersNotInClient = keys.map(_.userId).flatten.toSet -- client.users
 
     Either.cond(
-      relationshipsNotInClient.isEmpty,
+      usersNotInClient.isEmpty,
       (),
-      PartyRelationshipNotAllowedError(
-        relationshipsNotInClient.map(relationshipId => (relationshipId.toString, client.id.toString))
-      )
+      UserNotAllowedError(usersNotInClient.map(userId => (userId.toString, client.id.toString)))
     )
   }
 
@@ -321,10 +325,13 @@ object KeyPersistentBehavior {
     event match {
       case e: KeysAdded                         => state.addKeys(e)
       case e: KeyDeleted                        => state.deleteKey(e)
+      case e: KeyRelationshipToUserMigrated     => state.migrateKeyRelationshipToUser(e)
       case e: ClientAdded                       => state.addClient(e)
       case e: ClientDeleted                     => state.deleteClient(e)
       case e: RelationshipAdded                 => state.addRelationship(e)
       case e: RelationshipRemoved               => state.removeRelationship(e)
+      case e: UserAdded                         => state.addUser(e)
+      case e: UserRemoved                       => state.removeUser(e)
       case e: ClientPurposeAdded                => state.addClientPurpose(e)
       case e: ClientPurposeRemoved              => state.removeClientPurpose(e)
       case e: EServiceStateUpdated              => state.updateClientsByEService(e)

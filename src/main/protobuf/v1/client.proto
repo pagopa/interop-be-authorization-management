@@ -16,6 +16,7 @@ message PersistentClientV1 {
   repeated ClientPurposesEntryV1 purposes = 7;
   required ClientKindV1 kind = 8;
   optional int64 createdAt = 9;
+  repeated string users = 10;
 }
 
 message ClientPurposesEntryV1 {

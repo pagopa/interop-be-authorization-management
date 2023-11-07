@@ -31,90 +31,94 @@ class RelationshipManagementSpec
     super.afterAll()
   }
 
-  "Relationship creation" should {
+  "User creation" should {
     "be successful on existing client" in {
-      val clientId       = UUID.randomUUID()
-      val consumerId     = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val userId     = UUID.randomUUID()
 
       createClient(clientId, consumerId)
 
       val data = s"""{
-                    |  "relationshipId": "${relationshipId.toString}"
+                    |  "userId": "${userId.toString}"
                     |}""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId/relationships", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/$clientId/users", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.OK
       val retrievedClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
 
-      retrievedClient.relationships shouldBe Set(relationshipId)
+      retrievedClient.users shouldBe Set(userId)
     }
 
     "fail if client does not exist" in {
-      val clientId       = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+      val clientId = UUID.randomUUID()
+      val userId   = UUID.randomUUID()
 
       val data = s"""{
-                    |  "relationshipId": "${relationshipId.toString}"
+                    |  "userId": "${userId.toString}"
                     |}""".stripMargin
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId/relationships", method = HttpMethods.POST, data = Some(data))
+        request(uri = s"$serviceURL/clients/$clientId/users", method = HttpMethods.POST, data = Some(data))
 
       response.status shouldBe StatusCodes.NotFound
     }
   }
 
-  "Relationship deletion" should {
+  "User deletion" should {
     "be successful" in {
-      val clientId        = UUID.randomUUID()
-      val consumerId      = UUID.randomUUID()
-      val relationshipId1 = UUID.randomUUID()
-      val relationshipId2 = UUID.randomUUID()
+      val clientId   = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val userId1    = UUID.randomUUID()
+      val userId2    = UUID.randomUUID()
 
       createClient(clientId, consumerId)
-      addRelationship(clientId, relationshipId1)
-      addRelationship(clientId, relationshipId2)
-      val keyOne = createKey(clientId, relationshipId1)
-      val keyTwo = createKey(clientId, relationshipId2)
+      addUser(clientId, userId1)
+      addUser(clientId, userId2)
+      val keyOne = createKey(clientId, userId1)
+      val keyTwo = createKey(clientId, userId2)
+
+      val clientRetrieveResponse1 = request(uri = s"$serviceURL/clients/$clientId", method = HttpMethods.GET)
+      val retrievedClient1        = Await.result(Unmarshal(clientRetrieveResponse1).to[Client], Duration.Inf)
+      retrievedClient1.users shouldBe Set(userId1, userId2)
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId/relationships/$relationshipId1", method = HttpMethods.DELETE)
+        request(uri = s"$serviceURL/clients/$clientId/users/$userId1", method = HttpMethods.DELETE)
 
       response.status shouldBe StatusCodes.NoContent
 
       val clientRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId", method = HttpMethods.GET)
       val retrievedClient        = Await.result(Unmarshal(clientRetrieveResponse).to[Client], Duration.Inf)
-      retrievedClient.relationships shouldBe Set(relationshipId2)
+      retrievedClient.users shouldBe Set(userId2)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Keys], Duration.Inf)
       retrievedKeys.keys shouldEqual (keyOne.keys ++ keyTwo.keys)
     }
 
-    "be successful and don't remove same relationship keys of different client" in {
-      val clientId1      = UUID.randomUUID()
-      val clientId2      = UUID.randomUUID()
-      val consumerId     = UUID.randomUUID()
-      val relationshipId = UUID.randomUUID()
+    "be successful and don't remove same user keys of different client" in {
+      val clientId1  = UUID.randomUUID()
+      val clientId2  = UUID.randomUUID()
+      val consumerId = UUID.randomUUID()
+      val userId     = UUID.randomUUID()
 
       createClient(clientId1, consumerId)
       createClient(clientId2, consumerId)
-      addRelationship(clientId1, relationshipId)
-      addRelationship(clientId2, relationshipId)
-      createKey(clientId1, relationshipId)
-      val client2Keys = createKey(clientId2, relationshipId)
+      addUser(clientId1, userId)
+      addUser(clientId2, userId)
+      createKey(clientId1, userId)
+      val client2Keys = createKey(clientId2, userId)
 
       val response =
-        request(uri = s"$serviceURL/clients/$clientId1/relationships/$relationshipId", method = HttpMethods.DELETE)
+        request(uri = s"$serviceURL/clients/$clientId1/users/$userId", method = HttpMethods.DELETE)
 
       response.status shouldBe StatusCodes.NoContent
 
       val clientRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2", method = HttpMethods.GET)
       val retrievedClient        = Await.result(Unmarshal(clientRetrieveResponse).to[Client], Duration.Inf)
-      retrievedClient.relationships shouldBe Set(relationshipId)
+      retrievedClient.users shouldBe Set(userId)
 
       val keysRetrieveResponse = request(uri = s"$serviceURL/clients/$clientId2/keys", method = HttpMethods.GET)
       val retrievedKeys        = Await.result(Unmarshal(keysRetrieveResponse).to[Keys], Duration.Inf)

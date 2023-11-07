@@ -15,18 +15,19 @@ import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.authorizationmanagement.api._
 import it.pagopa.interop.authorizationmanagement.api.impl.{
+  MigrateApiMarshallerImpl,
   ClientApiMarshallerImpl,
   ClientApiServiceImpl,
   HealthApiMarshallerImpl,
   HealthServiceApiImpl,
   KeyApiMarshallerImpl,
-  KeyApiServiceImpl,
   PurposeApiMarshallerImpl,
   PurposeApiServiceImpl,
   TokenGenerationApiMarshallerImpl,
   TokenGenerationApiServiceImpl,
   serviceCode
 }
+import it.pagopa.interop.authorizationmanagement.api.impl.{MigrateApiServiceImpl, KeyApiServiceImpl}
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration
 import it.pagopa.interop.authorizationmanagement.common.system.ApplicationConfiguration.{
   numberOfProjectionTags,
@@ -62,9 +63,10 @@ trait Dependencies {
   implicit val loggerTI: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog]("OAuth2JWTValidatorAsContexts")
 
-  val keyApiMarshaller: KeyApiMarshaller       = KeyApiMarshallerImpl
-  val uuidSupplier: UUIDSupplier               = UUIDSupplier
-  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
+  val migrateApiMarshaller: MigrateApiMarshaller = MigrateApiMarshallerImpl
+  val keyApiMarshaller: KeyApiMarshaller         = KeyApiMarshallerImpl
+  val uuidSupplier: UUIDSupplier                 = UUIDSupplier
+  val dateTimeSupplier: OffsetDateTimeSupplier   = OffsetDateTimeSupplier
 
   val behaviorFactory: EntityContext[Command] => Behavior[Command] = { entityContext =>
     val index = math.abs(entityContext.entityId.hashCode % numberOfProjectionTags)
@@ -145,6 +147,13 @@ trait Dependencies {
       stopMessage = ProjectionBehavior.Stop
     )
   }
+
+  def migrateApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit actorSystem: ActorSystem[_]) =
+    new MigrateApi(
+      MigrateApiServiceImpl(actorSystem, sharding, keyPersistentEntity),
+      migrateApiMarshaller,
+      jwtReader.OAuth2JWTValidatorAsContexts
+    )
 
   def keyApi(jwtReader: JWTReader, sharding: ClusterSharding)(implicit
     ec: ExecutionContext,

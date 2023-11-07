@@ -36,7 +36,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END PUBLIC KEY-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID(),
+        userId = UUID.randomUUID(),
         name = "Random Key",
         createdAt = OffsetDateTime.now()
       )
@@ -67,7 +67,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID(),
+        userId = UUID.randomUUID(),
         name = "Random Key",
         createdAt = OffsetDateTime.now()
       )
@@ -99,7 +99,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END CERTIFICATE-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID(),
+        userId = UUID.randomUUID(),
         name = "Random Key",
         createdAt = OffsetDateTime.now()
       )
@@ -125,7 +125,7 @@ class ValidationSpec extends AnyWordSpecLike with Matchers with EitherValues {
                                      |-----END RSA PRIVATE KEY-----""".stripMargin),
         alg = "123",
         use = KeyUse.SIG,
-        relationshipId = UUID.randomUUID(),
+        userId = UUID.randomUUID(),
         name = "Random Key",
         createdAt = OffsetDateTime.now()
       )
