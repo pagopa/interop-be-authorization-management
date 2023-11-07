@@ -45,7 +45,6 @@ paths:
   '/migrate/clients/{clientId}/keys/{keyId}':
     parameters:
       - $ref: '#/components/parameters/CorrelationIdHeader'
-      - $ref: '#/components/parameters/IpAddress'
     post:
       tags:
         - migrate
