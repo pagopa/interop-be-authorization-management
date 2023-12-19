@@ -61,8 +61,11 @@ object ClientCqrsProjection {
         collection.updateOne(Filters.eq("data.id", c.id.toString), _),
         Updates.push("data.users", rId.toString)
       )
-    case UserRemoved(cId, rId)                        =>
-      ActionWithBson(collection.updateOne(Filters.eq("data.id", cId), _), Updates.pull("data.users", rId.toString))
+    case UserRemoved(c, rId)                          =>
+      ActionWithBson(
+        collection.updateOne(Filters.eq("data.id", c.id.toString), _),
+        Updates.pull("data.users", rId.toString)
+      )
     case ClientPurposeAdded(cId, states)              =>
       // Added as array instead of map because it is not possible to update objects without knowing their key
       ActionWithBson(
