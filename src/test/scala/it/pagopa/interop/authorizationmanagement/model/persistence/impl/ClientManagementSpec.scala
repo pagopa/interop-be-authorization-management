@@ -37,7 +37,6 @@ class ClientManagementSpec
 
     "be created successfully" in {
       val newClientUuid = UUID.randomUUID()
-      (() => mockUUIDSupplier.get()).expects().returning(newClientUuid).once()
 
       val consumerUuid = UUID.randomUUID()
       val name         = "New Client 1"
@@ -57,6 +56,7 @@ class ClientManagementSpec
 
       val data =
         s"""{
+           |  "clientId": "${newClientUuid.toString}",
            |  "consumerId": "${consumerUuid.toString}",
            |  "name": "$name",
            |  "kind": "CONSUMER",

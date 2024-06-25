@@ -85,11 +85,8 @@ trait SpecHelper
         wrappingDirective
       )
 
-    val clientApi = new ClientApi(
-      ClientApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
-      clientApiMarshaller,
-      wrappingDirective
-    )
+    val clientApi =
+      new ClientApi(ClientApiServiceImpl(system, sharding, persistentEntity), clientApiMarshaller, wrappingDirective)
 
     val purposeApi = new PurposeApi(
       PurposeApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
@@ -124,14 +121,13 @@ trait SpecHelper
   }
 
   def createClient(id: UUID, consumerUUID: UUID, userIds: Seq[UUID] = Seq.empty): Client = {
-    (() => mockUUIDSupplier.get()).expects().returning(id).once()
-
     val name        = s"New Client ${id.toString}"
     val description = s"New Client ${id.toString} description"
     val users       = if (userIds.isEmpty) "[]" else userIds.map(_.toString).mkString("[\"", "\",\"", "\"]")
 
     val data =
       s"""{
+         |  "clientId": "${id.toString}",
          |  "consumerId": "${consumerUUID.toString}",
          |  "name": "$name",
          |  "kind": "CONSUMER",
