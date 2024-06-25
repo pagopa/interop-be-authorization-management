@@ -4,6 +4,8 @@ import it.pagopa.interop.authorizationmanagement.model._
 import it.pagopa.interop.authorizationmanagement.model.client._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 
+import java.util.UUID
+
 object ClientAdapters {
 
   implicit class PersistentClientWrapper(private val p: PersistentClient) extends AnyVal {
@@ -21,9 +23,9 @@ object ClientAdapters {
   }
 
   implicit class PersistentClientObjectWrapper(private val p: PersistentClient.type) extends AnyVal {
-    def toPersistentClient(seed: ClientSeed): PersistentClient =
+    def toPersistentClient(clientId: UUID, seed: ClientSeed): PersistentClient =
       client.PersistentClient(
-        id = seed.clientId.getOrElse(UUIDSupplier.get()),
+        id = clientId,
         consumerId = seed.consumerId,
         name = seed.name,
         purposes = Seq.empty,

@@ -17,6 +17,7 @@ import it.pagopa.interop.authorizationmanagement.model.persistence.ClientAdapter
 import it.pagopa.interop.authorizationmanagement.model.persistence._
 import it.pagopa.interop.authorizationmanagement.model.persistence.impl.Validation
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.commons.utils.TypeConversions._
 import cats.syntax.all._
 
@@ -28,7 +29,8 @@ import scala.util.{Failure, Success, Try}
 final case class ClientApiServiceImpl(
   system: ActorSystem[_],
   sharding: ClusterSharding,
-  entity: Entity[Command, ShardingEnvelope[Command]]
+  entity: Entity[Command, ShardingEnvelope[Command]],
+  uuidSupplier: UUIDSupplier
 )(implicit ec: ExecutionContext)
     extends ClientApiService
     with Validation {
@@ -47,7 +49,8 @@ final case class ClientApiServiceImpl(
     val operationLabel: String = s"Creating client for Consumer ${clientSeed.consumerId}"
     logger.info(operationLabel)
 
-    val persistentClient       = PersistentClient.toPersistentClient(clientSeed)
+    val persistentClient       =
+      PersistentClient.toPersistentClient(clientSeed.clientId.getOrElse(uuidSupplier.get()), clientSeed)
     val result: Future[Client] =
       commander(persistentClient.id.toString)
         .askWithStatus(ref => AddClient(persistentClient, ref))

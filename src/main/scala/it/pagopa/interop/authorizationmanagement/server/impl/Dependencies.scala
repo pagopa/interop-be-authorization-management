@@ -168,7 +168,7 @@ trait Dependencies {
     ec: ExecutionContext,
     actorSystem: ActorSystem[_]
   ) = new ClientApi(
-    ClientApiServiceImpl(actorSystem, sharding, keyPersistentEntity),
+    ClientApiServiceImpl(actorSystem, sharding, keyPersistentEntity, uuidSupplier),
     ClientApiMarshallerImpl,
     jwtReader.OAuth2JWTValidatorAsContexts
   )
