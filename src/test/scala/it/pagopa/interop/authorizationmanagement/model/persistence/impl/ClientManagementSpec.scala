@@ -35,8 +35,48 @@ class ClientManagementSpec
 
   "Client" should {
 
-    "be created successfully" in {
+    "be created successfully passing clientId" in {
       val newClientUuid = UUID.randomUUID()
+
+      val consumerUuid = UUID.randomUUID()
+      val name         = "New Client 1"
+      val description  = Some("New Client 1 description")
+
+      val expected =
+        Client(
+          id = newClientUuid,
+          consumerId = consumerUuid,
+          name = name,
+          purposes = Seq.empty,
+          description = description,
+          kind = ClientKind.CONSUMER,
+          createdAt = timestamp,
+          users = Set.empty
+        )
+
+      val data =
+        s"""{
+           |  "clientId": "${newClientUuid.toString}",
+           |  "consumerId": "${consumerUuid.toString}",
+           |  "name": "$name",
+           |  "kind": "CONSUMER",
+           |  "description": "${description.get}",
+           |  "createdAt": "$timestamp",
+           |  "users": []
+           |}""".stripMargin
+
+      val response = request(uri = s"$serviceURL/clients", method = HttpMethods.POST, data = Some(data))
+
+      response.status shouldBe StatusCodes.OK
+      val createdClient = Await.result(Unmarshal(response).to[Client], Duration.Inf)
+
+      createdClient shouldBe expected
+
+    }
+    "be created successfully without passing clientId" in {
+
+      val newClientUuid = UUID.randomUUID()
+
       (() => mockUUIDSupplier.get()).expects().returning(newClientUuid).once()
 
       val consumerUuid = UUID.randomUUID()

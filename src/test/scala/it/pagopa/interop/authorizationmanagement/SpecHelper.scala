@@ -85,11 +85,12 @@ trait SpecHelper
         wrappingDirective
       )
 
-    val clientApi = new ClientApi(
-      ClientApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
-      clientApiMarshaller,
-      wrappingDirective
-    )
+    val clientApi =
+      new ClientApi(
+        ClientApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),
+        clientApiMarshaller,
+        wrappingDirective
+      )
 
     val purposeApi = new PurposeApi(
       PurposeApiServiceImpl(system, sharding, persistentEntity, mockUUIDSupplier),

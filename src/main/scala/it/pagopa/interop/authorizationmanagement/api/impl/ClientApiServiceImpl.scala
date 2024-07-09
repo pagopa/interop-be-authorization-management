@@ -49,11 +49,10 @@ final case class ClientApiServiceImpl(
     val operationLabel: String = s"Creating client for Consumer ${clientSeed.consumerId}"
     logger.info(operationLabel)
 
-    val clientId = uuidSupplier.get()
-
-    val persistentClient       = PersistentClient.toPersistentClient(clientId, clientSeed)
+    val persistentClient       =
+      PersistentClient.toPersistentClient(clientSeed.clientId.getOrElse(uuidSupplier.get()), clientSeed)
     val result: Future[Client] =
-      commander(clientId.toString)
+      commander(persistentClient.id.toString)
         .askWithStatus(ref => AddClient(persistentClient, ref))
         .map(_.toApi)
 
